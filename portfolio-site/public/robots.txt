@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://alitouheed.dev/sitemap.xml
