@@ -147,33 +147,35 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({ currentFrame =
             </svg>
           </div>
 
-          {/* Role Title */}
-          <p
-            className="my-2.5 text-2xl sm:text-3xl font-bold leading-tight text-slate-100 -rotate-1.5 origin-left"
+          {/* Role Title with rich color accents */}
+          <div
+            className="my-3 text-2xl sm:text-3xl lg:text-[1.95rem] font-bold leading-tight text-slate-100 -rotate-1.5 origin-left flex items-center flex-wrap gap-x-1.5"
             style={{ fontFamily: "'Caveat', cursive" }}
           >
-            <TypewriterText text="Web & App Developer | AI Automation" delay={850} speed={25} active={fontsReady} />
-          </p>
+            <span>Web &amp; App</span>
+            <span className="text-purple-400 drop-shadow-[0_0_12px_rgba(168,85,247,0.6)]">Developer</span>
+            <span className="text-slate-400/60 font-light mx-1">|</span>
+            <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.6)]">AI Automation</span>
+          </div>
 
-          {/* Handwritten Bio Text: Enlarged and clearly readable as requested */}
+          {/* Bio Text: Crisp, polished typography with elegant contrast */}
           <div
-            className="relative max-w-[46ch] mb-4"
-            data-ui-delay="1100"
+            className="relative max-w-115 mb-4 pl-1"
+            data-ui-delay="650"
           >
             <p
-              className="m-0 text-xl sm:text-2xl lg:text-[1.55rem] font-bold leading-relaxed text-slate-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] -rotate-1 origin-left"
-              style={{ fontFamily: "'Caveat', cursive" }}
+              className="m-0 text-base sm:text-lg lg:text-[1.18rem] leading-relaxed text-slate-200/90 font-medium tracking-wide drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]"
             >
               <TypewriterText
                 text="I build modern web experiences, automate workflows, and turn ideas into real products."
-                delay={1150}
-                speed={20}
+                delay={900}
+                speed={18}
                 active={fontsReady}
               />
             </p>
             {/* Bio Underline Doodle */}
             <svg
-              className="block w-64 h-4.5 mt-1 ml-4"
+              className="block w-60 h-4 mt-2 ml-1"
               viewBox="0 0 240 16"
               fill="none"
               aria-hidden="true"
@@ -188,8 +190,62 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({ currentFrame =
         {/* CENTER STAGE: Empty spacer reserved for 3D Floating Character */}
         <div className="min-h-40 lg:min-h-65 pointer-events-none" aria-hidden="true" />
 
-        {/* RIGHT COLUMN: Collab in bottom-right */}
-        <aside className="flex flex-col justify-end items-start lg:items-end h-full max-h-115 pointer-events-auto w-full">
+        {/* RIGHT COLUMN: Top has Mantra (Code. Create. Innovate.) and Bottom has Collab Note */}
+        <aside className="flex flex-col justify-between items-start lg:items-end h-full max-h-115 pointer-events-auto w-full pt-4 lg:pt-2">
+          {/* MANTRA BLOCK: Inside Right Column, high up in clear space, NEVER colliding with character */}
+          <div
+            className={`relative flex flex-col items-start -rotate-3 origin-left transition-all duration-700 ease-out self-start lg:self-end mt-2 ${
+              showMantra ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
+            }`}
+          >
+            {/* Hand-drawn Arrow pointing to Code */}
+            <svg
+              className="absolute -left-16 sm:-left-20 -top-2 w-16 sm:w-20 h-10 filter drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]"
+              viewBox="0 0 80 40"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M 6 30 C 26 34, 52 24, 72 10"
+                stroke="#f8fafc"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 62 10 L 73 9 L 69 19"
+                stroke="#f8fafc"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            <div
+              className="flex flex-col text-3xl sm:text-4xl lg:text-[2.6rem] font-bold leading-none text-slate-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
+              style={{ fontFamily: "'Caveat', cursive" }}
+            >
+              <span>
+                <TypewriterText text="Code." delay={100} speed={40} active={showMantra} />
+              </span>
+              <span>
+                <TypewriterText text="Create." delay={300} speed={40} active={showMantra} />
+              </span>
+              <span className="text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.7)]">
+                <TypewriterText text="Innovate." delay={550} speed={35} active={showMantra} />
+              </span>
+            </div>
+
+            <svg
+              className="w-40 sm:w-48 h-6 mt-1 filter drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+              viewBox="0 0 165 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M6 15 C52 7, 114 4, 158 9" stroke="#a855f7" strokeWidth="3.4" strokeLinecap="round" />
+              <path d="M22 20 C68 14, 116 12, 148 15" stroke="#c084fc" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+            </svg>
+          </div>
+
           {/* Collab Block: Tilted at -10deg with top-left sparkle burst, "Let's build" directly above "something amazing...", double neon green underline, and smiley */}
           <div
             className="relative flex flex-col items-start self-start lg:self-end text-left -rotate-10 origin-bottom-right mt-auto mb-6 sm:mb-10"
@@ -252,66 +308,6 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({ currentFrame =
         </aside>
       </div>
 
-      {/* 
-        MANTRA BLOCK: ("Code. Create. Innovate.")
-        Positioned right beside the character's laptop, with arrow emerging from laptop.
-        APPEARS ONLY WHEN frame_0028 IS REACHED (currentFrame >= 28)!
-      */}
-      <div
-        className={`absolute top-[44%] sm:top-[46%] md:top-[48%] left-[50%] ml-10 sm:ml-14 md:ml-20 lg:ml-24 pointer-events-auto transition-all duration-700 ease-out z-20 ${
-          showMantra ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
-        }`}
-      >
-        <div className="relative flex flex-col items-start -rotate-2 origin-left">
-          {/* Hand-drawn Arrow emerging directly from the character's laptop */}
-          <svg
-            className="absolute -left-14 sm:-left-18 -top-1 w-14 sm:w-18 h-9 filter drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]"
-            viewBox="0 0 75 38"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M 4 28 C 24 30, 48 20, 68 10"
-              stroke="#f8fafc"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-            {/* Arrowhead pointing to Code */}
-            <path
-              d="M 58 9 L 69 9 L 66 18"
-              stroke="#f8fafc"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-
-          <div
-            className="flex flex-col text-3xl sm:text-4xl lg:text-[2.6rem] font-bold leading-none text-slate-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
-            style={{ fontFamily: "'Caveat', cursive" }}
-          >
-            <span>
-              <TypewriterText text="Code." delay={100} speed={40} active={showMantra} />
-            </span>
-            <span>
-              <TypewriterText text="Create." delay={300} speed={40} active={showMantra} />
-            </span>
-            <span className="text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.7)]">
-              <TypewriterText text="Innovate." delay={550} speed={35} active={showMantra} />
-            </span>
-          </div>
-
-          <svg
-            className="w-40 sm:w-48 h-6 mt-1 filter drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-            viewBox="0 0 165 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path d="M6 15 C52 7, 114 4, 158 9" stroke="#a855f7" strokeWidth="3.4" strokeLinecap="round" />
-            <path d="M22 20 C68 14, 116 12, 148 15" stroke="#c084fc" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
-          </svg>
-        </div>
-      </div>
 
       {/* 
         BOTTOM CENTER SCROLL CUE:
