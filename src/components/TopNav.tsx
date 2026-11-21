@@ -100,7 +100,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
         <nav
           aria-label="Primary Navigation"
           onMouseLeave={() => setHoveredId(null)}
-          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-2 sm:px-3"
+          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-2 sm:px-3"
         >
           {NAV_LINKS.map((item, idx) => {
             const isHighlighted = highlightedId === item.id;

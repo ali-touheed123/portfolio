@@ -14,6 +14,7 @@ import { HandwrittenHero } from './components/HandwrittenHero';
 import { TopNav } from './components/TopNav';
 import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
 import { AboutOriginSection } from './components/AboutOriginSection';
+import { ProjectsSection } from './components/ProjectsSection';
 
 const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
@@ -100,7 +101,7 @@ function PortfolioShell() {
   }, [curtainDone]);
 
   useEffect(() => {
-    const sections = ['story', 'stack'];
+    const sections = ['story', 'stack', 'work'];
     const onScroll = () => {
       const triggerLine = window.innerHeight * 0.42;
       let current = 'top';
@@ -145,7 +146,7 @@ function PortfolioShell() {
       className={`relative min-h-screen w-full overflow-x-clip transition-colors duration-700 ${
         isDay
           ? 'bg-linear-to-b from-[#D5E9FF] via-[#EAF3FC] to-[#F7FAFE] text-slate-900'
-          : 'bg-[#070A11] text-slate-100'
+          : 'bg-background text-slate-100'
       }`}
     >
       {/* 4-Column Staggered Upward Entry Curtain */}
@@ -185,9 +186,12 @@ function PortfolioShell() {
         <CrossedRibbonBridge />
         <AboutOriginSection />
         <section id="stack" className="relative w-full z-10">
-          <Suspense fallback={<div className="min-h-[400px] w-full" />}>
+          <Suspense fallback={<div className="min-h-100 w-full" />}>
             <SkillsSectionApp />
           </Suspense>
+        </section>
+        <section id="work" className="relative w-full z-10">
+          <ProjectsSection />
         </section>
       </main>
     </div>

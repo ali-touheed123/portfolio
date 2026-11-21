@@ -103,14 +103,14 @@ export const CrossedRibbonBridge: React.FC = () => {
     <div
       ref={containerRef}
       aria-hidden="true"
-      className="relative z-30 w-full h-[130px] sm:h-[160px] -mt-10 sm:-mt-14 -mb-4 sm:-mb-6 overflow-hidden pointer-events-none select-none"
+      className="relative z-30 w-full h-32.5 sm:h-40 -mt-10 sm:-mt-14 -mb-4 sm:-mb-6 overflow-hidden pointer-events-none select-none"
     >
       {/* Seamless vertical transition veil fusing Hero bottom into #05070e Origin Story */}
       <div
         className={`absolute inset-0 ${
           isDay
-            ? 'bg-gradient-to-b from-transparent via-[#05070e]/75 to-[#05070e]'
-            : 'bg-gradient-to-b from-transparent via-[#05070e]/85 to-[#05070e]'
+            ? 'bg-linear-to-b from-transparent via-[#05070e]/75 to-[#05070e]'
+            : 'bg-linear-to-b from-transparent via-[#05070e]/85 to-[#05070e]'
         }`}
       />
 

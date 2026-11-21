@@ -93,8 +93,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
     <div
       className={`flex items-center pointer-events-auto ${
         isMobile
-          ? 'flex-row justify-center gap-2 xs:gap-3 w-full mt-2.5 min-h-[50px]'
-          : 'flex-wrap gap-4 sm:gap-5 mt-6 sm:mt-7 ml-1 min-h-[58px]'
+          ? 'flex-row justify-center gap-2 xs:gap-3 w-full mt-2.5 min-h-12.5'
+          : 'flex-wrap gap-4 sm:gap-5 mt-6 sm:mt-7 ml-1 min-h-14.5'
       }`}
     >
       {/* Button 1: Download CV */}
@@ -126,7 +126,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           aria-hidden="true"
           className={`absolute inset-1 rounded-full transition-all duration-300 ${
             hoveredBtn === 'cv'
-              ? 'opacity-100 bg-gradient-to-r from-cyan-500/25 via-emerald-400/25 to-violet-500/25 shadow-[0_0_26px_rgba(34,211,238,0.5)]'
+              ? 'opacity-100 bg-linear-to-r from-cyan-500/25 via-emerald-400/25 to-violet-500/25 shadow-[0_0_26px_rgba(34,211,238,0.5)]'
               : 'opacity-0'
           }`}
         />
@@ -159,10 +159,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 
         <span className="relative z-10 flex items-center gap-2">
           {cvDownloaded ? (
-            <Check className={`${isMobile ? 'w-4 h-4' : 'w-[18px] h-[18px]'} text-emerald-400`} strokeWidth={2.5} />
+            <Check className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} text-emerald-400`} strokeWidth={2.5} />
           ) : (
             <Download
-              className={`${isMobile ? 'w-4 h-4' : 'w-[18px] h-[18px]'} transition-colors duration-300 ${
+              className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-colors duration-300 ${
                 hoveredBtn === 'cv' ? 'text-cyan-500 dark:text-cyan-300' : 'text-slate-900 dark:text-white'
               }`}
               strokeWidth={2.3}
@@ -204,8 +204,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           aria-hidden="true"
           className={`absolute inset-1 rounded-full transition-all duration-300 ${
             hoveredBtn === 'connect'
-              ? 'opacity-100 bg-gradient-to-r from-cyan-500/25 via-violet-500/30 to-fuchsia-500/30 shadow-[0_0_28px_rgba(217,70,239,0.6)]'
-              : 'opacity-100 bg-gradient-to-r from-red-500/20 via-rose-500/18 to-red-600/20 shadow-[0_0_22px_rgba(255,42,85,0.45)]'
+              ? 'opacity-100 bg-linear-to-r from-cyan-500/25 via-violet-500/30 to-fuchsia-500/30 shadow-[0_0_28px_rgba(217,70,239,0.6)]'
+              : 'opacity-100 bg-linear-to-r from-red-500/20 via-rose-500/18 to-red-600/20 shadow-[0_0_22px_rgba(255,42,85,0.45)]'
           }`}
         />
         <svg
@@ -250,7 +250,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             Let&apos;s Connect
           </span>
           <Send
-            className={`${isMobile ? 'w-4 h-4' : 'w-[18px] h-[18px]'} transition-all duration-300 ${
+            className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-all duration-300 ${
               hoveredBtn === 'connect'
                 ? 'text-cyan-500 dark:text-cyan-300 translate-x-0.5 -translate-y-0.5'
                 : 'text-red-600 dark:text-rose-400'
@@ -362,7 +362,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
       {/* ─── DESKTOP HERO (lg:grid) — Preserves Original 3-Column Studio Layout ─── */}
       <div className="hidden lg:grid grid-cols-[minmax(280px,0.94fr)_minmax(340px,1.12fr)_minmax(280px,0.94fr)] items-center gap-6 w-full flex-1 min-h-0">
         {/* LEFT COLUMN — Name, Collab Note & Primary Actions */}
-        <section className="flex flex-col items-start max-w-[420px] xl:max-w-[465px] pointer-events-auto mt-8">
+        <section className="flex flex-col items-start max-w-105 xl:max-w-116.25 pointer-events-auto mt-8">
           {/* Hello Note */}
           <div className="relative flex flex-col items-start -mb-1 -ml-5" data-ui-delay="480">
             <div className="inline-flex items-center gap-1 -rotate-8 origin-left">
@@ -430,7 +430,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 
         {/* RIGHT COLUMN — Role & Bio */}
         <aside className="flex flex-col items-end pointer-events-auto w-full pt-8">
-          <div className="flex flex-col items-start max-w-[325px] xl:max-w-[365px] -mr-4 xl:-mr-6">
+          <div className="flex flex-col items-start max-w-81.25 xl:max-w-91.25 -mr-4 xl:-mr-6">
             <div
               className="mb-1 text-2xl lg:text-[2.05rem] font-bold leading-tight text-slate-900 dark:text-white -rotate-2 origin-left flex items-center flex-wrap gap-x-2 transition-colors duration-500"
               style={{ fontFamily: "'Caveat', cursive" }}
@@ -555,7 +555,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           </div>
 
           {/* Sleek Mouse Capsule with Glowing Purple Scroll Dot */}
-          <div className="relative flex flex-col items-center justify-start w-5 h-8 sm:w-[22px] sm:h-9 border-[1.75px] border-slate-800/85 dark:border-white/90 rounded-full bg-white/60 dark:bg-slate-950/50 pt-1 transition-colors duration-500">
+          <div className="relative flex flex-col items-center justify-start w-5 h-8 sm:w-5.5 sm:h-9 border-[1.75px] border-slate-800/85 dark:border-white/90 rounded-full bg-white/60 dark:bg-slate-950/50 pt-1 transition-colors duration-500">
             <div className="w-0.5 h-2 bg-slate-800/40 dark:bg-white/45 rounded-full" />
             <motion.div
               animate={{ y: [0, 5, 0], opacity: [0.95, 0.35, 0.95] }}
@@ -577,7 +577,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         <motion.svg
           animate={{ y: [0, 3.5, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-[18px] h-[18px] mt-1"
+          className="w-4.5 h-4.5 mt-1"
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"

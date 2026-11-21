@@ -148,7 +148,7 @@ export const CloudField: React.FC = () => {
     >
       <canvas ref={canvasRef} className="w-full h-full block" />
       {/* Soft horizon mist grounding the clouds into the daylight sections below */}
-      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#EEF5FC] via-[#EEF5FC]/70 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-44 bg-linear-to-t from-[#EEF5FC] via-[#EEF5FC]/70 to-transparent" />
     </div>
   );
 };

@@ -171,7 +171,7 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
     >
       {/* BACK LUMINOUS ORBITAL ARCS (z-5 — strictly BEHIND HeroScrollCanvas z-10) */}
       <div
-        className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
+        className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
         style={{
           opacity: ringOpacityBack,
           transform: `translate3d(${(parallax?.x ?? 0) * 10}px, ${(parallax?.y ?? 0) * 6 + 42}px, 0) scale(${
@@ -239,7 +239,7 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
 
       {/* FRONT LOWER FOREGROUND RIM (z-15 — sweeps gently ONLY under lower half around mossy rock) */}
       <div
-        className="pointer-events-none absolute inset-0 z-[15] flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
+        className="pointer-events-none absolute inset-0 z-15 flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
         style={{
           opacity: ringOpacityFront,
           transform: `translate3d(${(parallax?.x ?? 0) * 10}px, ${(parallax?.y ?? 0) * 6 + 42}px, 0) scale(${

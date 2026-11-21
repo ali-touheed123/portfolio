@@ -294,43 +294,43 @@ export const AboutOriginSection: React.FC = () => {
     <section
       id="story"
       aria-label="About Me and Origin Story"
-      className="relative w-full pt-12 pb-18 lg:pt-16 lg:pb-[90px] bg-[#05070e] text-[#f8fafc] overflow-hidden"
+      className="relative w-full pt-12 pb-18 lg:pt-16 lg:pb-22.5 bg-[#05070e] text-[#f8fafc] overflow-hidden"
     >
       {/* Subtle Hero-matched Grid & Starry Space Backdrop — masked cleanly at top for seamless Hero blend */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 [background-image:linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:160px_160px] [mask-image:linear-gradient(to_bottom,transparent_0%,black_18%,black_100%)]"
+        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-size-[160px_160px] mask-[linear-gradient(to_bottom,transparent_0%,black_18%,black_100%)]"
       />
       <canvas
         ref={starCanvasRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 w-full h-full opacity-72 [mask-image:linear-gradient(to_bottom,transparent_0%,black_16%,black_100%)]"
+        className="pointer-events-none absolute inset-0 z-0 w-full h-full opacity-72 mask-[linear-gradient(to_bottom,transparent_0%,black_16%,black_100%)]"
       />
 
       {/* Soft Cosmic Nebulae */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-[560px] h-[560px] top-[4%] -left-[140px] bg-[radial-gradient(circle,#a855f7,transparent_70%)]"
+        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-140 h-140 top-[4%] -left-35 bg-[radial-gradient(circle,#a855f7,transparent_70%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-[520px] h-[520px] top-[44%] -right-[120px] bg-[radial-gradient(circle,#22d3ee,transparent_70%)]"
+        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-130 h-130 top-[44%] -right-30 bg-[radial-gradient(circle,#22d3ee,transparent_70%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-18 w-[480px] h-[480px] bottom-[6%] left-[18%] bg-[radial-gradient(circle,#3b82f6,transparent_70%)]"
+        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-18 w-120 h-120 bottom-[6%] left-[18%] bg-[radial-gradient(circle,#3b82f6,transparent_70%)]"
       />
 
       {/* Header stays neatly centered in .container */}
-      <div className="relative z-2 max-w-[1240px] mx-auto px-[18px] sm:px-8">
+      <div className="relative z-2 max-w-310 mx-auto px-4.5 sm:px-8">
         <header className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.9fr] gap-6 lg:gap-12 items-end mb-10 lg:mb-9">
           <div>
             <div className="flex flex-wrap items-center gap-3.5 mb-5">
               <span
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/[0.03] text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/3 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
-                <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] [animation:pulseDot_2s_ease-in-out_infinite]" />
+                <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-[pulseDot_2s_ease-in-out_infinite]" />
                 About Me
               </span>
               <span className="font-mono text-xs tracking-[0.14em] uppercase text-[#a855f7]">
@@ -349,13 +349,13 @@ export const AboutOriginSection: React.FC = () => {
                 Cloud ERP
                 <span
                   aria-hidden="true"
-                  className="absolute left-0 right-0 bottom-0.5 h-1 rounded-full bg-gradient-to-r from-[#a855f7] to-[#22d3ee] -rotate-[1.2deg]"
+                  className="absolute left-0 right-0 bottom-0.5 h-1 rounded-full bg-linear-to-r from-[#a855f7] to-[#22d3ee] rotate-[-1.2deg]"
                 />
               </span>
             </h2>
 
             <div
-              className="hidden lg:inline-flex items-center gap-2 mt-[22px] p-1.5 rounded-full bg-white/[0.03] border border-white/8"
+              className="hidden lg:inline-flex items-center gap-2 mt-5.5 p-1.5 rounded-full bg-white/3 border border-white/8"
               aria-label="Journey Milestones"
             >
               {CHAPTER_LABELS.map((label, idx) => (
@@ -365,8 +365,8 @@ export const AboutOriginSection: React.FC = () => {
                   onClick={() => scrollToStep(idx)}
                   className={`font-mono text-[0.74rem] px-3.5 py-1.5 rounded-full cursor-pointer transition-all duration-250 border ${
                     activeChapterIdx === idx
-                      ? 'text-white bg-gradient-to-br from-purple-500/35 to-cyan-400/25 border-cyan-400/40 shadow-[0_0_16px_rgba(168,85,247,0.25)]'
-                      : 'text-[#94a3b8] border-transparent hover:text-white hover:bg-white/[0.06]'
+                      ? 'text-white bg-linear-to-br from-purple-500/35 to-cyan-400/25 border-cyan-400/40 shadow-[0_0_16px_rgba(168,85,247,0.25)]'
+                      : 'text-[#94a3b8] border-transparent hover:text-white hover:bg-white/6'
                   }`}
                 >
                   {label}
@@ -392,7 +392,7 @@ export const AboutOriginSection: React.FC = () => {
       </div>
 
       {/* Full-Bleed Path Stage (Desktop Edge-to-Edge) */}
-      <div ref={stageRef} className="relative hidden lg:block w-full aspect-[1440/1800] z-2">
+      <div ref={stageRef} className="relative hidden lg:block w-full aspect-1440/1800 z-2">
         {/* Decorative Flowing Side Ribbons (Anchored off exact left & right screen edges) */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-2"
@@ -540,7 +540,7 @@ export const AboutOriginSection: React.FC = () => {
           type="button"
           onClick={() => scrollToStep(0)}
           aria-label="Step 1"
-          className={`absolute left-[29.17%] top-[12.22%] -translate-x-1/2 -translate-y-1/2 w-[58px] h-[58px] rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
+          className={`absolute left-[29.17%] top-[12.22%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[0]
               ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
               : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
@@ -550,20 +550,20 @@ export const AboutOriginSection: React.FC = () => {
           {reachedSteps[0] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
 
         <article
-          className={`absolute left-[35.5%] top-[5.5%] w-[34%] max-w-[480px] z-5 transition-all duration-650 ${
+          className={`absolute left-[35.5%] top-[5.5%] w-[34%] max-w-120 z-5 transition-all duration-650 ${
             reachedSteps[0]
               ? 'opacity-100 translate-y-0 blur-none pointer-events-auto'
-              : 'opacity-0 translate-y-[26px] blur-[4px] pointer-events-none'
+              : 'opacity-0 translate-y-6.5 blur-xs pointer-events-none'
           }`}
         >
           <div className="flex items-center flex-wrap gap-3 mb-3">
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-[11px] py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.75 py-1 rounded-full">
               First Commercial Client
             </span>
             <span className="font-mono text-[0.72rem] text-[#64748b]">
@@ -588,7 +588,7 @@ export const AboutOriginSection: React.FC = () => {
             type="button"
             onClick={() => setPitchToggled((prev) => !prev)}
             title="Click to toggle insight"
-            className="w-full text-left px-3.5 py-3 rounded-xl bg-purple-500/8 border border-dashed border-purple-500/38 text-[0.87rem] text-[#e9d5ff] cursor-pointer transition-all duration-250 hover:bg-purple-500/15 hover:translate-x-[3px]"
+            className="w-full text-left px-3.5 py-3 rounded-xl bg-purple-500/8 border border-dashed border-purple-500/38 text-[0.87rem] text-[#e9d5ff] cursor-pointer transition-all duration-250 hover:bg-purple-500/15 hover:translate-x-0.75"
           >
             <span className="block font-mono text-[0.68rem] uppercase tracking-[0.08em] text-[#a855f7] mb-1">
               The Face-to-Face Pitch (Click)
@@ -609,7 +609,7 @@ export const AboutOriginSection: React.FC = () => {
           type="button"
           onClick={() => scrollToStep(1)}
           aria-label="Step 2"
-          className={`absolute left-[65.28%] top-[31.11%] -translate-x-1/2 -translate-y-1/2 w-[58px] h-[58px] rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
+          className={`absolute left-[65.28%] top-[31.11%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[1]
               ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
               : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
@@ -619,21 +619,21 @@ export const AboutOriginSection: React.FC = () => {
           {reachedSteps[1] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
 
         <article
-          className={`absolute right-[49%] top-[27%] w-[37%] max-w-[455px] text-right z-5 transition-all duration-650 ${
+          className={`absolute right-[49%] top-[27%] w-[37%] max-w-113.75 text-right z-5 transition-all duration-650 ${
             reachedSteps[1]
               ? 'opacity-100 translate-y-0 blur-none pointer-events-auto'
-              : 'opacity-0 translate-y-[26px] blur-[4px] pointer-events-none'
+              : 'opacity-0 translate-y-6.5 blur-xs pointer-events-none'
           }`}
         >
           <div className="flex items-center justify-end flex-wrap gap-3 mb-3">
             <span className="font-mono text-[0.72rem] text-[#64748b]">Paper &rarr; Digital</span>
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-[11px] py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-2.75 py-1 rounded-full">
               Real Retail Friction Discovered
             </span>
           </div>
@@ -650,10 +650,10 @@ export const AboutOriginSection: React.FC = () => {
                 key={chip.label}
                 type="button"
                 onClick={() => setActiveChipIdx(idx)}
-                className={`font-mono text-[0.72rem] px-[11px] py-1.5 rounded-lg border cursor-pointer transition-all duration-220 ${
+                className={`font-mono text-[0.72rem] px-2.75 py-1.5 rounded-lg border cursor-pointer transition-all duration-220 ${
                   activeChipIdx === idx
                     ? 'bg-cyan-400/14 border-[#22d3ee] text-white shadow-[0_0_14px_rgba(34,211,238,0.22)]'
-                    : 'bg-white/[0.04] border-white/12 text-[#cbd5e1] hover:bg-cyan-400/14 hover:border-[#22d3ee] hover:text-white'
+                    : 'bg-white/4 border-white/12 text-[#cbd5e1] hover:bg-cyan-400/14 hover:border-[#22d3ee] hover:text-white'
                 }`}
               >
                 {chip.label}
@@ -673,7 +673,7 @@ export const AboutOriginSection: React.FC = () => {
           type="button"
           onClick={() => scrollToStep(2)}
           aria-label="Step 3"
-          className={`absolute left-[36.11%] top-[56.67%] -translate-x-1/2 -translate-y-1/2 w-[58px] h-[58px] rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
+          className={`absolute left-[36.11%] top-[56.67%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[2]
               ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
               : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
@@ -683,20 +683,20 @@ export const AboutOriginSection: React.FC = () => {
           {reachedSteps[2] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
 
         <article
-          className={`absolute left-[44.5%] top-[50%] w-[34%] max-w-[480px] z-5 transition-all duration-650 ${
+          className={`absolute left-[44.5%] top-[50%] w-[34%] max-w-120 z-5 transition-all duration-650 ${
             reachedSteps[2]
               ? 'opacity-100 translate-y-0 blur-none pointer-events-auto'
-              : 'opacity-0 translate-y-[26px] blur-[4px] pointer-events-none'
+              : 'opacity-0 translate-y-6.5 blur-xs pointer-events-none'
           }`}
         >
           <div className="flex items-center flex-wrap gap-3 mb-3">
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-[11px] py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-2.75 py-1 rounded-full">
               60% Faster Counter Checkout
             </span>
             <span className="font-mono text-[0.72rem] text-[#64748b]">Cloud ERP &amp; POS</span>
@@ -723,21 +723,21 @@ export const AboutOriginSection: React.FC = () => {
                 className={`font-mono text-[0.72rem] px-3 py-1.5 rounded-lg border cursor-pointer transition-all duration-220 ${
                   activeErpIdx === idx
                     ? 'bg-green-400/14 border-[#4ade80] text-white'
-                    : 'bg-white/[0.04] border-white/12 text-[#94a3b8] hover:bg-green-400/14 hover:border-[#4ade80] hover:text-white'
+                    : 'bg-white/4 border-white/12 text-[#94a3b8] hover:bg-green-400/14 hover:border-[#4ade80] hover:text-white'
                 }`}
               >
                 {mod.tab}
               </button>
             ))}
           </div>
-          <div className="px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/8">
+          <div className="px-3.5 py-3 rounded-xl bg-white/3 border border-white/8">
             <div className="flex justify-between font-mono text-[0.76rem] text-[#e2e8f0] mb-2">
               <span>{activeErp.label}</span>
               <span className="text-[#4ade80]">{activeErp.val}</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
               <div
-                className={`h-full rounded-full bg-gradient-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
+                className={`h-full rounded-full bg-linear-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
               />
             </div>
           </div>
@@ -751,7 +751,7 @@ export const AboutOriginSection: React.FC = () => {
           type="button"
           onClick={() => scrollToStep(3)}
           aria-label="Step 4"
-          className={`absolute left-[59.72%] top-[80%] -translate-x-1/2 -translate-y-1/2 w-[58px] h-[58px] rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
+          className={`absolute left-[59.72%] top-[80%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[3]
               ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
               : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
@@ -761,21 +761,21 @@ export const AboutOriginSection: React.FC = () => {
           {reachedSteps[3] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
 
         <article
-          className={`absolute right-[49%] top-[74.5%] w-[34%] max-w-[480px] text-right z-5 transition-all duration-650 ${
+          className={`absolute right-[49%] top-[74.5%] w-[34%] max-w-120 text-right z-5 transition-all duration-650 ${
             reachedSteps[3]
               ? 'opacity-100 translate-y-0 blur-none pointer-events-auto'
-              : 'opacity-0 translate-y-[26px] blur-[4px] pointer-events-none'
+              : 'opacity-0 translate-y-6.5 blur-xs pointer-events-none'
           }`}
         >
           <div className="flex items-center justify-end flex-wrap gap-3 mb-3">
             <span className="font-mono text-[0.72rem] text-[#64748b]">Today &amp; Beyond</span>
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-[11px] py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.75 py-1 rounded-full">
               Full Stack &amp; Automation
             </span>
           </div>
@@ -793,26 +793,26 @@ export const AboutOriginSection: React.FC = () => {
             software designed for real users and real business growth.
           </p>
           <div className="grid grid-cols-3 gap-2.5 mb-3">
-            <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
+            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
               <strong className="block text-[1.15rem] font-extrabold text-white">2+</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
+              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
                 Years Learning
               </span>
             </div>
-            <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
+            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
               <strong className="block text-[1.15rem] font-extrabold text-white">10+</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
+              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
                 Projects Built
               </span>
             </div>
-            <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
+            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
               <strong className="block text-[1.15rem] font-extrabold text-white">100%</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
+              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
                 Dedication
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap justify-end gap-[7px]">
+          <div className="flex flex-wrap justify-end gap-1.75">
             {['Next.js', 'React', 'Node.js', 'Supabase', 'Workflow Automation'].map((pill) => (
               <span
                 key={pill}
@@ -826,14 +826,14 @@ export const AboutOriginSection: React.FC = () => {
       </div>
 
       {/* Mobile Animated Winding Timeline (< lg) */}
-      <div ref={mobileTimelineRef} className="relative z-2 max-w-[1240px] mx-auto px-4 sm:px-8 lg:hidden">
+      <div ref={mobileTimelineRef} className="relative z-2 max-w-310 mx-auto px-4 sm:px-8 lg:hidden">
         <div className="relative pl-10 sm:pl-12 py-2">
           {/* Background idle guide track */}
           <div className="absolute left-3.5 sm:left-4 top-4 bottom-4 w-1 bg-[#161c30] rounded-full" />
 
           {/* Active scroll-drawn glowing neon beam */}
           <div
-            className="absolute left-3.5 sm:left-4 top-4 w-1 rounded-full bg-gradient-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)] transition-all duration-150"
+            className="absolute left-3.5 sm:left-4 top-4 w-1 rounded-full bg-linear-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)] transition-all duration-150"
             style={{ height: `${Math.min(100, Math.max(0, mobileProgress * 100))}%` }}
           />
 
@@ -854,7 +854,7 @@ export const AboutOriginSection: React.FC = () => {
                 type="button"
                 onClick={() => scrollToStep(0)}
                 aria-label="Step 1"
-                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[0]
                     ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
                     : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
@@ -864,7 +864,7 @@ export const AboutOriginSection: React.FC = () => {
                 {reachedSteps[0] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -917,7 +917,7 @@ export const AboutOriginSection: React.FC = () => {
                 type="button"
                 onClick={() => scrollToStep(1)}
                 aria-label="Step 2"
-                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[1]
                     ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
                     : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
@@ -927,7 +927,7 @@ export const AboutOriginSection: React.FC = () => {
                 {reachedSteps[1] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -956,7 +956,7 @@ export const AboutOriginSection: React.FC = () => {
                       className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
                         activeChipIdx === idx
                           ? 'bg-cyan-400/14 border-[#22d3ee] text-white shadow-[0_0_12px_rgba(34,211,238,0.25)]'
-                          : 'bg-white/[0.04] border-white/12 text-[#cbd5e1]'
+                          : 'bg-white/4 border-white/12 text-[#cbd5e1]'
                       }`}
                     >
                       {chip.label}
@@ -976,7 +976,7 @@ export const AboutOriginSection: React.FC = () => {
                 type="button"
                 onClick={() => scrollToStep(2)}
                 aria-label="Step 3"
-                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[2]
                     ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
                     : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
@@ -986,7 +986,7 @@ export const AboutOriginSection: React.FC = () => {
                 {reachedSteps[2] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -1021,21 +1021,21 @@ export const AboutOriginSection: React.FC = () => {
                       className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
                         activeErpIdx === idx
                           ? 'bg-green-400/14 border-[#4ade80] text-white shadow-[0_0_12px_rgba(74,222,128,0.25)]'
-                          : 'bg-white/[0.04] border-white/12 text-[#94a3b8]'
+                          : 'bg-white/4 border-white/12 text-[#94a3b8]'
                       }`}
                     >
                       {mod.tab}
                     </button>
                   ))}
                 </div>
-                <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/8">
+                <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/8">
                   <div className="flex justify-between font-mono text-xs text-[#e2e8f0] mb-1.5">
                     <span>{activeErp.label}</span>
                     <span className="text-[#4ade80]">{activeErp.val}</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
                     <div
-                      className={`h-full rounded-full bg-gradient-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
+                      className={`h-full rounded-full bg-linear-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
                     />
                   </div>
                 </div>
@@ -1049,7 +1049,7 @@ export const AboutOriginSection: React.FC = () => {
                 type="button"
                 onClick={() => scrollToStep(3)}
                 aria-label="Step 4"
-                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[3]
                     ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.35)]'
                     : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
@@ -1059,7 +1059,7 @@ export const AboutOriginSection: React.FC = () => {
                 {reachedSteps[3] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -1086,15 +1086,15 @@ export const AboutOriginSection: React.FC = () => {
                   automating workflows, and turning ideas into real products.
                 </p>
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
                     <strong className="block text-base font-extrabold text-white">2+</strong>
                     <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Years</span>
                   </div>
-                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
                     <strong className="block text-base font-extrabold text-white">10+</strong>
                     <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Projects</span>
                   </div>
-                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
                     <strong className="block text-base font-extrabold text-white">100%</strong>
                     <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Grit</span>
                   </div>

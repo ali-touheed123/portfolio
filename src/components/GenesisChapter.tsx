@@ -127,7 +127,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
                       className={`text-left p-3 rounded-2xl transition-all cursor-pointer border ${
                         active
                           ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-md'
-                          : 'bg-transparent border-transparent hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-400'
+                          : 'bg-transparent border-transparent hover:bg-slate-900/4 dark:hover:bg-white/4 text-slate-600 dark:text-slate-400'
                       }`}
                     >
                       <div className="text-[11px] font-mono opacity-75">{chap.index}</div>
