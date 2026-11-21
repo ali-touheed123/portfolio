@@ -5,22 +5,16 @@ interface EntryCurtainProps {
   onCurtainComplete?: () => void;
 }
 
-const CURTAIN_PANELS = [
-  { id: 'col-1', delay: 0.0 },
-  { id: 'col-2', delay: 0.09 },
-  { id: 'col-3', delay: 0.18 },
-  { id: 'col-4', delay: 0.27 },
-];
+// Stagger delays — left panel lifts first, right panel last (reference style)
+const PANEL_DELAYS = [0.0, 0.1, 0.2, 0.3];
 
 /**
- * 4-Column Lime Green Stepped Shutter Reveal.
+ * 4-Column Lime Green Stepped Shutter Reveal (reference-matched).
  *
- * 1. Exactly 4 equal 25% columns (w-1/4) with distinct vertical seams.
- * 2. High-energy Lime Green (#a3e635) with deep contrast typography.
- * 3. Instant system-font rendering: zero font-loading delay so name is visible immediately.
- * 4. 650ms reading hold time so "ALI TOUHEED" registers clearly before lift begins.
- * 5. Smooth 1.05s cubic-bezier(0.65, 0, 0.25, 1) cascade wave (0ms, 90ms, 180ms, 270ms).
- * 6. Brand lockup rides smoothly upward in lockstep with the shutters.
+ * Layout: CSS Grid (4 equal columns) — guaranteed 4 panels regardless of flex quirks.
+ * Motion: each column slides UP via translateY(-110%) with staggered delay.
+ * Hold:   650ms before lift so brand is readable.
+ * Easing: cubic-bezier(0.76, 0, 0.24, 1) — fast-out, smooth deceleration.
  */
 export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
   onCurtainOpenStart,
@@ -42,24 +36,20 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
       return;
     }
 
-    // 1. Hold for 650ms so user can comfortably see and read the name & branding
-    const liftTimer = window.setTimeout(() => {
-      setLifting(true);
-    }, 650);
+    // Hold 650ms → lift panels
+    const liftTimer = window.setTimeout(() => setLifting(true), 650);
 
-    // 2. Trigger hero reveal as shutters clear halfway
-    const revealTimer = window.setTimeout(() => {
-      onCurtainOpenStart?.();
-    }, 950);
+    // Fire hero reveal ~halfway through lift animation
+    const revealTimer = window.setTimeout(() => onCurtainOpenStart?.(), 1000);
 
-    // 3. Safety fallback unmount
+    // Safety unmount — last panel delay (0.3s) + lift duration (1.1s) + buffer
     const safetyTimer = window.setTimeout(() => {
       if (!completedRef.current) {
         completedRef.current = true;
         setUnmounted(true);
         onCurtainComplete?.();
       }
-    }, 2500);
+    }, 2600);
 
     return () => {
       window.clearTimeout(liftTimer);
@@ -68,9 +58,9 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
     };
   }, [onCurtainOpenStart, onCurtainComplete]);
 
-  // Clean unmount once the 4th (last) trailing shutter panel completes its transition
-  const handleTransitionEnd = (panelId: string, e: React.TransitionEvent<HTMLDivElement>) => {
-    if (panelId === 'col-4' && e.propertyName === 'transform' && lifting) {
+  const handleTransitionEnd = (panelIdx: number, e: React.TransitionEvent<HTMLDivElement>) => {
+    // Last panel (index 3) triggers unmount
+    if (panelIdx === 3 && e.propertyName === 'transform' && lifting) {
       if (!completedRef.current) {
         completedRef.current = true;
         setUnmounted(true);
@@ -84,69 +74,88 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 z-[100] flex w-full h-full pointer-events-none select-none overflow-hidden"
+      style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', pointerEvents: 'none', userSelect: 'none' }}
     >
-      {/* Exactly 4 Equal-Width (w-1/4) Lime Green Shutters with Distinct Seams */}
-      {CURTAIN_PANELS.map((panel) => (
-        <div
-          key={panel.id}
-          onTransitionEnd={(e) => handleTransitionEnd(panel.id, e)}
-          style={{
-            transform: lifting ? 'translate3d(0, -102%, 0)' : 'translate3d(0, 0%, 0)',
-            transition: `transform 1.05s cubic-bezier(0.65, 0, 0.25, 1) ${lifting ? panel.delay : 0}s`,
-            willChange: 'transform',
-          }}
-          className="relative h-full w-1/4 bg-[#a3e635] border-r-2 border-black/25 last:border-r-0"
-        >
-          {/* Subtle bottom edge shadow giving crisp shutter depth */}
-          <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/25" />
-        </div>
-      ))}
-
-      {/* Centered Geometric Brand Lockup — Rides Smoothly Upward With Shutters */}
+      {/* ── 4 Equal Grid Columns ── */}
       <div
         style={{
-          transform: lifting
-            ? 'translate3d(0, -102vh, 0)'
-            : 'translate3d(0, 0, 0)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 25%)',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        {PANEL_DELAYS.map((delay, i) => (
+          <div
+            key={i}
+            onTransitionEnd={(e) => handleTransitionEnd(i, e)}
+            style={{
+              height: '100%',
+              backgroundColor: '#a3e635',
+              borderRight: i < 3 ? '2px solid rgba(0,0,0,0.18)' : 'none',
+              transform: lifting ? 'translateY(-110%)' : 'translateY(0%)',
+              transition: lifting
+                ? `transform 1.1s cubic-bezier(0.76, 0, 0.24, 1) ${delay}s`
+                : 'none',
+              willChange: 'transform',
+              position: 'relative',
+            }}
+          >
+            {/* Bottom shutter edge line */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: 'rgba(0,0,0,0.18)' }} />
+          </div>
+        ))}
+      </div>
+
+      {/* ── Brand Lockup — rides upward with panels ── */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+          transform: lifting ? 'translateY(-110vh)' : 'translateY(0)',
           transition: lifting
-            ? 'transform 1.05s cubic-bezier(0.65, 0, 0.25, 1) 0.14s'
+            ? 'transform 1.1s cubic-bezier(0.76, 0, 0.24, 1) 0.12s'
             : 'none',
           willChange: 'transform',
         }}
-        className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4 pointer-events-none"
       >
-        <div className="flex items-center gap-3.5">
-          <svg className="w-16 h-10 sm:w-20 sm:h-12" viewBox="0 0 88 46" fill="none" aria-hidden="true">
-            {/* Dark parallelogram */}
-            <polygon points="4,42 26,6 39,6 17,42" fill="#070A11" />
-            {/* White contrast parallelogram */}
-            <polygon points="26,42 48,6 61,6 39,42" fill="#ffffff" />
-            {/* Dark card container */}
-            <polygon points="50,42 70,8 84,8 84,42" fill="#070A11" />
-            <text
-              x="67"
-              y="33"
-              textAnchor="middle"
-              fill="#a3e635"
-              fontSize="13"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              AT.
-            </text>
-          </svg>
-        </div>
+        {/* Logo SVG */}
+        <svg width="88" height="46" viewBox="0 0 88 46" fill="none" aria-hidden="true">
+          <polygon points="4,42 26,6 39,6 17,42" fill="#070A11" />
+          <polygon points="26,42 48,6 61,6 39,42" fill="#ffffff" />
+          <polygon points="50,42 70,8 84,8 84,42" fill="#070A11" />
+          <text x="67" y="33" textAnchor="middle" fill="#a3e635" fontSize="13" fontWeight="900" fontFamily="system-ui,-apple-system,sans-serif">AT.</text>
+        </svg>
 
-        <div className="mt-3 flex flex-col items-center">
-          <span
-            className="text-[#070A11] text-2xl sm:text-3xl tracking-[0.24em] font-black uppercase font-sans"
-          >
+        {/* Name */}
+        <div style={{ marginTop: 14, textAlign: 'center' }}>
+          <div style={{
+            color: '#070A11',
+            fontSize: 'clamp(18px, 2.5vw, 30px)',
+            letterSpacing: '0.24em',
+            fontWeight: 900,
+            textTransform: 'uppercase',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            lineHeight: 1,
+          }}>
             ALI TOUHEED
-          </span>
-          <span className="mt-1 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-[0.34em] text-[#070A11]/85">
+          </div>
+          <div style={{
+            marginTop: 6,
+            color: 'rgba(7,10,17,0.8)',
+            fontSize: 11,
+            letterSpacing: '0.34em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            fontFamily: 'monospace',
+          }}>
             CREATIVE ENGINEERING
-          </span>
+          </div>
         </div>
       </div>
     </div>
