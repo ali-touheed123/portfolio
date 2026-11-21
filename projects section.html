@@ -94,8 +94,17 @@
     }
 
     .section-header {
-      text-align: center;
+      width: 100%;
+      max-width: 1240px;
+      text-align: left;
       margin-bottom: 18px;
+      padding: 0 18px;
+    }
+
+    @media (min-width: 640px) {
+      .section-header {
+        padding: 0 32px;
+      }
     }
 
     .section-pill {

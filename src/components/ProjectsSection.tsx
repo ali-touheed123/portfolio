@@ -654,8 +654,17 @@ export const ProjectsSection: React.FC = () => {
         }
 
         #projects-section-container .section-header {
-          text-align: center;
+          width: 100%;
+          max-width: 1240px;
+          text-align: left;
           margin-bottom: 22px;
+          padding: 0 18px;
+        }
+
+        @media (min-width: 640px) {
+          #projects-section-container .section-header {
+            padding: 0 32px;
+          }
         }
 
         #projects-section-container .section-pill {

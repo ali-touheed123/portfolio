@@ -15,6 +15,7 @@ import { TopNav } from './components/TopNav';
 import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
 import { AboutOriginSection } from './components/AboutOriginSection';
 import { ProjectsSection } from './components/ProjectsSection';
+import { PortfolioFooter } from './components/PortfolioFooter';
 
 const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
@@ -101,7 +102,7 @@ function PortfolioShell() {
   }, [curtainDone]);
 
   useEffect(() => {
-    const sections = ['story', 'stack', 'work'];
+    const sections = ['story', 'stack', 'work', 'contact'];
     const onScroll = () => {
       const triggerLine = window.innerHeight * 0.42;
       let current = 'top';
@@ -192,6 +193,9 @@ function PortfolioShell() {
         </section>
         <section id="work" className="relative w-full z-10">
           <ProjectsSection />
+        </section>
+        <section id="contact" className="relative w-full z-10">
+          <PortfolioFooter />
         </section>
       </main>
     </div>
