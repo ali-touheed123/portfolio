@@ -5,8 +5,9 @@ interface EntryCurtainProps {
   onCurtainComplete?: () => void;
 }
 
-// Stagger delays — left panel lifts first, right panel last (reference style)
-const PANEL_DELAYS = [0.0, 0.1, 0.2, 0.3];
+// Left → Right stagger: each panel lifts 180ms after the previous
+// Distinct enough to see each shutter rise individually
+const PANEL_DELAYS = [0.0, 0.18, 0.36, 0.54];
 
 /**
  * 4-Column Lime Green Stepped Shutter Reveal (reference-matched).
@@ -39,17 +40,17 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
     // Hold 650ms → lift panels
     const liftTimer = window.setTimeout(() => setLifting(true), 650);
 
-    // Fire hero reveal ~halfway through lift animation
-    const revealTimer = window.setTimeout(() => onCurtainOpenStart?.(), 1000);
+    // Fire hero reveal after last panel (0.54s delay) + lift duration (1.1s) — curtain fully gone
+    const revealTimer = window.setTimeout(() => onCurtainOpenStart?.(), 650 + 540 + 1100 + 50);
 
-    // Safety unmount — last panel delay (0.3s) + lift duration (1.1s) + buffer
+    // Safety unmount — same as reveal + small buffer
     const safetyTimer = window.setTimeout(() => {
       if (!completedRef.current) {
         completedRef.current = true;
         setUnmounted(true);
         onCurtainComplete?.();
       }
-    }, 2600);
+    }, 650 + 540 + 1100 + 200);
 
     return () => {
       window.clearTimeout(liftTimer);
@@ -74,7 +75,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
   return (
     <div
       aria-hidden="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', pointerEvents: 'none', userSelect: 'none' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', pointerEvents: 'all', userSelect: 'none' }}
     >
       {/* ── 4 Equal Grid Columns ── */}
       <div

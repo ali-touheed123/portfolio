@@ -37,10 +37,26 @@ function PortfolioShell() {
   const [isHeroComplete, setIsHeroComplete] = useState<boolean>(false);
   const [heroRevealed, setHeroRevealed] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('top');
+  // Track whether curtain is still covering the screen
+  const [curtainDone, setCurtainDone] = useState<boolean>(false);
 
   const handleCurtainOpenStart = useCallback(() => {
     setHeroRevealed(true);
   }, []);
+
+  const handleCurtainComplete = useCallback(() => {
+    setCurtainDone(true);
+  }, []);
+
+  // Lock body scroll while curtain is showing, unlock when it's gone
+  useEffect(() => {
+    if (!curtainDone) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [curtainDone]);
 
   const showOrbitalOverlay = isHeroComplete || currentFrame >= 28;
 
@@ -56,6 +72,11 @@ function PortfolioShell() {
     });
     lenisRef.current = lenis;
 
+    // Keep Lenis stopped until curtain is fully gone
+    if (!curtainDone) {
+      lenis.stop();
+    }
+
     let rafId = 0;
     const raf = (time: number) => {
       lenis.raf(time);
@@ -69,6 +90,13 @@ function PortfolioShell() {
       lenisRef.current = null;
     };
   }, []);
+
+  // Start Lenis smooth scroll only after curtain is fully gone
+  useEffect(() => {
+    if (curtainDone && lenisRef.current) {
+      lenisRef.current.start();
+    }
+  }, [curtainDone]);
 
   useEffect(() => {
     const sections = ['story', 'stack'];
@@ -120,7 +148,7 @@ function PortfolioShell() {
       }`}
     >
       {/* 4-Column Staggered Upward Entry Curtain */}
-      <EntryCurtain onCurtainOpenStart={handleCurtainOpenStart} />
+      <EntryCurtain onCurtainOpenStart={handleCurtainOpenStart} onCurtainComplete={handleCurtainComplete} />
 
       {/* Persistent Atmospheric Sky & Architectural Grid */}
       <StarField />
