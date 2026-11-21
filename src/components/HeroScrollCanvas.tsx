@@ -170,7 +170,7 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
       <div
-        className="relative w-56 xs:w-64 sm:w-80 md:w-96 lg:w-124 max-h-[42vh] sm:max-h-[55vh] lg:max-h-[78vh] aspect-375/666 flex items-center justify-center translate-y-[-2%] sm:translate-y-[-4%] lg:translate-y-[-8%] pointer-events-auto will-change-transform"
+        className="relative w-56 xs:w-64 sm:w-80 md:w-96 lg:w-124 max-h-[42vh] sm:max-h-[55vh] lg:max-h-[78vh] aspect-375/666 flex items-center justify-center -translate-y-8 xs:-translate-y-10 sm:translate-y-[-4%] lg:translate-y-[-8%] pointer-events-auto will-change-transform"
         style={{
           transform: `perspective(1100px) translate3d(${px}px, ${py + currentDropY}px, 0) rotateY(${rotY}deg) rotateX(${rotX}deg) scale(${scaleDepth})`,
           transition: isEntranceActive ? 'transform 0.85s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',

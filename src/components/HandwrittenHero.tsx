@@ -376,7 +376,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none select-none px-3 xs:px-4 sm:px-8 md:px-12 lg:px-14 pt-14 sm:pt-20 pb-2 sm:pb-5 transition-opacity duration-300 ${
+      className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none select-none px-3 xs:px-4 sm:px-8 md:px-12 lg:px-14 pt-14 sm:pt-20 pb-7 xs:pb-9 sm:pb-5 transition-opacity duration-300 ${
         fontsReady ? 'opacity-100' : 'opacity-0'
       } ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
     >
@@ -488,7 +488,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
       {/* ─── MOBILE HERO (lg:hidden) — Clean Vertical Stack With Zero Overlap ─── */}
       <div className="flex lg:hidden flex-col justify-between w-full flex-1 min-h-0">
         {/* TOP: Identity & Role (Moved lower for comfortable breathing room from TopNav on mobile) */}
-        <div className="flex flex-col items-start pointer-events-auto pt-8 xs:pt-11">
+        <div className="flex flex-col items-start pointer-events-auto pt-14 xs:pt-18 mt-2 xs:mt-3">
           {/* Hello note */}
           <div className="inline-flex items-center gap-1 -rotate-6 origin-left -mb-1 ml-1">
             <svg className="w-4 h-5" viewBox="0 0 22 24" fill="none" aria-hidden="true" data-svg-draw>
@@ -551,7 +551,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         <div className="flex-1 min-h-[30vh] xs:min-h-[34vh] pointer-events-none" aria-hidden="true" />
 
         {/* BOTTOM: Collab Note (Shifted Upwards) + Compact Touch Buttons */}
-        <div className="flex flex-col items-center pointer-events-auto w-full pb-0.5">
+        <div className="flex flex-col items-center pointer-events-auto w-full pb-3 xs:pb-4 mb-2">
           {renderCollabNote(true)}
           {renderActionButtons(true)}
         </div>
