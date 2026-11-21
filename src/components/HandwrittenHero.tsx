@@ -457,8 +457,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 
       {/* ─── MOBILE HERO (lg:hidden) — Clean Vertical Stack With Zero Overlap ─── */}
       <div className="flex lg:hidden flex-col justify-between w-full flex-1 min-h-0">
-        {/* TOP: Identity & Role (Moved slightly lower for comfortable breathing room from TopNav) */}
-        <div className="flex flex-col items-start pointer-events-auto pt-4 xs:pt-6">
+        {/* TOP: Identity & Role (Moved lower for comfortable breathing room from TopNav on mobile) */}
+        <div className="flex flex-col items-start pointer-events-auto pt-8 xs:pt-11">
           {/* Hello note */}
           <div className="inline-flex items-center gap-1 -rotate-6 origin-left -mb-1 ml-1">
             <svg className="w-4 h-5" viewBox="0 0 22 24" fill="none" aria-hidden="true" data-svg-draw>

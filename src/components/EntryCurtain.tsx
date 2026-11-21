@@ -7,12 +7,13 @@ interface EntryCurtainProps {
 
 // Cascade Shutter wave: each panel starts with a slight offset, moving together in a stepped wave
 const DUR = 0.95;
-const STAGGER = 0.12;
-const DELAYS = [0, STAGGER, STAGGER * 2, STAGGER * 3]; // [0, 0.12, 0.24, 0.36]
+const STAGGER = 0.16;
+const DELAYS = [0, STAGGER, STAGGER * 2, STAGGER * 3]; // [0, 0.16, 0.32, 0.48]
 const EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
+const HOLD_MS = 250; // Snappy 250ms hold so curtain starts lifting immediately on page open
 
 // Total time from lift trigger until last panel is fully gone
-const TOTAL_LIFT_MS = Math.round((STAGGER * 3 + DUR) * 1000); // ~1310ms
+const TOTAL_LIFT_MS = Math.round((STAGGER * 3 + DUR) * 1000); // ~1430ms
 
 export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
   onCurtainOpenStart,
@@ -37,9 +38,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
       return;
     }
 
-    // ── STEP 1: After 650ms hold, directly animate panels via DOM refs ──
-    // Using direct DOM style lets the browser register the starting translateY(0)
-    // before we apply the transition — no React re-render timing issues.
+    // ── STEP 1: After snappy hold, directly animate panels via DOM refs ──
     const holdTimer = window.setTimeout(() => {
       panelRefs.current.forEach((el, i) => {
         if (!el) return;
@@ -52,12 +51,12 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
         lockupRef.current.style.transition = `transform ${DUR}s ${EASING} 0.15s`;
         lockupRef.current.style.transform = 'translateY(-110vh)';
       }
-    }, 650);
+    }, HOLD_MS);
 
     // ── STEP 2: Fire hero reveal as shutters clear halfway ──
     const revealTimer = window.setTimeout(() => {
       onCurtainOpenStart?.();
-    }, 650 + 600);
+    }, HOLD_MS + 450);
 
     // ── STEP 3: Unmount curtain cleanly when last panel finishes ──
     const unmountTimer = window.setTimeout(() => {
@@ -66,7 +65,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
         setUnmounted(true);
         onCurtainComplete?.();
       }
-    }, 650 + TOTAL_LIFT_MS + 80);
+    }, HOLD_MS + TOTAL_LIFT_MS + 60);
 
     return () => {
       window.clearTimeout(holdTimer);

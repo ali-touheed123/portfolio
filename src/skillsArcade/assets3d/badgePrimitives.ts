@@ -490,7 +490,7 @@ export function svgMarkupToExtrudedGroup(
   const rawGroup = new THREE.Group();
 
   for (const path of parsed.paths) {
-    const shapes = SVGLoader.createShapes(path);
+    const shapes = path.toShapes();
     for (const shape of shapes) {
       const geo = new THREE.ExtrudeGeometry(shape, {
         depth: extrudeDepth,

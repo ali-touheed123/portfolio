@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Lenis from 'lenis';
 import { useScroll, useSpring, useTransform } from 'motion/react';
 import { ThemeProvider, useSkyTheme } from './context/ThemeContext';
@@ -14,7 +14,8 @@ import { HandwrittenHero } from './components/HandwrittenHero';
 import { TopNav } from './components/TopNav';
 import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
 import { AboutOriginSection } from './components/AboutOriginSection';
-import SkillsSectionApp from './skillsArcade/App';
+
+const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
 function PortfolioShell() {
   const { isDay } = useSkyTheme();
@@ -184,7 +185,9 @@ function PortfolioShell() {
         <CrossedRibbonBridge />
         <AboutOriginSection />
         <section id="stack" className="relative w-full z-10">
-          <SkillsSectionApp />
+          <Suspense fallback={<div className="min-h-[400px] w-full" />}>
+            <SkillsSectionApp />
+          </Suspense>
         </section>
       </main>
     </div>
