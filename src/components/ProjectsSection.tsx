@@ -415,15 +415,17 @@ export const ProjectsSection: React.FC = () => {
           pe = 'auto';
 
         if (isMobile) {
-          // Stacked peekaboo layout for mobile — Apple Books style
+          // Stacked peekaboo layout — cards stack BEHIND center like Apple Books
           if (diff === 0) {
             tx = 0; ty = 0; ry = 0; sc = 1; op = 1; z = 30;
           } else if (diff === -1) {
-            tx = -18; ty = 10; ry = 10; sc = 0.9; op = 0.65; z = 20;
+            // peek from top-left behind center card
+            tx = -14; ty = -20; ry = -7; sc = 0.91; op = 0.85; z = 20;
           } else if (diff === 1) {
-            tx = 18; ty = 10; ry = -10; sc = 0.9; op = 0.65; z = 20;
+            // peek from top-right behind center card
+            tx = 14; ty = -20; ry = 7; sc = 0.91; op = 0.85; z = 19;
           } else {
-            tx = 0; ty = 14; ry = 0; sc = 0.82; op = 0; z = 1; pe = 'none';
+            tx = 0; ty = -24; ry = 0; sc = 0.84; op = 0; z = 1; pe = 'none';
           }
         } else {
           if (diff === 0) {
@@ -1261,39 +1263,57 @@ export const ProjectsSection: React.FC = () => {
 
         /* ───── MOBILE: Stacked peekaboo layout ───── */
         @media (max-width: 639px) {
+          /* viewport gets top padding to house the floating meta above cards */
           #projects-section-container .carousel-viewport {
-            height: 480px !important;
+            height: 560px !important;
+            padding-top: 80px;
             overflow: visible;
           }
 
+          /* scaler: full-width, no scale transform, let content escape top */
           #projects-section-container .carousel-scaler {
             width: 100%;
             height: 480px;
             transform: none !important;
-          }
-
-          #projects-section-container .carousel-stage {
-            perspective: 600px;
             overflow: visible;
           }
 
-          #projects-section-container .project-card {
-            width: min(82vw, 310px);
-            height: 420px;
-            left: 50%;
-            margin-left: calc(-1 * min(41vw, 155px));
+          #projects-section-container .carousel-stage {
+            perspective: 700px;
+            overflow: visible;
           }
 
+          /* pull meta stage OUT above the card area, into the padding-top zone */
           #projects-section-container .active-meta-stage {
-            width: min(90vw, 330px);
-            top: 6px;
+            top: -76px;
+            width: min(90vw, 320px);
+            pointer-events: none;
           }
 
           #projects-section-container .active-project-title {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
-          /* hide cards that are |diff| >= 2 so nothing peeks from far sides */
+          #projects-section-container .active-project-subtitle {
+            font-size: 0.72rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          /* center card: takes most of the width */
+          #projects-section-container .project-card {
+            width: min(80vw, 300px);
+            height: 410px;
+            /* center horizontally via left+margin trick */
+            left: 50%;
+            margin-left: calc(-1 * min(40vw, 150px));
+          }
+
+          /* hide cards that are |diff| >= 2 */
           #projects-section-container .project-card[data-pos="2"],
           #projects-section-container .project-card[data-pos="-2"],
           #projects-section-container .project-card[data-pos="3"],
