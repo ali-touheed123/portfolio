@@ -255,7 +255,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
     <div
       className={`relative flex flex-col pointer-events-auto ${
         isMobile
-          ? 'items-center -rotate-1 mt-1'
+          ? 'items-center -rotate-1 mb-2.5 xs:mb-3.5 -translate-y-3 xs:-translate-y-4'
           : 'items-start -rotate-2.5 origin-left mt-2 ml-1'
       }`}
     >
@@ -457,8 +457,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 
       {/* ─── MOBILE HERO (lg:hidden) — Clean Vertical Stack With Zero Overlap ─── */}
       <div className="flex lg:hidden flex-col justify-between w-full flex-1 min-h-0">
-        {/* TOP: Identity & Role */}
-        <div className="flex flex-col items-start pointer-events-auto">
+        {/* TOP: Identity & Role (Moved slightly lower for comfortable breathing room from TopNav) */}
+        <div className="flex flex-col items-start pointer-events-auto pt-4 xs:pt-6">
           {/* Hello note */}
           <div className="inline-flex items-center gap-1 -rotate-6 origin-left -mb-1 ml-1">
             <svg className="w-4 h-5" viewBox="0 0 22 24" fill="none" aria-hidden="true" data-svg-draw>
@@ -516,8 +516,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         {/* CENTER TRANSPARENT ZONE: Leaves 3D Character & Revolving Tech Icons 100% Unobstructed! */}
         <div className="flex-1 min-h-[30vh] xs:min-h-[34vh] pointer-events-none" aria-hidden="true" />
 
-        {/* BOTTOM: Collab Note + Compact Touch Buttons */}
-        <div className="flex flex-col items-center pointer-events-auto w-full pb-1">
+        {/* BOTTOM: Collab Note (Shifted Upwards) + Compact Touch Buttons */}
+        <div className="flex flex-col items-center pointer-events-auto w-full pb-0.5">
           {renderCollabNote(true)}
           {renderActionButtons(true)}
         </div>

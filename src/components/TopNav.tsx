@@ -100,7 +100,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
         <nav
           aria-label="Primary Navigation"
           onMouseLeave={() => setHoveredId(null)}
-          className="pointer-events-auto flex items-center justify-center gap-1 sm:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2 px-3"
+          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-2 sm:px-3"
         >
           {NAV_LINKS.map((item, idx) => {
             const isHighlighted = highlightedId === item.id;
@@ -116,7 +116,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
                     onNavigate(item.id);
                   }}
                   style={{ fontFamily: "'Caveat', cursive" }}
-                  className={`relative px-2.5 sm:px-4 py-0.5 text-xl sm:text-[1.6rem] font-bold tracking-wide transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                  className={`relative px-1.5 xs:px-2.5 sm:px-4 py-0.5 text-[1.12rem] xs:text-[1.25rem] sm:text-[1.6rem] font-bold tracking-wide transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer select-none ${
                     isHighlighted
                       ? 'text-slate-950 dark:text-white'
                       : 'text-slate-700/85 dark:text-slate-300/85 hover:text-slate-950 dark:hover:text-white'
@@ -129,7 +129,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
                 {idx < NAV_LINKS.length - 1 && (
                   <span
                     aria-hidden="true"
-                    className="text-slate-400/70 dark:text-slate-500/75 text-sm sm:text-base font-light select-none"
+                    className="text-slate-400/70 dark:text-slate-500/75 text-xs sm:text-base font-light select-none"
                   >
                     |
                   </span>
