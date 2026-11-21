@@ -5,9 +5,10 @@ interface EntryCurtainProps {
   onCurtainComplete?: () => void;
 }
 
-// Left → Right stagger: each panel lifts 180ms after the previous
-// Distinct enough to see each shutter rise individually
-const PANEL_DELAYS = [0.0, 0.18, 0.36, 0.54];
+// Left → Right sequential: each panel waits for the previous to finish
+// Duration per panel: 0.42s | Stagger: 0.42s → panel 2 starts exactly when panel 1 is gone
+const PANEL_DURATION = 0.42;
+const PANEL_DELAYS = [0, 0.42, 0.84, 1.26];
 
 /**
  * 4-Column Lime Green Stepped Shutter Reveal (reference-matched).
@@ -40,17 +41,18 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
     // Hold 650ms → lift panels
     const liftTimer = window.setTimeout(() => setLifting(true), 650);
 
-    // Fire hero reveal after last panel (0.54s delay) + lift duration (1.1s) — curtain fully gone
-    const revealTimer = window.setTimeout(() => onCurtainOpenStart?.(), 650 + 540 + 1100 + 50);
+    // Fire hero reveal after ALL 4 panels are gone
+    // last panel delay (1.26s) + duration (0.42s) = 1.68s after lift → + 650ms hold
+    const revealTimer = window.setTimeout(() => onCurtainOpenStart?.(), 650 + 1260 + 420 + 50);
 
-    // Safety unmount — same as reveal + small buffer
+    // Safety unmount — same + small buffer
     const safetyTimer = window.setTimeout(() => {
       if (!completedRef.current) {
         completedRef.current = true;
         setUnmounted(true);
         onCurtainComplete?.();
       }
-    }, 650 + 540 + 1100 + 200);
+    }, 650 + 1260 + 420 + 200);
 
     return () => {
       window.clearTimeout(liftTimer);
@@ -96,7 +98,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
               borderRight: i < 3 ? '2px solid rgba(0,0,0,0.18)' : 'none',
               transform: lifting ? 'translateY(-110%)' : 'translateY(0%)',
               transition: lifting
-                ? `transform 1.1s cubic-bezier(0.76, 0, 0.24, 1) ${delay}s`
+                ? `transform ${PANEL_DURATION}s cubic-bezier(0.76, 0, 0.24, 1) ${delay}s`
                 : 'none',
               willChange: 'transform',
               position: 'relative',
@@ -120,7 +122,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
           zIndex: 10,
           transform: lifting ? 'translateY(-110vh)' : 'translateY(0)',
           transition: lifting
-            ? 'transform 1.1s cubic-bezier(0.76, 0, 0.24, 1) 0.12s'
+            ? `transform ${PANEL_DURATION}s cubic-bezier(0.76, 0, 0.24, 1) 1.1s`
             : 'none',
           willChange: 'transform',
         }}
