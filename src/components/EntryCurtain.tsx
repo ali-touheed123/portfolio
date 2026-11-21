@@ -5,14 +5,14 @@ interface EntryCurtainProps {
   onCurtainComplete?: () => void;
 }
 
-// Duration per panel (s) + stagger (s) — sequential: panel n+1 starts when panel n finishes
-const DUR = 0.45;
-const STAGGER = 0.45; // equal to DUR → pure one-by-one
-const DELAYS = [0, STAGGER, STAGGER * 2, STAGGER * 3]; // [0, 0.45, 0.90, 1.35]
+// Cascade Shutter wave: each panel starts with a slight offset, moving together in a stepped wave
+const DUR = 0.95;
+const STAGGER = 0.12;
+const DELAYS = [0, STAGGER, STAGGER * 2, STAGGER * 3]; // [0, 0.12, 0.24, 0.36]
 const EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
 
 // Total time from lift trigger until last panel is fully gone
-const TOTAL_LIFT_MS = (STAGGER * 3 + DUR) * 1000; // 1800ms
+const TOTAL_LIFT_MS = Math.round((STAGGER * 3 + DUR) * 1000); // ~1310ms
 
 export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
   onCurtainOpenStart,
@@ -47,26 +47,26 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
         el.style.transform = 'translateY(-110%)';
       });
 
-      // Brand lockup rides up with the last panel
+      // Brand lockup rides up with the shutters
       if (lockupRef.current) {
-        lockupRef.current.style.transition = `transform ${DUR}s ${EASING} ${DELAYS[3]}s`;
+        lockupRef.current.style.transition = `transform ${DUR}s ${EASING} 0.15s`;
         lockupRef.current.style.transform = 'translateY(-110vh)';
       }
     }, 650);
 
-    // ── STEP 2: Fire hero reveal right as last panel finishes ──
+    // ── STEP 2: Fire hero reveal as shutters clear halfway ──
     const revealTimer = window.setTimeout(() => {
       onCurtainOpenStart?.();
-    }, 650 + TOTAL_LIFT_MS + 30);
+    }, 650 + 600);
 
-    // ── STEP 3: Unmount curtain cleanly ──
+    // ── STEP 3: Unmount curtain cleanly when last panel finishes ──
     const unmountTimer = window.setTimeout(() => {
       if (!completedRef.current) {
         completedRef.current = true;
         setUnmounted(true);
         onCurtainComplete?.();
       }
-    }, 650 + TOTAL_LIFT_MS + 150);
+    }, 650 + TOTAL_LIFT_MS + 80);
 
     return () => {
       window.clearTimeout(holdTimer);

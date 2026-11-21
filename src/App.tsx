@@ -150,53 +150,43 @@ function PortfolioShell() {
       {/* 4-Column Staggered Upward Entry Curtain */}
       <EntryCurtain onCurtainOpenStart={handleCurtainOpenStart} onCurtainComplete={handleCurtainComplete} />
 
-      {/*
-        ── Everything below is deferred until curtain is fully gone ──
-        While curtain covers the screen, NO heavy content renders.
-        This keeps the browser free → curtain CSS transition is buttery smooth.
-        Once curtainDone=true, everything mounts and fades in together.
-      */}
-      {curtainDone && (
-        <>
-          {/* Persistent Atmospheric Sky & Architectural Grid */}
-          <StarField />
-          <CloudField />
-          <ArchitecturalGrid />
+      {/* Persistent Atmospheric Sky & Architectural Grid */}
+      <StarField />
+      <CloudField />
+      <ArchitecturalGrid />
 
-          {/* Top Nav */}
-          <TopNav onNavigate={handleNavigate} activeSection={activeSection} />
+      {/* Top Nav */}
+      <TopNav onNavigate={handleNavigate} activeSection={activeSection} />
 
-          {/* 260vh STICKY 3D SCROLL STAGE HERO */}
-          <section ref={heroTrackRef} className="relative w-full h-[260vh] z-10">
-            <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
-              <HeroSkyAtmosphere parallax={parallax} />
-              <HeroOrbitalIcons visible={showOrbitalOverlay} parallax={parallax} />
-              <HeroScrollCanvas
-                className="w-full h-full z-10"
-                scrollProgress={heroFrameProgress}
-                parallax={parallax}
-                onFrameChange={setCurrentFrame}
-                onAnimationComplete={setIsHeroComplete}
-              />
-              <HandwrittenHero
-                currentFrame={currentFrame}
-                isComplete={isHeroComplete}
-                revealActive={heroRevealed}
-                onConnectClick={() => handleNavigate('contact')}
-              />
-            </div>
-          </section>
+      {/* 260vh STICKY 3D SCROLL STAGE HERO */}
+      <section ref={heroTrackRef} className="relative w-full h-[260vh] z-10">
+        <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
+          <HeroSkyAtmosphere parallax={parallax} />
+          <HeroOrbitalIcons visible={showOrbitalOverlay} parallax={parallax} />
+          <HeroScrollCanvas
+            className="w-full h-full z-10"
+            scrollProgress={heroFrameProgress}
+            parallax={parallax}
+            onFrameChange={setCurrentFrame}
+            onAnimationComplete={setIsHeroComplete}
+          />
+          <HandwrittenHero
+            currentFrame={currentFrame}
+            isComplete={isHeroComplete}
+            revealActive={heroRevealed}
+            onConnectClick={() => handleNavigate('contact')}
+          />
+        </div>
+      </section>
 
-          {/* BELOW-HERO PORTFOLIO EXPERIENCE */}
-          <main className="relative z-10">
-            <CrossedRibbonBridge />
-            <AboutOriginSection />
-            <section id="stack" className="relative w-full z-10">
-              <SkillsSectionApp />
-            </section>
-          </main>
-        </>
-      )}
+      {/* BELOW-HERO PORTFOLIO EXPERIENCE */}
+      <main className="relative z-10">
+        <CrossedRibbonBridge />
+        <AboutOriginSection />
+        <section id="stack" className="relative w-full z-10">
+          <SkillsSectionApp />
+        </section>
+      </main>
     </div>
   );
 }
