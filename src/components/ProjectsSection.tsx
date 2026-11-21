@@ -386,15 +386,16 @@ export const ProjectsSection: React.FC = () => {
       if (!scalerEl || !viewportEl) return;
       const winW = window.innerWidth || document.documentElement.clientWidth || 1280;
       if (winW < 640) {
-        // On mobile: let the card drive height, no scaler transform
-        scalerEl.style.transform = 'scale(1)';
-        viewportEl.style.height = '480px';
-      } else {
-        const availableW = Math.min(winW - 28, 1280);
-        const scale = Math.max(0.28, Math.min(1, availableW / 1250));
-        scalerEl.style.transform = `scale(${scale})`;
-        viewportEl.style.height = `${Math.round(540 * scale)}px`;
+        // On mobile: no scale transform — CSS handles everything
+        scalerEl.style.transform = 'none';
+        // viewport height controlled by CSS; just ensure scaler height is correct
+        scalerEl.style.height = '470px';
+        return;
       }
+      const availableW = Math.min(winW - 28, 1280);
+      const scale = Math.max(0.28, Math.min(1, availableW / 1250));
+      scalerEl.style.transform = `scale(${scale})`;
+      viewportEl.style.height = `${Math.round(540 * scale)}px`;
     }
 
     function updateCarousel(animateMeta = true) {
@@ -415,17 +416,17 @@ export const ProjectsSection: React.FC = () => {
           pe = 'auto';
 
         if (isMobile) {
-          // Stacked peekaboo layout — cards stack BEHIND center like Apple Books
+          // Apple Books stacked peekaboo — side cards peek from TOP-CORNERS behind center
           if (diff === 0) {
             tx = 0; ty = 0; ry = 0; sc = 1; op = 1; z = 30;
           } else if (diff === -1) {
-            // peek from top-left behind center card
-            tx = -14; ty = -20; ry = -7; sc = 0.91; op = 0.85; z = 20;
+            // LEFT card: pushed UP + slightly left + rotated — only its top-left corner shows above center
+            tx = -22; ty = -52; ry = -13; sc = 0.87; op = 1; z = 20;
           } else if (diff === 1) {
-            // peek from top-right behind center card
-            tx = 14; ty = -20; ry = 7; sc = 0.91; op = 0.85; z = 19;
+            // RIGHT card: pushed UP + slightly right + rotated — only its top-right corner shows above center
+            tx = 22; ty = -52; ry = 13; sc = 0.87; op = 1; z = 19;
           } else {
-            tx = 0; ty = -24; ry = 0; sc = 0.84; op = 0; z = 1; pe = 'none';
+            tx = 0; ty = -55; ry = 0; sc = 0.84; op = 0; z = 1; pe = 'none';
           }
         } else {
           if (diff === 0) {
@@ -1263,17 +1264,17 @@ export const ProjectsSection: React.FC = () => {
 
         /* ───── MOBILE: Stacked peekaboo layout ───── */
         @media (max-width: 639px) {
-          /* viewport gets top padding to house the floating meta above cards */
+          /* Extra top space: side cards peek ~52px ABOVE center card top edge */
           #projects-section-container .carousel-viewport {
-            height: 560px !important;
-            padding-top: 80px;
+            height: 600px !important;
+            padding-top: 130px;
             overflow: visible;
           }
 
-          /* scaler: full-width, no scale transform, let content escape top */
+          /* scaler: full width, no scale transform, overflow visible for top-peeking */
           #projects-section-container .carousel-scaler {
             width: 100%;
-            height: 480px;
+            height: 470px;
             transform: none !important;
             overflow: visible;
           }
@@ -1283,37 +1284,36 @@ export const ProjectsSection: React.FC = () => {
             overflow: visible;
           }
 
-          /* pull meta stage OUT above the card area, into the padding-top zone */
+          /* meta floats above card — in the padding-top zone above the stage */
           #projects-section-container .active-meta-stage {
-            top: -76px;
+            top: -122px;
             width: min(90vw, 320px);
             pointer-events: none;
           }
 
           #projects-section-container .active-project-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
           }
 
           #projects-section-container .active-project-subtitle {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
           }
 
-          /* center card: takes most of the width */
+          /* center card: width controlled, centered */
           #projects-section-container .project-card {
             width: min(80vw, 300px);
-            height: 410px;
-            /* center horizontally via left+margin trick */
+            height: 400px;
             left: 50%;
             margin-left: calc(-1 * min(40vw, 150px));
           }
 
-          /* hide cards that are |diff| >= 2 */
+          /* hide cards |diff| >= 2 */
           #projects-section-container .project-card[data-pos="2"],
           #projects-section-container .project-card[data-pos="-2"],
           #projects-section-container .project-card[data-pos="3"],
