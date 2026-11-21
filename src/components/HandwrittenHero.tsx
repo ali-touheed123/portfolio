@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Check, Download, Send } from 'lucide-react';
 import { TypewriterText } from './TypewriterText';
-import { CelestialOrb } from './CelestialOrb';
 import { useSkyTheme } from '../context/ThemeContext';
 import { downloadAliCv } from '../utils/downloadCv';
 
@@ -102,12 +101,6 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         fontsReady ? 'opacity-100' : 'opacity-0'
       } ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
     >
-      {/* Celestial Moon / Sun Theme Toggle anchored cleanly at Top-Right Corner */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-6 lg:right-8 flex items-center justify-center pointer-events-auto z-50">
-        <CelestialOrb size={80} className="hidden sm:inline-flex" />
-        <CelestialOrb size={56} className="inline-flex sm:hidden" />
-      </div>
-
       {/* 3-COLUMN HERO GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,0.94fr)_minmax(340px,1.12fr)_minmax(280px,0.94fr)] items-center gap-4 lg:gap-6 w-full flex-1 min-h-0">
         {/* LEFT COLUMN — Name, Collab Note & Primary Actions */}
