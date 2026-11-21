@@ -85,6 +85,7 @@ const WINDING_PATH_D = `M -40 130
 export const AboutOriginSection: React.FC = () => {
   const starCanvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const mobileTimelineRef = useRef<HTMLDivElement>(null);
   const activePathRef = useRef<SVGPathElement>(null);
   const orbHaloRef = useRef<SVGCircleElement>(null);
   const orbCoreRef = useRef<SVGCircleElement>(null);
@@ -94,6 +95,7 @@ export const AboutOriginSection: React.FC = () => {
 
   const [reachedSteps, setReachedSteps] = useState<boolean[]>([false, false, false, false]);
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
+  const [mobileProgress, setMobileProgress] = useState<number>(0);
 
   // Interactive widget states
   const [pitchToggled, setPitchToggled] = useState<boolean>(false);
@@ -158,17 +160,25 @@ export const AboutOriginSection: React.FC = () => {
     };
   }, []);
 
-  // 2. Scroll-Drawn Winding Path + Leading Comet Orb + Side Ribbons
+  // 2. Scroll-Drawn Winding Path + Leading Comet Orb + Side Ribbons (Desktop + Mobile)
   useEffect(() => {
     const stage = stageRef.current;
+    const mobileStage = mobileTimelineRef.current;
     const activePath = activePathRef.current;
-    if (!stage || !activePath) return;
 
-    const totalLength = activePath.getTotalLength();
-    activePath.style.strokeDasharray = `${totalLength}`;
-    activePath.style.strokeDashoffset = `${totalLength}`;
+    let totalLength = 1000;
+    if (activePath) {
+      try {
+        totalLength = activePath.getTotalLength();
+        activePath.style.strokeDasharray = `${totalLength}`;
+        activePath.style.strokeDashoffset = `${totalLength}`;
+      } catch {
+        // Fallback if SVG not yet rendered
+      }
+    }
 
     const findClosestLengthFraction = (target: { x: number; y: number }) => {
+      if (!activePath) return 0;
       const samples = 500;
       let bestLen = 0;
       let bestDist = Infinity;
@@ -184,7 +194,9 @@ export const AboutOriginSection: React.FC = () => {
       return bestLen / totalLength;
     };
 
-    const nodeThresholds = NODE_COORDS.map(findClosestLengthFraction);
+    const desktopThresholds = activePath ? NODE_COORDS.map(findClosestLengthFraction) : [0.12, 0.35, 0.58, 0.82];
+    const mobileThresholds = [0.08, 0.32, 0.58, 0.84];
+
     let currentProgress = 0;
     let targetProgress = 0;
     let lastMask = '';
@@ -192,10 +204,13 @@ export const AboutOriginSection: React.FC = () => {
     let rafId = 0;
 
     const computeTargetProgress = () => {
-      const rect = stage.getBoundingClientRect();
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+      const container = isDesktop ? stage : mobileStage;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
       const vh = window.innerHeight;
-      const startY = vh * 0.68;
-      const endY = vh * 0.42;
+      const startY = vh * (isDesktop ? 0.68 : 0.78);
+      const endY = vh * (isDesktop ? 0.42 : 0.28);
       const totalScrollSpan = rect.height - (startY - endY);
       if (totalScrollSpan <= 0) return;
       const raw = (startY - rect.top) / totalScrollSpan;
@@ -205,18 +220,25 @@ export const AboutOriginSection: React.FC = () => {
     const tick = () => {
       currentProgress += (targetProgress - currentProgress) * 0.1;
 
-      const drawnLen = totalLength * currentProgress;
-      activePath.style.strokeDashoffset = `${totalLength - drawnLen}`;
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+      if (!isDesktop) {
+        setMobileProgress(currentProgress);
+      }
 
-      if (orbHaloRef.current && orbCoreRef.current) {
-        const tip = activePath.getPointAtLength(drawnLen);
-        const orbOpacity = currentProgress > 0.008 && currentProgress < 0.992 ? '1' : '0';
-        orbHaloRef.current.setAttribute('cx', `${tip.x}`);
-        orbHaloRef.current.setAttribute('cy', `${tip.y}`);
-        orbHaloRef.current.setAttribute('opacity', orbOpacity);
-        orbCoreRef.current.setAttribute('cx', `${tip.x}`);
-        orbCoreRef.current.setAttribute('cy', `${tip.y}`);
-        orbCoreRef.current.setAttribute('opacity', orbOpacity);
+      if (activePath) {
+        const drawnLen = totalLength * currentProgress;
+        activePath.style.strokeDashoffset = `${totalLength - drawnLen}`;
+
+        if (orbHaloRef.current && orbCoreRef.current) {
+          const tip = activePath.getPointAtLength(drawnLen);
+          const orbOpacity = currentProgress > 0.008 && currentProgress < 0.992 ? '1' : '0';
+          orbHaloRef.current.setAttribute('cx', `${tip.x}`);
+          orbHaloRef.current.setAttribute('cy', `${tip.y}`);
+          orbHaloRef.current.setAttribute('opacity', orbOpacity);
+          orbCoreRef.current.setAttribute('cx', `${tip.x}`);
+          orbCoreRef.current.setAttribute('cy', `${tip.y}`);
+          orbCoreRef.current.setAttribute('opacity', orbOpacity);
+        }
       }
 
       if (ribbonText1Ref.current) {
@@ -226,7 +248,8 @@ export const AboutOriginSection: React.FC = () => {
         ribbonText2Ref.current.setAttribute('startOffset', `${6 + currentProgress * 12}%`);
       }
 
-      const nextReached = nodeThresholds.map((threshold) => currentProgress >= threshold - 0.02);
+      const activeThresholds = isDesktop ? desktopThresholds : mobileThresholds;
+      const nextReached = activeThresholds.map((threshold) => currentProgress >= threshold - 0.02);
       const mask = nextReached.map((r) => (r ? '1' : '0')).join('');
       let activeIdx = 0;
       nextReached.forEach((r, idx) => {
@@ -802,109 +825,291 @@ export const AboutOriginSection: React.FC = () => {
         </article>
       </div>
 
-      {/* Mobile Fallback Timeline (< lg) */}
-      <div className="relative z-2 max-w-[1240px] mx-auto px-[18px] sm:px-8 lg:hidden">
-        <div className="flex flex-col gap-8 relative pl-[34px] border-l-2 border-[#1e2640]">
-          <div className="relative py-1.5">
-            <div className="absolute -left-[53px] top-1.5 w-9 h-9 rounded-full bg-[#090c17] border-2 border-[#a855f7] text-white font-mono text-[0.8rem] font-bold flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.45)]">
-              01
-            </div>
-            <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-[11px] py-1 rounded-full mb-2">
-              First Commercial Client
-            </span>
-            <h3 className="text-[1.45rem] font-extrabold leading-[1.18] text-white mb-2">
-              Pitching{' '}
-              <span
-                className="font-bold text-[1.22em] text-[#4ade80] mx-1"
-                style={{ fontFamily: "'Caveat', cursive" }}
-              >
-                Karachi
-              </span>{' '}
-              Brick &amp; Mortar
-            </h3>
-            <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8]">
-              Stepped into Tawakkal Paint House face-to-face and landed my first commercial web
-              client by solving a real local shop&apos;s digital needs.
-            </p>
-          </div>
+      {/* Mobile Animated Winding Timeline (< lg) */}
+      <div ref={mobileTimelineRef} className="relative z-2 max-w-[1240px] mx-auto px-4 sm:px-8 lg:hidden">
+        <div className="relative pl-10 sm:pl-12 py-2">
+          {/* Background idle guide track */}
+          <div className="absolute left-3.5 sm:left-4 top-4 bottom-4 w-1 bg-[#161c30] rounded-full" />
 
-          <div className="relative py-1.5">
-            <div className="absolute -left-[53px] top-1.5 w-9 h-9 rounded-full bg-[#090c17] border-2 border-[#a855f7] text-white font-mono text-[0.8rem] font-bold flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.45)]">
-              02
-            </div>
-            <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-[11px] py-1 rounded-full mb-2">
-              Real Retail Friction Discovered
-            </span>
-            <h3 className="text-[1.45rem] font-extrabold leading-[1.18] text-white mb-2">
-              Tawakkal Paint House
-            </h3>
-            <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8]">
-              Turned paper catalogs into searchable contractor ordering while uncovering bottlenecks
-              in tinting formulas, multi-can inventory, credit ledgers, and manual billing.
-            </p>
-          </div>
+          {/* Active scroll-drawn glowing neon beam */}
+          <div
+            className="absolute left-3.5 sm:left-4 top-4 w-1 rounded-full bg-gradient-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)] transition-all duration-150"
+            style={{ height: `${Math.min(100, Math.max(0, mobileProgress * 100))}%` }}
+          />
 
-          <div className="relative py-1.5">
-            <div className="absolute -left-[53px] top-1.5 w-9 h-9 rounded-full bg-[#090c17] border-2 border-[#a855f7] text-white font-mono text-[0.8rem] font-bold flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.45)]">
-              03
-            </div>
-            <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-[11px] py-1 rounded-full mb-2">
-              60% Faster Counter Checkout
-            </span>
-            <h3 className="text-[1.45rem] font-extrabold leading-[1.18] text-white mb-2">
-              <span
-                className="font-bold text-[1.22em] text-[#4ade80] mr-1"
-                style={{ fontFamily: "'Caveat', cursive" }}
-              >
-                Pyntflow
-              </span>{' '}
-              Cloud ERP &amp; POS
-            </h3>
-            <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8]">
-              Sparked Pyntflow: an end-to-end cloud ERP, tint recipe calculator, and high-speed POS
-              built for multi-branch paint retailers and wholesalers.
-            </p>
-          </div>
+          {/* Glowing comet head orb on mobile */}
+          <div
+            className="absolute left-3 sm:left-3.5 w-3 h-3 rounded-full bg-white shadow-[0_0_14px_#22d3ee,0_0_24px_#a855f7] transition-all duration-150 -translate-y-1/2"
+            style={{
+              top: `calc(1rem + ${Math.min(100, Math.max(0, mobileProgress * 100))}% * 0.95)`,
+              opacity: mobileProgress > 0.02 && mobileProgress < 0.98 ? 1 : 0,
+            }}
+          />
 
-          <div className="relative py-1.5">
-            <div className="absolute -left-[53px] top-1.5 w-9 h-9 rounded-full bg-[#090c17] border-2 border-[#a855f7] text-white font-mono text-[0.8rem] font-bold flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.45)]">
-              04
-            </div>
-            <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-[11px] py-1 rounded-full mb-2">
-              Full Stack &amp; Automation
-            </span>
-            <h3 className="text-[1.45rem] font-extrabold leading-[1.18] text-white mb-2">
-              Turning Ideas Into{' '}
-              <span
-                className="font-bold text-[1.22em] text-[#4ade80] mx-1"
-                style={{ fontFamily: "'Caveat', cursive" }}
+          <div className="flex flex-col gap-10">
+            {/* ── STEP 01 ── */}
+            <div className="relative">
+              {/* Animated Node Circle */}
+              <button
+                type="button"
+                onClick={() => scrollToStep(0)}
+                aria-label="Step 1"
+                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                  reachedSteps[0]
+                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
+                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                }`}
               >
-                Reality
-              </span>
-            </h3>
-            <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8] mb-3">
-              2+ years learning, 10+ projects, and 100% dedication—building modern web experiences,
-              automating workflows, and turning ideas into real products.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center">
-                <strong className="block text-[1.15rem] font-extrabold text-white">2+</strong>
-                <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
-                  Years Learning
+                01
+                {reachedSteps[0] && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                  />
+                )}
+              </button>
+
+              {/* Step Card Content */}
+              <article
+                className={`transition-all duration-500 ${
+                  reachedSteps[0] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
+                }`}
+              >
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.5 py-0.5 rounded-full mb-2">
+                  First Commercial Client
                 </span>
-              </div>
-              <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center">
-                <strong className="block text-[1.15rem] font-extrabold text-white">10+</strong>
-                <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
-                  Projects Built
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                  Pitching{' '}
+                  <span
+                    className="font-bold text-[1.22em] text-[#4ade80] mx-1"
+                    style={{ fontFamily: "'Caveat', cursive" }}
+                  >
+                    Karachi
+                  </span>{' '}
+                  Brick &amp; Mortar
+                </h3>
+                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                  Stepped into Tawakkal Paint House face-to-face and landed my first commercial web
+                  client by solving a real local shop&apos;s digital needs.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPitchToggled((prev) => !prev)}
+                  title="Click to toggle insight"
+                  className="w-full text-left px-3.5 py-2.5 rounded-xl bg-purple-500/8 border border-dashed border-purple-500/38 text-xs text-[#e9d5ff] cursor-pointer transition-all duration-250 hover:bg-purple-500/15"
+                >
+                  <span className="block font-mono text-[0.68rem] uppercase tracking-wider text-[#a855f7] mb-1">
+                    The Face-to-Face Pitch (Tap)
+                  </span>
+                  <span>
+                    {pitchToggled
+                      ? 'Result: Built their first digital catalog & discovered real retail ERP gaps.'
+                      : '“Do you want a modern digital presence for your shop?” — He said yes.'}
+                  </span>
+                </button>
+              </article>
+            </div>
+
+            {/* ── STEP 02 ── */}
+            <div className="relative">
+              {/* Animated Node Circle */}
+              <button
+                type="button"
+                onClick={() => scrollToStep(1)}
+                aria-label="Step 2"
+                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                  reachedSteps[1]
+                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
+                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                }`}
+              >
+                02
+                {reachedSteps[1] && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                  />
+                )}
+              </button>
+
+              <article
+                className={`transition-all duration-500 ${
+                  reachedSteps[1] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
+                }`}
+              >
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-2.5 py-0.5 rounded-full mb-2">
+                  Real Retail Friction Discovered
                 </span>
-              </div>
-              <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/9 text-center">
-                <strong className="block text-[1.15rem] font-extrabold text-white">100%</strong>
-                <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-[0.05em]">
-                  Dedication
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                  Tawakkal Paint House
+                </h3>
+                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                  Turned paper catalogs into searchable contractor ordering while uncovering daily retail
+                  bottlenecks. Tap a bottleneck to inspect:
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {FRICTION_CHIPS.map((chip, idx) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => setActiveChipIdx(idx)}
+                      className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activeChipIdx === idx
+                          ? 'bg-cyan-400/14 border-[#22d3ee] text-white shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                          : 'bg-white/[0.04] border-white/12 text-[#cbd5e1]'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-[#22d3ee] min-h-4">
+                  &rarr; {FRICTION_CHIPS[activeChipIdx].info}
+                </p>
+              </article>
+            </div>
+
+            {/* ── STEP 03 ── */}
+            <div className="relative">
+              {/* Animated Node Circle */}
+              <button
+                type="button"
+                onClick={() => scrollToStep(2)}
+                aria-label="Step 3"
+                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                  reachedSteps[2]
+                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
+                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                }`}
+              >
+                03
+                {reachedSteps[2] && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                  />
+                )}
+              </button>
+
+              <article
+                className={`transition-all duration-500 ${
+                  reachedSteps[2] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
+                }`}
+              >
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-2.5 py-0.5 rounded-full mb-2">
+                  60% Faster Counter Checkout
                 </span>
-              </div>
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                  <span
+                    className="font-bold text-[1.22em] text-[#4ade80] mr-1"
+                    style={{ fontFamily: "'Caveat', cursive" }}
+                  >
+                    Pyntflow
+                  </span>{' '}
+                  Cloud ERP &amp; POS
+                </h3>
+                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                  Sparked Pyntflow: an end-to-end cloud ERP, tint recipe calculator, and high-speed POS
+                  built for multi-branch paint retailers and wholesalers.
+                </p>
+                <div className="flex gap-1.5 flex-wrap mb-2.5">
+                  {ERP_MODULES.map((mod, idx) => (
+                    <button
+                      key={mod.id}
+                      type="button"
+                      onClick={() => setActiveErpIdx(idx)}
+                      className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activeErpIdx === idx
+                          ? 'bg-green-400/14 border-[#4ade80] text-white shadow-[0_0_12px_rgba(74,222,128,0.25)]'
+                          : 'bg-white/[0.04] border-white/12 text-[#94a3b8]'
+                      }`}
+                    >
+                      {mod.tab}
+                    </button>
+                  ))}
+                </div>
+                <div className="px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/8">
+                  <div className="flex justify-between font-mono text-xs text-[#e2e8f0] mb-1.5">
+                    <span>{activeErp.label}</span>
+                    <span className="text-[#4ade80]">{activeErp.val}</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
+                    />
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            {/* ── STEP 04 ── */}
+            <div className="relative">
+              {/* Animated Node Circle */}
+              <button
+                type="button"
+                onClick={() => scrollToStep(3)}
+                aria-label="Step 4"
+                className={`absolute -left-[43px] sm:-left-[47px] top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
+                  reachedSteps[3]
+                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.35)]'
+                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                }`}
+              >
+                04
+                {reachedSteps[3] && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 [animation:spinSlow_14s_linear_infinite]"
+                  />
+                )}
+              </button>
+
+              <article
+                className={`transition-all duration-500 ${
+                  reachedSteps[3] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
+                }`}
+              >
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.5 py-0.5 rounded-full mb-2">
+                  Full Stack &amp; Automation
+                </span>
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                  Turning Ideas Into{' '}
+                  <span
+                    className="font-bold text-[1.22em] text-[#4ade80] mx-1"
+                    style={{ fontFamily: "'Caveat', cursive" }}
+                  >
+                    Reality
+                  </span>
+                </h3>
+                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                  2+ years learning, 10+ projects, and 100% dedication—building modern web experiences,
+                  automating workflows, and turning ideas into real products.
+                </p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                    <strong className="block text-base font-extrabold text-white">2+</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Years</span>
+                  </div>
+                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                    <strong className="block text-base font-extrabold text-white">10+</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Projects</span>
+                  </div>
+                  <div className="px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/9 text-center">
+                    <strong className="block text-base font-extrabold text-white">100%</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Grit</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Next.js', 'React', 'Node.js', 'Supabase', 'Automation'].map((pill) => (
+                    <span
+                      key={pill}
+                      className="font-mono text-[0.68rem] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/28 text-[#e9d5ff]"
+                    >
+                      {pill}
+                    </span>
+                  ))}
+                </div>
+              </article>
             </div>
           </div>
         </div>
