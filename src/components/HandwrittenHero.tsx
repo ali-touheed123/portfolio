@@ -18,15 +18,15 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 }) => {
   const { isDay } = useSkyTheme();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fontsReady, setFontsReady] = useState<boolean>(false);
   const [nameTyped, setNameTyped] = useState<boolean>(false);
   const [buttonsPop, setButtonsPop] = useState<boolean>(false);
   const [cvDownloaded, setCvDownloaded] = useState<boolean>(false);
   const [hoveredBtn, setHoveredBtn] = useState<'cv' | 'connect' | null>(null);
 
-  const introActive = fontsReady && revealActive;
+  // Directly activate as soon as curtain begins lifting (zero font-blocking delays)
+  const introActive = revealActive;
 
-  // Once typing completes (~1050ms), pop the action buttons into view
+  // Once typing completes (~680ms), pop the action buttons into view
   useEffect(() => {
     if (!introActive) {
       setButtonsPop(false);
@@ -36,31 +36,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
     const timer = window.setTimeout(() => {
       setNameTyped(true);
       setButtonsPop(true);
-    }, 1050);
+    }, 680);
     return () => window.clearTimeout(timer);
   }, [introActive]);
 
-  useEffect(() => {
-    let mounted = true;
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      Promise.all([
-        document.fonts.load("600 24px 'Caveat'"),
-        document.fonts.load("400 48px 'Permanent Marker'"),
-        document.fonts.ready,
-      ])
-        .then(() => {
-          if (mounted) setFontsReady(true);
-        })
-        .catch(() => {
-          if (mounted) setFontsReady(true);
-        });
-    } else {
-      setFontsReady(true);
-    }
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!introActive) return;
@@ -314,10 +293,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           style={{ fontFamily: "'Caveat', cursive" }}
         >
           <span className={isMobile ? '' : 'pl-2 min-h-[1.35rem] sm:min-h-[1.55rem]'}>
-            <TypewriterText text="Let's build" delay={60} speed={24} active={introActive} />
+            <TypewriterText text="Let's build" delay={20} speed={20} active={introActive} />
           </span>
           <span className={isMobile ? '' : 'min-h-[1.35rem] sm:min-h-[1.55rem]'}>
-            <TypewriterText text="something amazing together!" delay={180} speed={20} active={introActive} />
+            <TypewriterText text="something amazing together!" delay={70} speed={18} active={introActive} />
           </span>
         </div>
       </div>
@@ -332,7 +311,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={introActive ? { pathLength: 1 } : { pathLength: 0 }}
-            transition={{ duration: 0.35, delay: 0.78, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.35, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
           />
           <motion.path
             d="M 28 19 C 80 13, 136 10, 174 12"
@@ -342,7 +321,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             opacity="0.85"
             initial={{ pathLength: 0 }}
             animate={introActive ? { pathLength: 1 } : { pathLength: 0 }}
-            transition={{ duration: 0.28, delay: 0.84, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.28, delay: 0.54, ease: [0.22, 1, 0.36, 1] }}
           />
         </svg>
 
@@ -352,21 +331,21 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             stroke={inkStroke} strokeWidth="2.5" strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={introActive ? { pathLength: 1 } : { pathLength: 0 }}
-            transition={{ duration: 0.16, delay: 0.88 }}
+            transition={{ duration: 0.16, delay: 0.58 }}
           />
           <motion.line
             x1="22" y1="10" x2="22" y2="15"
             stroke={inkStroke} strokeWidth="2.5" strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={introActive ? { pathLength: 1 } : { pathLength: 0 }}
-            transition={{ duration: 0.16, delay: 0.92 }}
+            transition={{ duration: 0.16, delay: 0.62 }}
           />
           <motion.path
             d="M 7 19 C 12 28, 22 28, 27 19"
             stroke={inkStroke} strokeWidth="2.5" strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={introActive ? { pathLength: 1 } : { pathLength: 0 }}
-            transition={{ duration: 0.28, delay: 0.96 }}
+            transition={{ duration: 0.28, delay: 0.66 }}
           />
         </svg>
       </div>
@@ -376,9 +355,9 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none select-none px-3 xs:px-4 sm:px-8 md:px-12 lg:px-14 pt-14 sm:pt-20 pb-7 xs:pb-9 sm:pb-5 transition-opacity duration-300 ${
-        fontsReady ? 'opacity-100' : 'opacity-0'
-      } ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
+      className={`absolute inset-0 z-20 flex flex-col justify-between pointer-events-none select-none px-3 xs:px-4 sm:px-8 md:px-12 lg:px-14 pt-14 sm:pt-20 pb-7 xs:pb-9 sm:pb-5 transition-opacity duration-300 opacity-100 ${
+        isDay ? 'text-slate-900' : 'text-slate-100'
+      }`}
     >
       {/* ─── DESKTOP HERO (lg:grid) — Preserves Original 3-Column Studio Layout ─── */}
       <div className="hidden lg:grid grid-cols-[minmax(280px,0.94fr)_minmax(340px,1.12fr)_minmax(280px,0.94fr)] items-center gap-6 w-full flex-1 min-h-0">
@@ -394,7 +373,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
                 className="text-2xl sm:text-3xl font-semibold text-slate-800 dark:text-slate-100 transition-colors duration-500"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
-                <TypewriterText text="Hello, I'm" delay={140} speed={35} active={introActive} />
+                <TypewriterText text="Hello, I'm" delay={10} speed={24} active={introActive} />
               </span>
               <svg className="w-5 h-6" viewBox="0 0 22 24" fill="none" aria-hidden="true" data-svg-draw>
                 <path d="M14 6 L9 12 M16 14 L11 16" stroke={subtleInkStroke} strokeWidth="1.5" strokeLinecap="round" />
@@ -413,13 +392,13 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               style={{ fontFamily: "'Permanent Marker', cursive" }}
             >
               <span className="text-slate-950 dark:text-white transition-colors duration-500 drop-shadow-[0_2px_14px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_2px_18px_rgba(255,255,255,0.2)]">
-                <TypewriterText text="ALI" delay={360} speed={45} active={introActive} />
+                <TypewriterText text="ALI" delay={30} speed={30} active={introActive} />
               </span>
               <span className="text-violet-600 dark:text-[#a855f7] transition-colors duration-500 dark:drop-shadow-[0_0_26px_rgba(168,85,247,0.75)]">
                 <TypewriterText
                   text="TOUHEED"
-                  delay={520}
-                  speed={40}
+                  delay={100}
+                  speed={28}
                   active={introActive}
                   onComplete={() => setNameTyped(true)}
                 />
@@ -457,10 +436,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               style={{ fontFamily: "'Caveat', cursive" }}
             >
               <span>
-                <TypewriterText text="Web & App" delay={60} speed={28} active={introActive} />
+                <TypewriterText text="Web & App" delay={20} speed={22} active={introActive} />
               </span>
               <span className="text-violet-600 dark:text-[#a855f7] dark:drop-shadow-[0_0_16px_rgba(168,85,247,0.55)]">
-                <TypewriterText text="Developer" delay={200} speed={28} active={introActive} />
+                <TypewriterText text="Developer" delay={100} speed={22} active={introActive} />
               </span>
             </div>
 
@@ -471,8 +450,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               >
                 <TypewriterText
                   text="I build modern web experiences, automate workflows, and turn ideas into real products."
-                  delay={80}
-                  speed={11}
+                  delay={30}
+                  speed={9}
                   active={introActive}
                 />
               </p>
@@ -498,7 +477,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               className="text-lg xs:text-xl font-semibold text-slate-800 dark:text-slate-100 transition-colors duration-500"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
-              <TypewriterText text="Hello, I'm" delay={140} speed={35} active={introActive} />
+              <TypewriterText text="Hello, I'm" delay={10} speed={24} active={introActive} />
             </span>
           </div>
 
@@ -509,13 +488,13 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               style={{ fontFamily: "'Permanent Marker', cursive" }}
             >
               <span className="text-slate-950 dark:text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_2px_14px_rgba(255,255,255,0.2)]">
-                <TypewriterText text="ALI" delay={360} speed={45} active={introActive} />
+                <TypewriterText text="ALI" delay={30} speed={30} active={introActive} />
               </span>
               <span className="text-violet-600 dark:text-[#a855f7] dark:drop-shadow-[0_0_20px_rgba(168,85,247,0.7)]">
                 <TypewriterText
                   text="TOUHEED"
-                  delay={520}
-                  speed={40}
+                  delay={100}
+                  speed={28}
                   active={introActive}
                   onComplete={() => setNameTyped(true)}
                 />
@@ -539,10 +518,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             style={{ fontFamily: "'Caveat', cursive" }}
           >
             <span>
-              <TypewriterText text="Web & App" delay={60} speed={28} active={introActive} />
+              <TypewriterText text="Web & App" delay={20} speed={22} active={introActive} />
             </span>
             <span className="text-violet-600 dark:text-[#a855f7] underline decoration-violet-500/50">
-              <TypewriterText text="Developer" delay={200} speed={28} active={introActive} />
+              <TypewriterText text="Developer" delay={100} speed={22} active={introActive} />
             </span>
           </div>
         </div>

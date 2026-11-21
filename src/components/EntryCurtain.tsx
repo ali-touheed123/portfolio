@@ -53,10 +53,10 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
       }
     }, HOLD_MS);
 
-    // ── STEP 2: Fire hero reveal as shutters clear halfway ──
+    // ── STEP 2: Fire hero reveal right as shutters start lifting ──
     const revealTimer = window.setTimeout(() => {
       onCurtainOpenStart?.();
-    }, HOLD_MS + 450);
+    }, HOLD_MS + 60);
 
     // ── STEP 3: Unmount curtain cleanly when last panel finishes ──
     const unmountTimer = window.setTimeout(() => {
