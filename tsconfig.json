@@ -25,5 +25,5 @@
     "noEmit": true
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["dist", "node_modules", "skills section 3rd section"]
+  "exclude": ["dist", "node_modules"]
 }

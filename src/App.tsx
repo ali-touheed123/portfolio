@@ -14,7 +14,7 @@ import { HandwrittenHero } from './components/HandwrittenHero';
 import { TopNav } from './components/TopNav';
 import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
 import { AboutOriginSection } from './components/AboutOriginSection';
-import SkillsSectionApp from '../skills section 3rd section/src/App';
+import SkillsSectionApp from './skillsArcade/App';
 
 function PortfolioShell() {
   const { isDay } = useSkyTheme();

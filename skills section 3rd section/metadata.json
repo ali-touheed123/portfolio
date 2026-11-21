@@ -1,6 +1,0 @@
-{
-  "name": "3D Skill Breaker & Catcher",
-  "description": "Interactive 3D-style brick breaker and skill catcher arcade game powered by real-time 360-degree rotating Three.js technology capsule models.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
