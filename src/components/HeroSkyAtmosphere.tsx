@@ -1,0 +1,210 @@
+import React, { useEffect, useRef } from 'react';
+import { useSkyTheme } from '../context/ThemeContext';
+import type { ParallaxState } from '../hooks/useParallax';
+
+interface HeroSkyAtmosphereProps {
+  parallax?: ParallaxState;
+}
+
+interface DustParticle {
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  hue: 'violet' | 'cyan' | 'amber';
+}
+
+/**
+ * Pure procedural WebGL-style atmospheric stage replacing background.webp & background-layer.webp.
+ * Renders depth-sorted atmospheric particles and horizon aura synced cleanly with Moon (Night) / Sun (Day).
+ */
+export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallax }) => {
+  const { isDay, isNight } = useSkyTheme();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const parallaxRef = useRef<ParallaxState>({ x: 0, y: 0 });
+  const isDayRef = useRef<boolean>(isDay);
+
+  useEffect(() => {
+    isDayRef.current = isDay;
+  }, [isDay]);
+
+  useEffect(() => {
+    if (parallax) {
+      parallaxRef.current = parallax;
+    }
+  }, [parallax]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let width = 0;
+    let height = 0;
+    let particles: DustParticle[] = [];
+    let animId = 0;
+
+    const init = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth || window.innerWidth;
+      height = canvas.clientHeight || window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const hues: Array<'violet' | 'cyan' | 'amber'> = ['violet', 'cyan', 'amber'];
+      const count = width < 768 ? 28 : 48;
+      particles = Array.from({ length: count }, (_, i) => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        z: 0.35 + Math.random() * 0.9,
+        vx: (Math.random() - 0.5) * 0.16,
+        vy: -0.06 - Math.random() * 0.18,
+        radius: 1 + Math.random() * 2.2,
+        hue: hues[i % hues.length],
+      }));
+    };
+
+    const draw = (time: number) => {
+      ctx.clearRect(0, 0, width, height);
+      const day = isDayRef.current;
+      const px = parallaxRef.current.x * 26;
+      const py = parallaxRef.current.y * 18;
+
+      // Subtle atmospheric aura centered around hero figure stage
+      const cx = width * 0.5 + px * 0.45;
+      const cy = height * 0.48 + py * 0.45;
+      const auraR = Math.max(width, height) * 0.46;
+
+      const coreGrad = ctx.createRadialGradient(cx, cy, auraR * 0.04, cx, cy, auraR);
+      if (day) {
+        coreGrad.addColorStop(0, 'rgba(186, 226, 255, 0.36)');
+        coreGrad.addColorStop(0.45, 'rgba(139, 92, 246, 0.08)');
+        coreGrad.addColorStop(1, 'rgba(238, 245, 252, 0)');
+      } else {
+        coreGrad.addColorStop(0, 'rgba(139, 92, 246, 0.22)');
+        coreGrad.addColorStop(0.42, 'rgba(34, 211, 238, 0.08)');
+        coreGrad.addColorStop(1, 'rgba(7, 10, 17, 0)');
+      }
+      ctx.fillStyle = coreGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Subtle perspective orbital arcs behind subject (lightweight vector polish)
+      ctx.save();
+      ctx.translate(cx, cy + height * 0.04);
+      ctx.rotate(Math.sin(time * 0.00025) * 0.04);
+      ctx.strokeStyle = day ? 'rgba(15, 23, 42, 0.045)' : 'rgba(192, 132, 252, 0.075)';
+      ctx.lineWidth = 1;
+      const ringW = Math.min(width * 0.42, 360);
+      const ringH = ringW * 0.34;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, ringW, ringH, -0.14, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = day ? 'rgba(14, 165, 233, 0.055)' : 'rgba(34, 211, 238, 0.065)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, ringW * 1.24, ringH * 1.18, 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Floating atmospheric motes
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (!prefersReduced) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.y < -20) {
+            p.y = height + 20;
+            p.x = Math.random() * width;
+          }
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+        }
+
+        const sx = p.x + px * p.z;
+        const sy = p.y + py * p.z;
+        const pulse = 0.45 + 0.35 * Math.sin(time * 0.0018 + i * 1.3);
+
+        let fill = '';
+        if (day) {
+          fill =
+            p.hue === 'amber'
+              ? `rgba(245, 158, 11, ${pulse * 0.25})`
+              : p.hue === 'violet'
+                ? `rgba(124, 58, 237, ${pulse * 0.2})`
+                : `rgba(14, 165, 233, ${pulse * 0.22})`;
+        } else {
+          fill =
+            p.hue === 'cyan'
+              ? `rgba(34, 211, 238, ${pulse * 0.55})`
+              : p.hue === 'amber'
+                ? `rgba(251, 191, 36, ${pulse * 0.42})`
+                : `rgba(168, 85, 247, ${pulse * 0.55})`;
+        }
+
+        ctx.beginPath();
+        ctx.arc(sx, sy, p.radius * p.z, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+
+      if (!prefersReduced) {
+        animId = window.requestAnimationFrame(draw);
+      }
+    };
+
+    init();
+    animId = window.requestAnimationFrame(draw);
+    window.addEventListener('resize', init);
+
+    return () => {
+      window.removeEventListener('resize', init);
+      window.cancelAnimationFrame(animId);
+    };
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Night deep cosmic horizon wash */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-700 ${
+          isNight ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background:
+            'radial-gradient(circle at 50% 42%, rgba(76, 29, 149, 0.22) 0%, rgba(15, 23, 42, 0.42) 48%, #070A11 100%)',
+        }}
+      />
+
+      {/* Day bright atmospheric radiance */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-700 ${
+          isDay ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background:
+            'radial-gradient(circle at 82% 18%, rgba(255, 224, 142, 0.52) 0%, rgba(182, 220, 255, 0.36) 36%, rgba(238, 245, 252, 0.94) 100%)',
+        }}
+      />
+
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" aria-hidden="true" />
+
+      {/* Bottom horizon feather so sticky Hero melts smoothly into the Origin Story transition */}
+      <div
+        className={`absolute inset-x-0 bottom-0 h-32 transition-opacity duration-700 ${
+          isNight ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background: 'linear-gradient(to bottom, rgba(7,10,17,0) 0%, #05070e 100%)',
+        }}
+      />
+    </div>
+  );
+};

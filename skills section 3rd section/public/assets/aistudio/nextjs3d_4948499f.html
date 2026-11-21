@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Next.js — 3D Interactive Model</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      outline: none;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // 1. RENDERER, SCENE & CAMERA
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.setClearColor(0xffffff, 0);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    const INITIAL_CAM_POS = new THREE.Vector3(0, 0, 4.15);
+    const INITIAL_TARGET = new THREE.Vector3(0, 0, 0);
+
+    const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.copy(INITIAL_CAM_POS);
+
+    // 2. PROCEDURAL 360° STUDIO ENVIRONMENT (PMREM) & BALANCED LIGHTING
+    function createStudioEnv(glRenderer) {
+      const pmrem = new THREE.PMREMGenerator(glRenderer);
+      pmrem.compileEquirectangularShader();
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x0d1216);
+
+      const addPanel = (w, h, color, intensity, pos) => {
+        const geo = new THREE.PlaneGeometry(w, h);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(color).multiplyScalar(intensity),
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...pos);
+        mesh.lookAt(0, 0, 0);
+        envScene.add(mesh);
+      };
+
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.2, 8]);
+      addPanel(10, 5, 0xd8ecf4, 1.3, [0, -3.5, 8]);
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.2, -8]);
+      addPanel(10, 5, 0xd8ecf4, 1.3, [0, -3.5, -8]);
+      addPanel(12, 6, 0xf2f7fa, 2.0, [0, 8.5, 0]);
+      addPanel(12, 6, 0xc2d5df, 1.1, [0, -8.5, 0]);
+      addPanel(6, 8, 0xd4eaf2, 1.5, [-9, 0.5, 0]);
+      addPanel(6, 8, 0xe8edf0, 1.5, [9, 0.5, 0]);
+
+      const rt = pmrem.fromScene(envScene, 0.04);
+      pmrem.dispose();
+      return rt.texture;
+    }
+
+    scene.environment = createStudioEnv(renderer);
+    scene.add(new THREE.AmbientLight(0xeef5f8, 0.85));
+
+    const addDirLight = (color, intensity, pos) => {
+      const l = new THREE.DirectionalLight(color, intensity);
+      l.position.set(...pos);
+      scene.add(l);
+    };
+    addDirLight(0xffffff, 1.45, [2.5, 3.5, 5.5]);
+    addDirLight(0xbcdbe6, 0.65, [-3.5, -2.0, 4.5]);
+    addDirLight(0xffffff, 1.45, [-2.5, 3.5, -5.5]);
+    addDirLight(0xbcdbe6, 0.65, [3.5, -2.0, -4.5]);
+
+    // 3. EXACT BADGE DIMENSIONS & GEOMETRY HELPERS
+    const BADGE_W = 2.68;
+    const BADGE_H = 1.05;
+    const CORNER_R = 0.35;
+    const BODY_DEPTH = 0.12;
+    const BEVEL_THICKNESS = 0.042;
+    const BEVEL_SIZE = 0.036;
+    const TOTAL_HALF_Z = BODY_DEPTH / 2 + BEVEL_THICKNESS;
+
+    function createRoundedRectShape(w, h, r) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const s = new THREE.Shape();
+      s.moveTo(-hw + rad, -hh);
+      s.lineTo(hw - rad, -hh);
+      s.absarc(hw - rad, -hh + rad, rad, -Math.PI / 2, 0, false);
+      s.lineTo(hw, hh - rad);
+      s.absarc(hw - rad, hh - rad, rad, 0, Math.PI / 2, false);
+      s.lineTo(-hw + rad, hh);
+      s.absarc(-hw + rad, hh - rad, rad, Math.PI / 2, Math.PI, false);
+      s.lineTo(-hw, -hh + rad);
+      s.absarc(-hw + rad, -hh + rad, rad, Math.PI, Math.PI * 1.5, false);
+      return s;
+    }
+
+    function createRoundedRectCurvePoints(w, h, r, z = 0) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const pts = [];
+      const cornerSteps = 22;
+      const straightSteps = 10;
+
+      const pushLine = (x0, y0, x1, y1) => {
+        for (let i = 0; i < straightSteps; i++) {
+          const t = i / straightSteps;
+          pts.push(new THREE.Vector3(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z));
+        }
+      };
+      const pushArc = (cx, cy, a0, a1) => {
+        for (let i = 0; i < cornerSteps; i++) {
+          const a = a0 + (a1 - a0) * (i / cornerSteps);
+          pts.push(new THREE.Vector3(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad, z));
+        }
+      };
+
+      pushLine(-hw + rad, -hh, hw - rad, -hh);
+      pushArc(hw - rad, -hh + rad, -Math.PI / 2, 0);
+      pushLine(hw, -hh + rad, hw, hh - rad);
+      pushArc(hw - rad, hh - rad, 0, Math.PI / 2);
+      pushLine(hw - rad, hh, -hw + rad, hh);
+      pushArc(-hw + rad, hh - rad, Math.PI / 2, Math.PI);
+      pushLine(-hw, hh - rad, -hw, -hh + rad);
+      pushArc(-hw + rad, -hh + rad, Math.PI, Math.PI * 1.5);
+      return pts;
+    }
+
+    function strokeRoundedRectCanvas(ctx, x, y, w, h, r) {
+      const rad = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.lineTo(x + w - rad, y);
+      ctx.arcTo(x + w, y, x + w, y + rad, rad);
+      ctx.lineTo(x + w, y + h - rad);
+      ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+      ctx.lineTo(x + rad, y + h);
+      ctx.arcTo(x, y + h, x, y + h - rad, rad);
+      ctx.lineTo(x, y + rad);
+      ctx.arcTo(x, y, x + rad, y, rad);
+      ctx.closePath();
+    }
+
+    // 4. HIGH-DPI PROCEDURAL TEXTURES (2560px SUPERSAMPLED)
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+    function createSmokyObsidianTexture() {
+      const W = 2560;
+      const H = 1004;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Deep dark obsidian with subtle slate-teal sheen on the left
+      const bg = ctx.createLinearGradient(0, 0, W, H * 0.4);
+      bg.addColorStop(0.0, '#102028');
+      bg.addColorStop(0.26, '#12181c');
+      bg.addColorStop(0.62, '#141618');
+      bg.addColorStop(1.0, '#18191a');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      let seed = 7391;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for (let i = 0; i < 60; i++) {
+        const cx = rand() * W;
+        const cy = rand() * H;
+        const rx = 180 + rand() * 420;
+        const ry = 80 + rand() * 200;
+        const angle = (rand() - 0.5) * 0.85;
+        const isLight = rand() > 0.45;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.scale(1, ry / rx);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+        if (isLight) {
+          const leftFactor = Math.max(0, 1 - cx / (W * 0.55));
+          const rCol = Math.round(36 - leftFactor * 10);
+          const gCol = Math.round(42 + leftFactor * 16);
+          const bCol = Math.round(48 + leftFactor * 24);
+          grad.addColorStop(0, `rgba(${rCol}, ${gCol}, ${bCol}, 0.14)`);
+          grad.addColorStop(0.6, `rgba(${rCol}, ${gCol}, ${bCol}, 0.05)`);
+          grad.addColorStop(1, 'rgba(18, 22, 26, 0)');
+        } else {
+          grad.addColorStop(0, 'rgba(6, 8, 10, 0.22)');
+          grad.addColorStop(0.6, 'rgba(10, 12, 14, 0.08)');
+          grad.addColorStop(1, 'rgba(10, 12, 14, 0)');
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Subtle dark-glassy inner bevel rim sheen
+      const pad = 22;
+      const rPx = (CORNER_R / BADGE_H) * (H - pad * 2);
+      ctx.save();
+      strokeRoundedRectCanvas(ctx, pad, pad, W - pad * 2, H - pad * 2, rPx);
+      ctx.shadowColor = 'rgba(120, 155, 175, 0.35)';
+      ctx.shadowBlur = 64;
+      ctx.lineWidth = 18;
+      ctx.strokeStyle = 'rgba(95, 115, 128, 0.26)';
+      ctx.stroke();
+
+      ctx.shadowBlur = 24;
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = 'rgba(165, 185, 198, 0.22)';
+      ctx.stroke();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAniso;
+      return tex;
+    }
+
+    // 5. EXACT NEXT.JS VECTOR PATHS (REF PROPORTIONS: 262 x 103)
+    function refTo3D(px, py) {
+      return [
+        (px / 262.0 - 0.5) * BADGE_W,
+        (0.5 - py / 103.0) * BADGE_H
+      ];
+    }
+
+    function polyToShape(refPts) {
+      const shape = new THREE.Shape();
+      refPts.forEach(([px, py], i) => {
+        const [x, y] = refTo3D(px, py);
+        if (i === 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+      });
+      shape.closePath();
+      return shape;
+    }
+
+    function strokePolylineToRefPts(pts, width) {
+      const left = [];
+      const right = [];
+      const hw = width / 2;
+      for (let i = 0; i < pts.length; i++) {
+        const pPrev = pts[Math.max(0, i - 1)];
+        const pNext = pts[Math.min(pts.length - 1, i + 1)];
+        const tx = pNext[0] - pPrev[0];
+        const ty = pNext[1] - pPrev[1];
+        const len = Math.hypot(tx, ty) || 1;
+        const nx = (-ty / len) * hw;
+        const ny = (tx / len) * hw;
+        left.push([pts[i][0] + nx, pts[i][1] + ny]);
+        right.push([pts[i][0] - nx, pts[i][1] - ny]);
+      }
+      return left.concat(right.reverse());
+    }
+
+    function sampleCubic(p0, p1, p2, p3, steps = 24) {
+      const out = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const u = 1 - t;
+        const x = u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0];
+        const y = u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1];
+        out.push([x, y]);
+      }
+      return out;
+    }
+
+    function getNextJsLogoPolygons() {
+      const sw = 3.1;
+      const yT = 31.0;
+      const yB = 72.0;
+      const polys = [];
+
+      // N: left stem, right stem (flush into diagonal), extended tapered slash
+      polys.push([[39.0, yT], [39.0 + sw, yT], [39.0 + sw, yB], [39.0, yB]]);
+      polys.push([[70.2, yT], [70.2 + sw, yT], [70.2 + sw, yB - 0.5], [70.2, yB - 0.5]]);
+      polys.push([
+        [39.0, yT],
+        [42.5, yT],
+        [73.1, yB],
+        [85.5, 92.0],
+        [69.6, yB]
+      ]);
+
+      // E: vertical stem + top, middle, bottom bars
+      const ex = 79.5;
+      const ew = 29.0;
+      const emw = 25.5;
+      polys.push([[ex, yT], [ex + sw, yT], [ex + sw, yB], [ex, yB]]);
+      polys.push([[ex, yT], [ex + ew, yT], [ex + ew, yT + sw], [ex, yT + sw]]);
+      polys.push([[ex, 50.0], [ex + emw, 50.0], [ex + emw, 50.0 + sw], [ex, 50.0 + sw]]);
+      polys.push([[ex, yB - sw], [ex + ew, yB - sw], [ex + ew, yB], [ex, yB]]);
+
+      // X: main top-left->bottom-right stroke + extended upward tapered slash
+      polys.push([[111.5, yT], [115.1, yT], [144.0, yB], [140.4, yB]]);
+      polys.push([
+        [111.5, yB],
+        [115.1, yB],
+        [144.1, yT],
+        [154.2, 15.5],
+        [140.5, yT]
+      ]);
+
+      // T: top bar + centered vertical stem
+      const tx0 = 146.5;
+      const tx1 = 181.5;
+      const tcx = (tx0 + tx1) / 2.0;
+      polys.push([[tx0, yT], [tx1, yT], [tx1, yT + sw], [tx0, yT + sw]]);
+      polys.push([[tcx - sw / 2, yT], [tcx + sw / 2, yT], [tcx + sw / 2, yB], [tcx - sw / 2, yB]]);
+
+      // Dot (.)
+      const dotPts = [];
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        dotPts.push([185.0 + 1.65 * Math.cos(a), 68.5 + 1.65 * Math.sin(a)]);
+      }
+      polys.push(dotPts);
+
+      // J: vertical stem + bottom hook
+      const jPts = [[198.2, 50.8], [198.2, 63.5]];
+      for (let i = 0; i <= 18; i++) {
+        const a = (i / 18) * (Math.PI * 0.72);
+        jPts.push([193.6 + 4.6 * Math.cos(a), 63.5 + 5.3 * Math.sin(a)]);
+      }
+      polys.push(strokePolylineToRefPts(jPts, 2.0));
+
+      // S: smooth geometric Bezier spline
+      const sTop = sampleCubic([218.2, 54.5], [217.5, 50.2], [205.5, 50.2], [205.5, 55.2], 22);
+      const sMid = sampleCubic([205.5, 55.2], [205.5, 59.8], [219.0, 59.6], [219.0, 64.8], 22);
+      const sBot = sampleCubic([219.0, 64.8], [219.0, 70.2], [205.2, 70.2], [204.6, 65.6], 22);
+      const sPts = sTop.concat(sMid.slice(1), sBot.slice(1));
+      polys.push(strokePolylineToRefPts(sPts, 2.0));
+
+      return polys;
+    }
+
+    function createLogoGlowTexture(polys) {
+      const W = 2560;
+      const H = 1004;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      const drawAll = () => {
+        polys.forEach((pts) => {
+          ctx.beginPath();
+          pts.forEach(([px, py], i) => {
+            const x = (px / 262.0) * W;
+            const y = (py / 103.0) * H;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+          ctx.fill();
+        });
+      };
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(220, 245, 255, 0.65)';
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      drawAll();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAniso;
+      return tex;
+    }
+
+    function createHaloTexture() {
+      const W = 2048;
+      const H = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      const rectW = W * 0.60;
+      const rectH = H * 0.45;
+      const rectX = (W - rectW) / 2;
+      const rectY = (H - rectH) / 2;
+      const rPx = (CORNER_R / BADGE_H) * rectH;
+
+      const passes = [
+        { blur: 135, alpha: 0.14, lw: 34 },
+        { blur: 84,  alpha: 0.18, lw: 26 },
+        { blur: 48,  alpha: 0.22, lw: 18 },
+        { blur: 22,  alpha: 0.24, lw: 12 }
+      ];
+
+      passes.forEach((p) => {
+        ctx.save();
+        strokeRoundedRectCanvas(ctx, rectX, rectY, rectW, rectH, rPx);
+        ctx.shadowColor = `rgba(18, 30, 38, ${p.alpha})`;
+        ctx.shadowBlur = p.blur;
+        ctx.lineWidth = p.lw;
+        ctx.strokeStyle = `rgba(18, 30, 38, ${p.alpha * 0.45})`;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBillboardAuraTexture() {
+      const S = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = S;
+      canvas.height = S;
+      const ctx = canvas.getContext('2d');
+
+      ctx.save();
+      ctx.translate(S / 2, S / 2);
+      ctx.scale(1.0, 0.56);
+      const grad = ctx.createRadialGradient(0, 0, S * 0.14, 0, 0, S * 0.48);
+      grad.addColorStop(0, 'rgba(20, 36, 46, 0.18)');
+      grad.addColorStop(0.45, 'rgba(30, 44, 52, 0.08)');
+      grad.addColorStop(0.75, 'rgba(30, 44, 52, 0.02)');
+      grad.addColorStop(1, 'rgba(30, 44, 52, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, S * 0.48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // 6. BUILD PHYSICAL 3D DOUBLE-SIDED MODEL
+    const badgeRoot = new THREE.Group();
+    scene.add(badgeRoot);
+
+    const smokyObsidianTex = createSmokyObsidianTexture();
+    const logoPolys = getNextJsLogoPolygons();
+    const logoGlowTex = createLogoGlowTexture(logoPolys);
+
+    // 6A. Extruded Physical Pill Body with 14-Segment Rounded Bevels
+    const bodyShape = createRoundedRectShape(BADGE_W, BADGE_H, CORNER_R);
+    const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
+      depth: BODY_DEPTH,
+      bevelEnabled: true,
+      bevelThickness: BEVEL_THICKNESS,
+      bevelSize: BEVEL_SIZE,
+      bevelSegments: 14,
+      curveSegments: 56
+    });
+    bodyGeo.center();
+
+    {
+      const pos = bodyGeo.attributes.position;
+      const uv = bodyGeo.attributes.uv;
+      const totalW = BADGE_W + BEVEL_SIZE * 2;
+      const totalH = BADGE_H + BEVEL_SIZE * 2;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / totalW) + 0.5, (pos.getY(i) / totalH) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+      map: smokyObsidianTex,
+      color: 0xffffff,
+      roughness: 0.17,
+      metalness: 0.14,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06,
+      ior: 1.52,
+      reflectivity: 0.92,
+      envMapIntensity: 1.35
+    });
+
+    badgeRoot.add(new THREE.Mesh(bodyGeo, bodyMaterial));
+
+    // 6B. 3D Sleek Obsidian-Graphite Perimeter Bevel Tubes
+    const rimMetalMat = new THREE.MeshPhysicalMaterial({
+      color: 0x262c31,
+      emissive: 0x0a1014,
+      emissiveIntensity: 0.35,
+      roughness: 0.18,
+      metalness: 0.55,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06,
+      envMapIntensity: 1.45
+    });
+
+    function createRimTube(w, h, r, zPos, tubeRadius) {
+      const pts = createRoundedRectCurvePoints(w, h, r, zPos);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const geo = new THREE.TubeGeometry(curve, 180, tubeRadius, 14, true);
+      return new THREE.Mesh(geo, rimMetalMat);
+    }
+
+    const rimZ = BODY_DEPTH / 2 + BEVEL_THICKNESS * 0.64;
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, rimZ, 0.021));
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, -rimZ, 0.021));
+    badgeRoot.add(createRimTube(BADGE_W + BEVEL_SIZE * 1.85, BADGE_H + BEVEL_SIZE * 1.85, CORNER_R + BEVEL_SIZE * 0.92, 0, 0.018));
+
+    // 6C. Front & Back Raised 3D NEXT.JS Logo Assemblies
+    const facePlateShape = createRoundedRectShape(BADGE_W - 0.04, BADGE_H - 0.04, CORNER_R - 0.02);
+    const facePlateGeo = new THREE.ShapeGeometry(facePlateShape, 48);
+    {
+      const pos = facePlateGeo.attributes.position;
+      const uv = facePlateGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / BADGE_W) + 0.5, (pos.getY(i) / BADGE_H) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const logoGlowMat = new THREE.MeshBasicMaterial({
+      map: logoGlowTex,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false
+    });
+
+    const logo3DMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf7fbff,
+      emissive: 0xe6f4ff,
+      emissiveIntensity: 0.42,
+      roughness: 0.14,
+      metalness: 0.06,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    const logoGeometries = logoPolys.map((pts) => {
+      const shape = polyToShape(pts);
+      return new THREE.ExtrudeGeometry(shape, {
+        depth: 0.012,
+        bevelEnabled: true,
+        bevelThickness: 0.0022,
+        bevelSize: 0.0016,
+        bevelSegments: 3
+      });
+    });
+
+    function createFaceDetailGroup() {
+      const group = new THREE.Group();
+
+      const glowMesh = new THREE.Mesh(facePlateGeo, logoGlowMat);
+      glowMesh.position.z = TOTAL_HALF_Z + 0.0015;
+      group.add(glowMesh);
+
+      const lettersGroup = new THREE.Group();
+      lettersGroup.position.z = TOTAL_HALF_Z + 0.002;
+      logoGeometries.forEach((geo) => {
+        lettersGroup.add(new THREE.Mesh(geo, logo3DMat));
+      });
+      group.add(lettersGroup);
+
+      return group;
+    }
+
+    badgeRoot.add(createFaceDetailGroup());
+
+    const backFace = createFaceDetailGroup();
+    backFace.rotation.y = Math.PI;
+    badgeRoot.add(backFace);
+
+    // 6D. Soft Obsidian Ambient Halo on Pure #FFFFFF Background
+    const haloMat = new THREE.MeshBasicMaterial({
+      map: createHaloTexture(),
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.2), haloMat);
+    haloMesh.renderOrder = -2;
+    badgeRoot.add(haloMesh);
+
+    const auraMat = new THREE.SpriteMaterial({
+      map: createBillboardAuraTexture(),
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false
+    });
+    const auraSprite = new THREE.Sprite(auraMat);
+    auraSprite.scale.set(4.1, 4.1, 1);
+    auraSprite.renderOrder = -3;
+    scene.add(auraSprite);
+
+    // 7. 360° ORBIT CONTROLS, IDLE FLOAT, HOVER MICRO-TILT & DOUBLE-CLICK RESET
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(INITIAL_TARGET);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 0.9;
+    controls.minDistance = 2.0;
+    controls.maxDistance = 8.5;
+    controls.update();
+
+    let isDragging = false;
+    let isPointerInside = false;
+    let pointerNX = 0;
+    let pointerNY = 0;
+    let isResetting = false;
+
+    const resetStartCam = new THREE.Vector3();
+    const resetStartTarget = new THREE.Vector3();
+    let resetProgress = 0;
+
+    controls.addEventListener('start', () => {
+      isDragging = true;
+      isResetting = false;
+    });
+    controls.addEventListener('end', () => {
+      isDragging = false;
+    });
+
+    const domEl = renderer.domElement;
+    domEl.addEventListener('pointermove', (e) => {
+      isPointerInside = true;
+      pointerNX = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerNY = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+    domEl.addEventListener('pointerleave', () => {
+      isPointerInside = false;
+      pointerNX = 0;
+      pointerNY = 0;
+    });
+    domEl.addEventListener('dblclick', () => {
+      resetStartCam.copy(camera.position);
+      resetStartTarget.copy(controls.target);
+      resetProgress = 0;
+      isResetting = true;
+    });
+
+    // 8. RESIZE & ANIMATION LOOP
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    });
+
+    const clock = new THREE.Clock();
+    const viewDir = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      if (isResetting) {
+        resetProgress = Math.min(resetProgress + dt * 2.4, 1);
+        const ease = 1 - Math.pow(1 - resetProgress, 3);
+        camera.position.lerpVectors(resetStartCam, INITIAL_CAM_POS, ease);
+        controls.target.lerpVectors(resetStartTarget, INITIAL_TARGET, ease);
+        if (resetProgress >= 1) isResetting = false;
+      }
+
+      const idleFloatY = Math.sin(elapsed * 1.45) * 0.022;
+      const idleRotX = Math.sin(elapsed * 0.95) * 0.012;
+      const idleRotY = Math.cos(elapsed * 0.75) * 0.015;
+
+      const targetTiltY = (!isDragging && isPointerInside) ? pointerNX * 0.085 : 0;
+      const targetTiltX = (!isDragging && isPointerInside) ? pointerNY * 0.065 : 0;
+
+      badgeRoot.position.y = THREE.MathUtils.lerp(badgeRoot.position.y, idleFloatY, 0.08);
+      badgeRoot.rotation.x = THREE.MathUtils.lerp(badgeRoot.rotation.x, targetTiltX + idleRotX, 0.07);
+      badgeRoot.rotation.y = THREE.MathUtils.lerp(badgeRoot.rotation.y, targetTiltY + idleRotY, 0.07);
+
+      auraSprite.position.y = badgeRoot.position.y;
+      viewDir.subVectors(camera.position, controls.target).normalize();
+      const edgeFactor = 1.0 - Math.abs(viewDir.z);
+      haloMat.opacity = 0.9 * (1.0 - edgeFactor * 0.65);
+      auraMat.opacity = 0.35 + edgeFactor * 0.25;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

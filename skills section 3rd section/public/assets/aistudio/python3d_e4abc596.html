@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Python — 3D Interactive Model</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      outline: none;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // 1. RENDERER, SCENE & CAMERA
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.setClearColor(0xffffff, 0);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    const INITIAL_CAM_POS = new THREE.Vector3(0, 0, 4.25);
+    const INITIAL_TARGET = new THREE.Vector3(0, 0, 0);
+
+    const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.copy(INITIAL_CAM_POS);
+
+    // 2. PROCEDURAL 360° STUDIO ENVIRONMENT (PMREM) & BALANCED LIGHTING
+    function createStudioEnv(glRenderer) {
+      const pmrem = new THREE.PMREMGenerator(glRenderer);
+      pmrem.compileEquirectangularShader();
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x161c28);
+
+      const addPanel = (w, h, color, intensity, pos) => {
+        const geo = new THREE.PlaneGeometry(w, h);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(color).multiplyScalar(intensity),
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...pos);
+        mesh.lookAt(0, 0, 0);
+        envScene.add(mesh);
+      };
+
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.4, 8]);
+      addPanel(10, 5, 0xffe4a0, 1.4, [0, -3.5, 8]);
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.4, -8]);
+      addPanel(10, 5, 0xffe4a0, 1.4, [0, -3.5, -8]);
+      addPanel(12, 6, 0xfff8e8, 2.0, [0, 8.5, 0]);
+      addPanel(12, 6, 0xd49428, 1.1, [0, -8.5, 0]);
+      addPanel(6, 8, 0xffd275, 1.6, [9, 0.5, 0]);
+      addPanel(6, 8, 0x7cb8ff, 1.5, [-9, 0.5, 0]);
+
+      const rt = pmrem.fromScene(envScene, 0.04);
+      pmrem.dispose();
+      return rt.texture;
+    }
+
+    scene.environment = createStudioEnv(renderer);
+    scene.add(new THREE.AmbientLight(0xfff4e0, 0.85));
+
+    const addDirLight = (color, intensity, pos) => {
+      const l = new THREE.DirectionalLight(color, intensity);
+      l.position.set(...pos);
+      scene.add(l);
+    };
+    addDirLight(0xffffff, 1.38, [2.5, 3.5, 5.5]);
+    addDirLight(0xffcb57, 0.65, [3.5, -2.0, 4.5]);
+    addDirLight(0x6bb8ff, 0.52, [-3.5, -2.0, 4.5]);
+    addDirLight(0xffffff, 1.35, [-2.5, 3.5, -5.5]);
+    addDirLight(0xffcb57, 0.65, [-3.5, -2.0, -4.5]);
+
+    // 3. EXACT BADGE DIMENSIONS & GEOMETRY HELPERS
+    const BADGE_W = 3.00;
+    const BADGE_H = 1.00;
+    const CORNER_R = 0.42;
+    const BODY_DEPTH = 0.12;
+    const BEVEL_THICKNESS = 0.042;
+    const BEVEL_SIZE = 0.036;
+    const TOTAL_HALF_Z = BODY_DEPTH / 2 + BEVEL_THICKNESS;
+
+    function createRoundedRectShape(w, h, r) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const s = new THREE.Shape();
+      s.moveTo(-hw + rad, -hh);
+      s.lineTo(hw - rad, -hh);
+      s.absarc(hw - rad, -hh + rad, rad, -Math.PI / 2, 0, false);
+      s.lineTo(hw, hh - rad);
+      s.absarc(hw - rad, hh - rad, rad, 0, Math.PI / 2, false);
+      s.lineTo(-hw + rad, hh);
+      s.absarc(-hw + rad, hh - rad, rad, Math.PI / 2, Math.PI, false);
+      s.lineTo(-hw, -hh + rad);
+      s.absarc(-hw + rad, -hh + rad, rad, Math.PI, Math.PI * 1.5, false);
+      return s;
+    }
+
+    function createRoundedRectCurvePoints(w, h, r, z = 0) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const pts = [];
+      const cornerSteps = 26;
+      const straightSteps = 10;
+
+      const pushLine = (x0, y0, x1, y1) => {
+        for (let i = 0; i < straightSteps; i++) {
+          const t = i / straightSteps;
+          pts.push(new THREE.Vector3(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z));
+        }
+      };
+      const pushArc = (cx, cy, a0, a1) => {
+        for (let i = 0; i < cornerSteps; i++) {
+          const a = a0 + (a1 - a0) * (i / cornerSteps);
+          pts.push(new THREE.Vector3(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad, z));
+        }
+      };
+
+      pushLine(-hw + rad, -hh, hw - rad, -hh);
+      pushArc(hw - rad, -hh + rad, -Math.PI / 2, 0);
+      pushLine(hw, -hh + rad, hw, hh - rad);
+      pushArc(hw - rad, hh - rad, 0, Math.PI / 2);
+      pushLine(hw - rad, hh, -hw + rad, hh);
+      pushArc(-hw + rad, hh - rad, Math.PI / 2, Math.PI);
+      pushLine(-hw, hh - rad, -hw, -hh + rad);
+      pushArc(-hw + rad, -hh + rad, Math.PI, Math.PI * 1.5);
+      return pts;
+    }
+
+    function strokeRoundedRectCanvas(ctx, x, y, w, h, r) {
+      const rad = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.lineTo(x + w - rad, y);
+      ctx.arcTo(x + w, y, x + w, y + rad, rad);
+      ctx.lineTo(x + w, y + h - rad);
+      ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+      ctx.lineTo(x + rad, y + h);
+      ctx.arcTo(x, y + h, x, y + h - rad, rad);
+      ctx.lineTo(x, y + rad);
+      ctx.arcTo(x, y, x + rad, y, rad);
+      ctx.closePath();
+    }
+
+    // 4. HIGH-DPI PROCEDURAL TEXTURES (2560x854 SUPERSAMPLED, SAFARI-SAFE)
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+    function createSmokyNavyGoldTexture() {
+      const W = 2560;
+      const H = 854;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Deep Navy (left) -> Dark Slate -> Warm Golden-Amber (right)
+      const bg = ctx.createLinearGradient(0, 0, W, H * 0.25);
+      bg.addColorStop(0.00, '#0a1f3a');
+      bg.addColorStop(0.28, '#0c2341');
+      bg.addColorStop(0.50, '#132638');
+      bg.addColorStop(0.70, '#413212');
+      bg.addColorStop(0.88, '#6e500d');
+      bg.addColorStop(1.00, '#86610f');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle atmospheric smoky depth clouds
+      let seed = 4242;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for (let i = 0; i < 55; i++) {
+        const cx = rand() * W;
+        const cy = rand() * H;
+        const rx = 180 + rand() * 400;
+        const ry = 80 + rand() * 190;
+        const angle = (rand() - 0.5) * 0.8;
+        const isWarm = cx > W * 0.52;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.scale(1, ry / rx);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+        if (isWarm) {
+          grad.addColorStop(0, 'rgba(218, 162, 34, 0.14)');
+          grad.addColorStop(0.6, 'rgba(130, 92, 16, 0.05)');
+          grad.addColorStop(1, 'rgba(70, 50, 10, 0)');
+        } else {
+          grad.addColorStop(0, 'rgba(32, 92, 168, 0.14)');
+          grad.addColorStop(0.6, 'rgba(14, 52, 104, 0.06)');
+          grad.addColorStop(1, 'rgba(6, 22, 46, 0)');
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Glossy diagonal glass sheen on upper half (matching reference image)
+      ctx.save();
+      const glossGrad = ctx.createLinearGradient(0, 0, 0, H * 0.62);
+      glossGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.22)');
+      glossGrad.addColorStop(0.35, 'rgba(255, 255, 255, 0.08)');
+      glossGrad.addColorStop(0.85, 'rgba(255, 255, 255, 0.01)');
+      glossGrad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = glossGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(W, 0);
+      ctx.lineTo(W, H * 0.28);
+      ctx.bezierCurveTo(W * 0.65, H * 0.34, W * 0.35, H * 0.56, 0, H * 0.62);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Subtle dark inner bezel shadow + bright top inner highlight
+      const pad = 18;
+      const rPx = (CORNER_R / BADGE_H) * (H - pad * 2);
+      ctx.save();
+      strokeRoundedRectCanvas(ctx, pad, pad, W - pad * 2, H - pad * 2, rPx);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = 45;
+      ctx.lineWidth = 22;
+      ctx.strokeStyle = 'rgba(4, 10, 20, 0.65)';
+      ctx.stroke();
+
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = 'rgba(255, 215, 110, 0.45)';
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(255, 224, 140, 0.35)';
+      ctx.stroke();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAniso;
+      return tex;
+    }
+
+    function createTypographyLayerTextures() {
+      const W = 2560;
+      const H = 854;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const bumpCanvas = document.createElement('canvas');
+      bumpCanvas.width = W;
+      bumpCanvas.height = H;
+      const bCtx = bumpCanvas.getContext('2d');
+
+      ctx.clearRect(0, 0, W, H);
+      bCtx.fillStyle = '#000000';
+      bCtx.fillRect(0, 0, W, H);
+
+      const text = 'Python';
+      const fontFamily = '"Inter", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
+      let fontSize = Math.round(H * 0.47);
+      const maxTextWidth = W * 0.46;
+
+      ctx.font = `600 ${fontSize}px ${fontFamily}`;
+      const measuredW = ctx.measureText(text).width;
+      if (measuredW > maxTextWidth) {
+        fontSize = Math.round(fontSize * (maxTextWidth / measuredW));
+      }
+
+      const fontSpec = `600 ${fontSize}px ${fontFamily}`;
+      ctx.font = fontSpec;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      const textX = W * 0.402;
+      const textY = H * 0.635;
+
+      // Subtle dark drop shadow for crisp separation
+      ctx.save();
+      ctx.shadowColor = 'rgba(10, 14, 22, 0.65)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(text, textX, textY);
+      ctx.restore();
+
+      // Clean white face with soft warm-white edge glow
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 248, 225, 0.40)';
+      ctx.shadowBlur = 5;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(text, textX, textY);
+      ctx.restore();
+
+      bCtx.font = fontSpec;
+      bCtx.textAlign = 'left';
+      bCtx.textBaseline = 'alphabetic';
+      bCtx.shadowColor = 'rgba(200, 200, 200, 0.85)';
+      bCtx.shadowBlur = 6;
+      bCtx.fillStyle = '#ffffff';
+      bCtx.fillText(text, textX, textY);
+
+      const mapTex = new THREE.CanvasTexture(canvas);
+      mapTex.colorSpace = THREE.SRGBColorSpace;
+      mapTex.anisotropy = maxAniso;
+
+      const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+      bumpTex.anisotropy = maxAniso;
+
+      return { mapTex, bumpTex };
+    }
+
+    function createHaloTexture() {
+      const W = 2048;
+      const H = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      const rectW = W * 0.65;
+      const rectH = H * 0.43;
+      const rectX = (W - rectW) / 2;
+      const rectY = (H - rectH) / 2;
+      const rPx = (CORNER_R / BADGE_H) * rectH;
+
+      const passes = [
+        { blur: 135, alpha: 0.28, lw: 34 },
+        { blur: 84,  alpha: 0.38, lw: 26 },
+        { blur: 48,  alpha: 0.48, lw: 18 },
+        { blur: 22,  alpha: 0.56, lw: 12 }
+      ];
+
+      passes.forEach((p) => {
+        ctx.save();
+        strokeRoundedRectCanvas(ctx, rectX, rectY, rectW, rectH, rPx);
+        ctx.shadowColor = `rgba(255, 188, 38, ${p.alpha})`;
+        ctx.shadowBlur = p.blur;
+        ctx.lineWidth = p.lw;
+        ctx.strokeStyle = `rgba(255, 196, 54, ${p.alpha * 0.55})`;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBillboardAuraTexture() {
+      const S = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = S;
+      canvas.height = S;
+      const ctx = canvas.getContext('2d');
+
+      ctx.save();
+      ctx.translate(S / 2, S / 2);
+      ctx.scale(1.0, 0.52);
+      const grad = ctx.createRadialGradient(0, 0, S * 0.14, 0, 0, S * 0.48);
+      grad.addColorStop(0, 'rgba(255, 190, 42, 0.30)');
+      grad.addColorStop(0.45, 'rgba(255, 180, 36, 0.14)');
+      grad.addColorStop(0.75, 'rgba(255, 175, 32, 0.04)');
+      grad.addColorStop(1, 'rgba(255, 175, 32, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, S * 0.48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // 5. BUILD PHYSICAL 3D DOUBLE-SIDED MODEL
+    const badgeRoot = new THREE.Group();
+    scene.add(badgeRoot);
+
+    const smokyBodyTex = createSmokyNavyGoldTexture();
+    const { mapTex: typoColorTex, bumpTex: typoBumpTex } = createTypographyLayerTextures();
+
+    // 5A. Extruded Physical Pill Body with 14-Segment Rounded Bevels
+    const bodyShape = createRoundedRectShape(BADGE_W, BADGE_H, CORNER_R);
+    const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
+      depth: BODY_DEPTH,
+      bevelEnabled: true,
+      bevelThickness: BEVEL_THICKNESS,
+      bevelSize: BEVEL_SIZE,
+      bevelSegments: 14,
+      curveSegments: 56
+    });
+    bodyGeo.center();
+
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x18212d,
+      roughness: 0.18,
+      metalness: 0.25,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06,
+      ior: 1.52,
+      reflectivity: 0.92,
+      envMapIntensity: 1.3
+    });
+
+    badgeRoot.add(new THREE.Mesh(bodyGeo, bodyMaterial));
+
+    // 5B. 3D Polished Golden-Amber Perimeter Bevel Tubes
+    const goldRimMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffca3a,
+      emissive: 0xc97b00,
+      emissiveIntensity: 0.45,
+      roughness: 0.16,
+      metalness: 0.72,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      envMapIntensity: 1.35
+    });
+
+    function createRimTube(w, h, r, zPos, tubeRadius) {
+      const pts = createRoundedRectCurvePoints(w, h, r, zPos);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const geo = new THREE.TubeGeometry(curve, 180, tubeRadius, 14, true);
+      return new THREE.Mesh(geo, goldRimMat);
+    }
+
+    const rimZ = BODY_DEPTH / 2 + BEVEL_THICKNESS * 0.64;
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, rimZ, 0.025));
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, -rimZ, 0.025));
+    badgeRoot.add(createRimTube(BADGE_W + BEVEL_SIZE * 1.85, BADGE_H + BEVEL_SIZE * 1.85, CORNER_R + BEVEL_SIZE * 0.92, 0, 0.020));
+
+    // 5C. Front & Back Face Assemblies (Gradient Glass Plate + 3D Python Snakes + Typography)
+    const bgPlateShape = createRoundedRectShape(BADGE_W - 0.02, BADGE_H - 0.02, CORNER_R - 0.01);
+    const bgPlateGeo = new THREE.ShapeGeometry(bgPlateShape, 56);
+    {
+      const pos = bgPlateGeo.attributes.position;
+      const uv = bgPlateGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / BADGE_W) + 0.5, (pos.getY(i) / BADGE_H) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const bgPlateMat = new THREE.MeshPhysicalMaterial({
+      map: smokyBodyTex,
+      color: 0xffffff,
+      roughness: 0.14,
+      metalness: 0.08,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      ior: 1.52,
+      reflectivity: 0.92,
+      envMapIntensity: 1.3
+    });
+
+    const facePlateShape = createRoundedRectShape(BADGE_W - 0.04, BADGE_H - 0.04, CORNER_R - 0.02);
+    const facePlateGeo = new THREE.ShapeGeometry(facePlateShape, 48);
+    {
+      const pos = facePlateGeo.attributes.position;
+      const uv = facePlateGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / BADGE_W) + 0.5, (pos.getY(i) / BADGE_H) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const typoMaterial = new THREE.MeshPhysicalMaterial({
+      map: typoColorTex,
+      bumpMap: typoBumpTex,
+      bumpScale: 0.008,
+      emissive: 0xfff8ea,
+      emissiveMap: typoColorTex,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      alphaTest: 0.01,
+      roughness: 0.15,
+      metalness: 0.02,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      depthWrite: false
+    });
+
+    // Build 3D Python Dual-Snake Geometry
+    const PY_SCALE = 0.58 / 96;
+    const px = (x) => x * PY_SCALE;
+    const py = (y) => y * PY_SCALE;
+
+    const snakeShape = new THREE.Shape();
+    snakeShape.moveTo(px(-22), py(24.5));
+    snakeShape.lineTo(px(-22), py(33));
+    snakeShape.bezierCurveTo(px(-22), py(42.5), px(-14.5), py(47), px(0), py(47));
+    snakeShape.bezierCurveTo(px(14.5), py(47), px(22), py(42.5), px(22), py(33));
+    snakeShape.lineTo(px(22), py(12));
+    snakeShape.bezierCurveTo(px(22), py(4.5), px(17), py(1.8), px(9), py(1.8));
+    snakeShape.lineTo(px(-12), py(1.8));
+    snakeShape.bezierCurveTo(px(-20), py(1.8), px(-26), py(-2), px(-26), py(-9));
+    snakeShape.lineTo(px(-26), py(-21.5));
+    snakeShape.lineTo(px(-33), py(-21.5));
+    snakeShape.bezierCurveTo(px(-42.5), py(-21.5), px(-47), py(-13.5), px(-47), py(0));
+    snakeShape.bezierCurveTo(px(-47), py(13.5), px(-42.5), py(21.5), px(-33), py(21.5));
+    snakeShape.lineTo(px(-1), py(21.5));
+    snakeShape.lineTo(px(-1), py(24.5));
+    snakeShape.closePath();
+
+    const eyeHole = new THREE.Path();
+    eyeHole.absarc(px(-12), py(36.5), px(3.8), 0, Math.PI * 2, true);
+    snakeShape.holes.push(eyeHole);
+
+    const snakeGeo = new THREE.ExtrudeGeometry(snakeShape, {
+      depth: 0.018,
+      bevelEnabled: true,
+      bevelThickness: 0.006,
+      bevelSize: 0.0032,
+      bevelSegments: 8,
+      curveSegments: 36
+    });
+
+    const blueSnakeMat = new THREE.MeshPhysicalMaterial({
+      color: 0x3b7eb8,
+      emissive: 0x164470,
+      emissiveIntensity: 0.35,
+      roughness: 0.16,
+      metalness: 0.08,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    const yellowSnakeMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffd13b,
+      emissive: 0xb87600,
+      emissiveIntensity: 0.32,
+      roughness: 0.16,
+      metalness: 0.08,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    const eyeBackingGeo = new THREE.CircleGeometry(px(4.2), 24);
+    const eyeBackingMat = new THREE.MeshBasicMaterial({ color: 0x07162b });
+
+    function createPythonLogoGroup() {
+      const logoGroup = new THREE.Group();
+
+      const blueMesh = new THREE.Mesh(snakeGeo, blueSnakeMat);
+      logoGroup.add(blueMesh);
+
+      const yellowMesh = new THREE.Mesh(snakeGeo, yellowSnakeMat);
+      yellowMesh.rotation.z = Math.PI;
+      logoGroup.add(yellowMesh);
+
+      const blueEyeBack = new THREE.Mesh(eyeBackingGeo, eyeBackingMat);
+      blueEyeBack.position.set(px(-12), py(36.5), 0.008);
+      logoGroup.add(blueEyeBack);
+
+      const yellowEyeBack = new THREE.Mesh(eyeBackingGeo, eyeBackingMat);
+      yellowEyeBack.position.set(px(12), py(-36.5), 0.008);
+      logoGroup.add(yellowEyeBack);
+
+      return logoGroup;
+    }
+
+    function createFaceDetailGroup() {
+      const group = new THREE.Group();
+
+      const bgPlate = new THREE.Mesh(bgPlateGeo, bgPlateMat);
+      bgPlate.position.z = TOTAL_HALF_Z + 0.0008;
+      group.add(bgPlate);
+
+      const logoGroup = createPythonLogoGroup();
+      logoGroup.position.set(-0.75, 0.0, TOTAL_HALF_Z + 0.0018);
+      group.add(logoGroup);
+
+      const typoMesh = new THREE.Mesh(facePlateGeo, typoMaterial);
+      typoMesh.position.z = TOTAL_HALF_Z + 0.0032;
+      group.add(typoMesh);
+
+      return group;
+    }
+
+    badgeRoot.add(createFaceDetailGroup());
+
+    const backFace = createFaceDetailGroup();
+    backFace.rotation.y = Math.PI;
+    badgeRoot.add(backFace);
+
+    // 5D. Outer Warm Golden Neon Halo on Pure #FFFFFF Background
+    const haloMat = new THREE.MeshBasicMaterial({
+      map: createHaloTexture(),
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.3), haloMat);
+    haloMesh.renderOrder = -2;
+    badgeRoot.add(haloMesh);
+
+    const auraMat = new THREE.SpriteMaterial({
+      map: createBillboardAuraTexture(),
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false
+    });
+    const auraSprite = new THREE.Sprite(auraMat);
+    auraSprite.scale.set(4.4, 4.4, 1);
+    auraSprite.renderOrder = -3;
+    scene.add(auraSprite);
+
+    // 6. 360° ORBIT CONTROLS, IDLE FLOAT, HOVER MICRO-TILT & DOUBLE-CLICK RESET
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(INITIAL_TARGET);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 0.9;
+    controls.minDistance = 2.0;
+    controls.maxDistance = 8.5;
+    controls.update();
+
+    let isDragging = false;
+    let isPointerInside = false;
+    let pointerNX = 0;
+    let pointerNY = 0;
+    let isResetting = false;
+
+    const resetStartCam = new THREE.Vector3();
+    const resetStartTarget = new THREE.Vector3();
+    let resetProgress = 0;
+
+    controls.addEventListener('start', () => {
+      isDragging = true;
+      isResetting = false;
+    });
+    controls.addEventListener('end', () => {
+      isDragging = false;
+    });
+
+    const domEl = renderer.domElement;
+    domEl.addEventListener('pointermove', (e) => {
+      isPointerInside = true;
+      pointerNX = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerNY = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+    domEl.addEventListener('pointerleave', () => {
+      isPointerInside = false;
+      pointerNX = 0;
+      pointerNY = 0;
+    });
+    domEl.addEventListener('dblclick', () => {
+      resetStartCam.copy(camera.position);
+      resetStartTarget.copy(controls.target);
+      resetProgress = 0;
+      isResetting = true;
+    });
+
+    // 7. RESIZE & ANIMATION LOOP
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    });
+
+    const clock = new THREE.Clock();
+    const viewDir = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      if (isResetting) {
+        resetProgress = Math.min(resetProgress + dt * 2.4, 1);
+        const ease = 1 - Math.pow(1 - resetProgress, 3);
+        camera.position.lerpVectors(resetStartCam, INITIAL_CAM_POS, ease);
+        controls.target.lerpVectors(resetStartTarget, INITIAL_TARGET, ease);
+        if (resetProgress >= 1) isResetting = false;
+      }
+
+      const idleFloatY = Math.sin(elapsed * 1.45) * 0.022;
+      const idleRotX = Math.sin(elapsed * 0.95) * 0.012;
+      const idleRotY = Math.cos(elapsed * 0.75) * 0.015;
+
+      const targetTiltY = (!isDragging && isPointerInside) ? pointerNX * 0.085 : 0;
+      const targetTiltX = (!isDragging && isPointerInside) ? pointerNY * 0.065 : 0;
+
+      badgeRoot.position.y = THREE.MathUtils.lerp(badgeRoot.position.y, idleFloatY, 0.08);
+      badgeRoot.rotation.x = THREE.MathUtils.lerp(badgeRoot.rotation.x, targetTiltX + idleRotX, 0.07);
+      badgeRoot.rotation.y = THREE.MathUtils.lerp(badgeRoot.rotation.y, targetTiltY + idleRotY, 0.07);
+
+      auraSprite.position.y = badgeRoot.position.y;
+      viewDir.subVectors(camera.position, controls.target).normalize();
+      const edgeFactor = 1.0 - Math.abs(viewDir.z);
+      haloMat.opacity = 0.95 * (1.0 - edgeFactor * 0.65);
+      auraMat.opacity = 0.35 + edgeFactor * 0.28;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

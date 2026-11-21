@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PostgreSQL — 3D Interactive Model</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ffffff;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      outline: none;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // 1. RENDERER, SCENE & CAMERA
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.setClearColor(0xffffff, 0);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    const INITIAL_CAM_POS = new THREE.Vector3(0, 0, 4.45);
+    const INITIAL_TARGET = new THREE.Vector3(0, 0, 0);
+
+    const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.copy(INITIAL_CAM_POS);
+
+    // 2. PROCEDURAL 360° STUDIO ENVIRONMENT (PMREM) & BALANCED LIGHTING
+    function createStudioEnv(glRenderer) {
+      const pmrem = new THREE.PMREMGenerator(glRenderer);
+      pmrem.compileEquirectangularShader();
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x07142b);
+
+      const addPanel = (w, h, color, intensity, pos) => {
+        const geo = new THREE.PlaneGeometry(w, h);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(color).multiplyScalar(intensity),
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...pos);
+        mesh.lookAt(0, 0, 0);
+        envScene.add(mesh);
+      };
+
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.2, 8]);
+      addPanel(10, 5, 0xa8ccff, 1.4, [0, -3.5, 8]);
+      addPanel(10, 5, 0xffffff, 2.2, [0, 3.2, -8]);
+      addPanel(10, 5, 0xa8ccff, 1.4, [0, -3.5, -8]);
+      addPanel(12, 6, 0xeaf2ff, 2.0, [0, 8.5, 0]);
+      addPanel(12, 6, 0x4b8cff, 1.15, [0, -8.5, 0]);
+      addPanel(6, 8, 0x7cb0ff, 1.6, [9, 0.5, 0]);
+      addPanel(6, 8, 0x7cb0ff, 1.6, [-9, 0.5, 0]);
+
+      const rt = pmrem.fromScene(envScene, 0.04);
+      pmrem.dispose();
+      return rt.texture;
+    }
+
+    scene.environment = createStudioEnv(renderer);
+    scene.add(new THREE.AmbientLight(0xd8e8ff, 0.88));
+
+    const addDirLight = (color, intensity, pos) => {
+      const l = new THREE.DirectionalLight(color, intensity);
+      l.position.set(...pos);
+      scene.add(l);
+    };
+    addDirLight(0xffffff, 1.35, [2.5, 3.5, 5.5]);
+    addDirLight(0x3b82f6, 0.68, [-3.5, -2.0, 4.5]);
+    addDirLight(0xffffff, 1.35, [-2.5, 3.5, -5.5]);
+    addDirLight(0x3b82f6, 0.68, [3.5, -2.0, -4.5]);
+
+    // 3. EXACT BADGE DIMENSIONS & GEOMETRY HELPERS
+    const BADGE_W = 3.24;
+    const BADGE_H = 1.00;
+    const CORNER_R = 0.32;
+    const BODY_DEPTH = 0.12;
+    const BEVEL_THICKNESS = 0.042;
+    const BEVEL_SIZE = 0.036;
+    const TOTAL_HALF_Z = BODY_DEPTH / 2 + BEVEL_THICKNESS;
+
+    function createRoundedRectShape(w, h, r) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const s = new THREE.Shape();
+      s.moveTo(-hw + rad, -hh);
+      s.lineTo(hw - rad, -hh);
+      s.absarc(hw - rad, -hh + rad, rad, -Math.PI / 2, 0, false);
+      s.lineTo(hw, hh - rad);
+      s.absarc(hw - rad, hh - rad, rad, 0, Math.PI / 2, false);
+      s.lineTo(-hw + rad, hh);
+      s.absarc(-hw + rad, hh - rad, rad, Math.PI / 2, Math.PI, false);
+      s.lineTo(-hw, -hh + rad);
+      s.absarc(-hw + rad, -hh + rad, rad, Math.PI, Math.PI * 1.5, false);
+      return s;
+    }
+
+    function createRoundedRectCurvePoints(w, h, r, z = 0) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const rad = Math.min(r, hw, hh);
+      const pts = [];
+      const cornerSteps = 22;
+      const straightSteps = 10;
+
+      const pushLine = (x0, y0, x1, y1) => {
+        for (let i = 0; i < straightSteps; i++) {
+          const t = i / straightSteps;
+          pts.push(new THREE.Vector3(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z));
+        }
+      };
+      const pushArc = (cx, cy, a0, a1) => {
+        for (let i = 0; i < cornerSteps; i++) {
+          const a = a0 + (a1 - a0) * (i / cornerSteps);
+          pts.push(new THREE.Vector3(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad, z));
+        }
+      };
+
+      pushLine(-hw + rad, -hh, hw - rad, -hh);
+      pushArc(hw - rad, -hh + rad, -Math.PI / 2, 0);
+      pushLine(hw, -hh + rad, hw, hh - rad);
+      pushArc(hw - rad, hh - rad, 0, Math.PI / 2);
+      pushLine(hw - rad, hh, -hw + rad, hh);
+      pushArc(-hw + rad, hh - rad, Math.PI / 2, Math.PI);
+      pushLine(-hw, hh - rad, -hw, -hh + rad);
+      pushArc(-hw + rad, -hh + rad, Math.PI, Math.PI * 1.5);
+      return pts;
+    }
+
+    function strokeRoundedRectCanvas(ctx, x, y, w, h, r) {
+      const rad = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.lineTo(x + w - rad, y);
+      ctx.arcTo(x + w, y, x + w, y + rad, rad);
+      ctx.lineTo(x + w, y + h - rad);
+      ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+      ctx.lineTo(x + rad, y + h);
+      ctx.arcTo(x, y + h, x, y + h - rad, rad);
+      ctx.lineTo(x, y + rad);
+      ctx.arcTo(x, y, x + rad, y, rad);
+      ctx.closePath();
+    }
+
+    // 4. HIGH-DPI PROCEDURAL TEXTURES (SUPERSAMPLED, SAFARI-SAFE)
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+    function createSmokyNavyTexture() {
+      const W = 2560;
+      const H = 790;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#143973');
+      bg.addColorStop(0.35, '#0f2d5e');
+      bg.addColorStop(0.7, '#0a1f45');
+      bg.addColorStop(1, '#123369');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      let seed = 7391;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for (let i = 0; i < 68; i++) {
+        const cx = rand() * W;
+        const cy = rand() * H;
+        const rx = 160 + rand() * 420;
+        const ry = 70 + rand() * 190;
+        const angle = (rand() - 0.5) * 0.85;
+        const isLight = rand() > 0.44;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.scale(1, ry / rx);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+        if (isLight) {
+          grad.addColorStop(0, 'rgba(36, 94, 178, 0.16)');
+          grad.addColorStop(0.55, 'rgba(24, 68, 138, 0.08)');
+          grad.addColorStop(1, 'rgba(15, 45, 94, 0)');
+        } else {
+          grad.addColorStop(0, 'rgba(4, 12, 30, 0.25)');
+          grad.addColorStop(0.6, 'rgba(6, 16, 40, 0.10)');
+          grad.addColorStop(1, 'rgba(6, 16, 40, 0)');
+        }
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Soft inner royal-blue edge glow
+      const pad = 22;
+      const rPx = (CORNER_R / BADGE_H) * (H - pad * 2);
+      ctx.save();
+      strokeRoundedRectCanvas(ctx, pad, pad, W - pad * 2, H - pad * 2, rPx);
+      ctx.shadowColor = 'rgba(45, 125, 255, 0.88)';
+      ctx.shadowBlur = 78;
+      ctx.lineWidth = 20;
+      ctx.strokeStyle = 'rgba(42, 118, 250, 0.55)';
+      ctx.stroke();
+
+      ctx.shadowBlur = 32;
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = 'rgba(72, 148, 255, 0.74)';
+      ctx.stroke();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAniso;
+      return tex;
+    }
+
+    function createTypographyLayerTextures() {
+      const W = 2560;
+      const H = 790;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const bumpCanvas = document.createElement('canvas');
+      bumpCanvas.width = W;
+      bumpCanvas.height = H;
+      const bCtx = bumpCanvas.getContext('2d');
+
+      ctx.clearRect(0, 0, W, H);
+      bCtx.fillStyle = '#000000';
+      bCtx.fillRect(0, 0, W, H);
+
+      const text = 'PostgreSQL';
+      const fontFamily = '"Inter", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif';
+      let fontSize = Math.round(H * 0.415);
+      const maxTextWidth = W * 0.595;
+
+      ctx.font = `600 ${fontSize}px ${fontFamily}`;
+      const measuredW = ctx.measureText(text).width;
+      if (measuredW > maxTextWidth) {
+        fontSize = Math.round(fontSize * (maxTextWidth / measuredW));
+      }
+
+      const fontSpec = `600 ${fontSize}px ${fontFamily}`;
+      ctx.font = fontSpec;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      const textX = W * 0.315;
+      const textY = H * 0.625;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(170, 210, 255, 0.42)';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#F8FBFF';
+      ctx.fillText(text, textX, textY);
+      ctx.restore();
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(text, textX, textY);
+      ctx.restore();
+
+      bCtx.font = fontSpec;
+      bCtx.textAlign = 'left';
+      bCtx.textBaseline = 'alphabetic';
+      bCtx.shadowColor = 'rgba(200, 200, 200, 0.85)';
+      bCtx.shadowBlur = 6;
+      bCtx.fillStyle = '#ffffff';
+      bCtx.fillText(text, textX, textY);
+
+      const mapTex = new THREE.CanvasTexture(canvas);
+      mapTex.colorSpace = THREE.SRGBColorSpace;
+      mapTex.anisotropy = maxAniso;
+
+      const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+      bumpTex.anisotropy = maxAniso;
+
+      return { mapTex, bumpTex };
+    }
+
+    function createHaloTexture() {
+      const W = 2048;
+      const H = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      const rectW = W * 0.675;
+      const rectH = H * 0.425;
+      const rectX = (W - rectW) / 2;
+      const rectY = (H - rectH) / 2;
+      const rPx = (CORNER_R / BADGE_H) * rectH;
+
+      const passes = [
+        { blur: 130, alpha: 0.24, lw: 34 },
+        { blur: 82,  alpha: 0.34, lw: 26 },
+        { blur: 46,  alpha: 0.44, lw: 18 },
+        { blur: 22,  alpha: 0.52, lw: 12 }
+      ];
+
+      passes.forEach((p) => {
+        ctx.save();
+        strokeRoundedRectCanvas(ctx, rectX, rectY, rectW, rectH, rPx);
+        ctx.shadowColor = `rgba(48, 128, 255, ${p.alpha})`;
+        ctx.shadowBlur = p.blur;
+        ctx.lineWidth = p.lw;
+        ctx.strokeStyle = `rgba(48, 128, 255, ${p.alpha * 0.55})`;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBillboardAuraTexture() {
+      const S = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = S;
+      canvas.height = S;
+      const ctx = canvas.getContext('2d');
+
+      ctx.save();
+      ctx.translate(S / 2, S / 2);
+      ctx.scale(1.0, 0.52);
+      const grad = ctx.createRadialGradient(0, 0, S * 0.14, 0, 0, S * 0.48);
+      grad.addColorStop(0, 'rgba(48, 128, 255, 0.28)');
+      grad.addColorStop(0.45, 'rgba(48, 128, 255, 0.13)');
+      grad.addColorStop(0.75, 'rgba(48, 128, 255, 0.04)');
+      grad.addColorStop(1, 'rgba(48, 128, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, S * 0.48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // 5. BUILD PHYSICAL 3D DOUBLE-SIDED MODEL
+    const badgeRoot = new THREE.Group();
+    scene.add(badgeRoot);
+
+    const smokyNavyTex = createSmokyNavyTexture();
+    const { mapTex: typoColorTex, bumpTex: typoBumpTex } = createTypographyLayerTextures();
+
+    // 5A. Extruded Physical Pill Body with 14-Segment Rounded Bevels
+    const bodyShape = createRoundedRectShape(BADGE_W, BADGE_H, CORNER_R);
+    const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
+      depth: BODY_DEPTH,
+      bevelEnabled: true,
+      bevelThickness: BEVEL_THICKNESS,
+      bevelSize: BEVEL_SIZE,
+      bevelSegments: 14,
+      curveSegments: 56
+    });
+    bodyGeo.center();
+
+    {
+      const pos = bodyGeo.attributes.position;
+      const uv = bodyGeo.attributes.uv;
+      const totalW = BADGE_W + BEVEL_SIZE * 2;
+      const totalH = BADGE_H + BEVEL_SIZE * 2;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / totalW) + 0.5, (pos.getY(i) / totalH) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+      map: smokyNavyTex,
+      color: 0xffffff,
+      roughness: 0.16,
+      metalness: 0.08,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06,
+      ior: 1.52,
+      reflectivity: 0.92,
+      envMapIntensity: 1.3
+    });
+
+    badgeRoot.add(new THREE.Mesh(bodyGeo, bodyMaterial));
+
+    // 5B. 3D Royal-Blue Perimeter Bevel Tubes
+    const neonBlueMat = new THREE.MeshPhysicalMaterial({
+      color: 0x3b82f6,
+      emissive: 0x1d68eb,
+      emissiveIntensity: 0.92,
+      roughness: 0.15,
+      metalness: 0.05,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      envMapIntensity: 1.15
+    });
+
+    function createRimTube(w, h, r, zPos, tubeRadius) {
+      const pts = createRoundedRectCurvePoints(w, h, r, zPos);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const geo = new THREE.TubeGeometry(curve, 180, tubeRadius, 14, true);
+      return new THREE.Mesh(geo, neonBlueMat);
+    }
+
+    const rimZ = BODY_DEPTH / 2 + BEVEL_THICKNESS * 0.64;
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, rimZ, 0.022));
+    badgeRoot.add(createRimTube(BADGE_W + 0.022, BADGE_H + 0.022, CORNER_R + 0.011, -rimZ, 0.022));
+    badgeRoot.add(createRimTube(BADGE_W + BEVEL_SIZE * 1.85, BADGE_H + BEVEL_SIZE * 1.85, CORNER_R + BEVEL_SIZE * 0.92, 0, 0.018));
+
+    // 5C. Front & Back Raised Face Assemblies (3D PostgreSQL Elephant Emblem + Supersampled Typography)
+    const facePlateShape = createRoundedRectShape(BADGE_W - 0.04, BADGE_H - 0.04, CORNER_R - 0.02);
+    const facePlateGeo = new THREE.ShapeGeometry(facePlateShape, 48);
+    {
+      const pos = facePlateGeo.attributes.position;
+      const uv = facePlateGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) / BADGE_W) + 0.5, (pos.getY(i) / BADGE_H) + 0.5);
+      }
+      uv.needsUpdate = true;
+    }
+
+    const typoMaterial = new THREE.MeshPhysicalMaterial({
+      map: typoColorTex,
+      bumpMap: typoBumpTex,
+      bumpScale: 0.008,
+      emissive: 0xeef5ff,
+      emissiveMap: typoColorTex,
+      emissiveIntensity: 0.42,
+      transparent: true,
+      alphaTest: 0.01,
+      roughness: 0.15,
+      metalness: 0.02,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      depthWrite: false
+    });
+
+    // Self-contained SVG Bezier Parser & 3D PostgreSQL Elephant ("Slonik") Builder
+    const SVG_CX = 432.071 / 2;
+    const SVG_CY = 445.383 / 2;
+    const ICON_SCALE = 0.635 / 445.383;
+
+    const toIconV2 = (p) => new THREE.Vector2((p.x - SVG_CX) * ICON_SCALE, -(p.y - CY_SAFE(SVG_CY)) * ICON_SCALE);
+    function CY_SAFE(v) { return v; }
+    const toIconV3 = (p, z = 0) => new THREE.Vector3((p.x - SVG_CX) * ICON_SCALE, -(p.y - SVG_CY) * ICON_SCALE, z);
+
+    function parseSvgSubPaths(d) {
+      const tokens = d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) || [];
+      const subPaths = [];
+      let idx = 0;
+      let cmd = '';
+      let cx = 0, cy = 0;
+      let sx = 0, sy = 0;
+      let lastCpX = 0, lastCpY = 0;
+      let prevCmd = '';
+      let current = null;
+
+      const isCmd = (t) => /^[a-zA-Z]$/.test(t);
+      const nextNum = () => parseFloat(tokens[idx++]);
+
+      while (idx < tokens.length) {
+        if (isCmd(tokens[idx])) {
+          cmd = tokens[idx++];
+          if (cmd === 'Z' || cmd === 'z') {
+            if (current) {
+              if (Math.hypot(cx - sx, cy - sy) > 0.05) {
+                current.segments.push({ type: 'L', p0: { x: cx, y: cy }, p1: { x: sx, y: sy } });
+              }
+              current.closed = true;
+            }
+            cx = sx;
+            cy = sy;
+            prevCmd = cmd;
+            continue;
+          }
+        } else {
+          if (cmd === 'M') cmd = 'L';
+          else if (cmd === 'm') cmd = 'l';
+        }
+
+        if (cmd === 'M' || cmd === 'm') {
+          const nx = nextNum() + (cmd === 'm' ? cx : 0);
+          const ny = nextNum() + (cmd === 'm' ? cy : 0);
+          cx = sx = nx;
+          cy = sy = ny;
+          current = { closed: false, segments: [] };
+          subPaths.push(current);
+          prevCmd = cmd;
+        } else if (cmd === 'L' || cmd === 'l') {
+          const nx = nextNum() + (cmd === 'l' ? cx : 0);
+          const ny = nextNum() + (cmd === 'l' ? cy : 0);
+          if (current) current.segments.push({ type: 'L', p0: { x: cx, y: cy }, p1: { x: nx, y: ny } });
+          cx = nx;
+          cy = ny;
+          prevCmd = cmd;
+        } else if (cmd === 'C' || cmd === 'c') {
+          const rel = cmd === 'c';
+          const x1 = nextNum() + (rel ? cx : 0);
+          const y1 = nextNum() + (rel ? cy : 0);
+          const x2 = nextNum() + (rel ? cx : 0);
+          const y2 = nextNum() + (rel ? cy : 0);
+          const x  = nextNum() + (rel ? cx : 0);
+          const y  = nextNum() + (rel ? cy : 0);
+          if (current) {
+            current.segments.push({
+              type: 'C',
+              p0: { x: cx, y: cy },
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x, y }
+            });
+          }
+          lastCpX = x2;
+          lastCpY = y2;
+          cx = x;
+          cy = y;
+          prevCmd = cmd;
+        } else if (cmd === 'S' || cmd === 's') {
+          const rel = cmd === 's';
+          const isPrevC = prevCmd === 'C' || prevCmd === 'c' || prevCmd === 'S' || prevCmd === 's';
+          const x1 = isPrevC ? 2 * cx - lastCpX : cx;
+          const y1 = isPrevC ? 2 * cy - lastCpY : cy;
+          const x2 = nextNum() + (rel ? cx : 0);
+          const y2 = nextNum() + (rel ? cy : 0);
+          const x  = nextNum() + (rel ? cx : 0);
+          const y  = nextNum() + (rel ? cy : 0);
+          if (current) {
+            current.segments.push({
+              type: 'C',
+              p0: { x: cx, y: cy },
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x, y }
+            });
+          }
+          lastCpX = x2;
+          lastCpY = y2;
+          cx = x;
+          cy = y;
+          prevCmd = cmd;
+        } else {
+          idx++;
+        }
+      }
+      return subPaths;
+    }
+
+    function evalCubic2D(seg, t) {
+      const u = 1 - t;
+      const u2 = u * u;
+      const t2 = t * t;
+      return {
+        x: u2 * u * seg.p0.x + 3 * u2 * t * seg.p1.x + 3 * u * t2 * seg.p2.x + t2 * t * seg.p3.x,
+        y: u2 * u * seg.p0.y + 3 * u2 * t * seg.p1.y + 3 * u * t2 * seg.p2.y + t2 * t * seg.p3.y
+      };
+    }
+
+    function sampleSegmentPts2D(seg, steps = 12) {
+      const pts = [];
+      if (seg.type === 'L') {
+        pts.push(toIconV2(seg.p0), toIconV2(seg.p1));
+      } else {
+        for (let i = 0; i <= steps; i++) {
+          pts.push(toIconV2(evalCubic2D(seg, i / steps)));
+        }
+      }
+      return pts;
+    }
+
+    function buildShapePointsFromD(dAttr, steps = 12) {
+      const sub = parseSvgSubPaths(dAttr)[0];
+      const clean = [];
+      sub.segments.forEach((seg) => {
+        const pts = sampleSegmentPts2D(seg, steps);
+        pts.forEach((pt) => {
+          if (clean.length === 0 || clean[clean.length - 1].distanceTo(pt) > 0.0012) {
+            clean.push(pt);
+          }
+        });
+      });
+      if (clean.length > 2 && clean[0].distanceTo(clean[clean.length - 1]) < 0.0012) {
+        clean.pop();
+      }
+      return clean;
+    }
+
+    function getSegEndTangentV2(seg, atEnd) {
+      if (seg.type === 'L') {
+        const v = toIconV2(seg.p1).sub(toIconV2(seg.p0));
+        return v.length() > 1e-6 ? v.normalize() : new THREE.Vector2(1, 0);
+      }
+      const a = atEnd ? toIconV2(evalCubic2D(seg, 0.97)) : toIconV2(seg.p0);
+      const b = atEnd ? toIconV2(seg.p3) : toIconV2(evalCubic2D(seg, 0.03));
+      const v = b.sub(a);
+      if (v.length() > 1e-6) return v.normalize();
+      const fallback = toIconV2(seg.p3).sub(toIconV2(seg.p0));
+      return fallback.length() > 1e-6 ? fallback.normalize() : new THREE.Vector2(1, 0);
+    }
+
+    function buildStrokeMeshesFromPath(dAttr, radius, zScale, material) {
+      const group = new THREE.Group();
+      const subPaths = parseSvgSubPaths(dAttr);
+      const capGeo = new THREE.SphereGeometry(radius, 10, 10);
+      capGeo.scale(1, 1, zScale);
+
+      subPaths.forEach((sub) => {
+        if (sub.segments.length === 0) return;
+
+        // Split at sharp corners so CatmullRomCurve3 + TubeGeometry never twists or overshoots
+        const runs = [[sub.segments[0]]];
+        for (let i = 1; i < sub.segments.length; i++) {
+          const tPrev = getSegEndTangentV2(sub.segments[i - 1], true);
+          const tNext = getSegEndTangentV2(sub.segments[i], false);
+          if (tPrev.dot(tNext) < 0.85) {
+            runs.push([sub.segments[i]]);
+          } else {
+            runs[runs.length - 1].push(sub.segments[i]);
+          }
+        }
+
+        runs.forEach((segs) => {
+          const pts3D = [];
+          segs.forEach((seg) => {
+            const raw = sampleSegmentPts2D(seg, 12);
+            raw.forEach((p2) => {
+              const p3 = new THREE.Vector3(p2.x, p2.y, 0);
+              if (pts3D.length === 0 || pts3D[pts3D.length - 1].distanceTo(p3) > 0.002) {
+                pts3D.push(p3);
+              }
+            });
+          });
+          // Ensure exact endpoint is included
+          const lastSeg = segs[segs.length - 1];
+          const endP = toIconV3(lastSeg.type === 'L' ? lastSeg.p1 : lastSeg.p3, 0);
+          if (pts3D.length > 0 && pts3D[pts3D.length - 1].distanceTo(endP) > 0.0005) {
+            pts3D.push(endP);
+          }
+          if (pts3D.length < 2) return;
+
+          const curve = new THREE.CatmullRomCurve3(pts3D, false);
+          const len = curve.getLength();
+          if (len < 1e-5) return;
+
+          const tubeSegs = Math.max(12, Math.round(len * 220));
+          const tubeGeo = new THREE.TubeGeometry(curve, tubeSegs, radius, 10, false);
+          tubeGeo.scale(1, 1, zScale);
+          group.add(new THREE.Mesh(tubeGeo, material));
+
+          const startCap = new THREE.Mesh(capGeo, material);
+          startCap.position.copy(pts3D[0]);
+          group.add(startCap);
+
+          const endCap = new THREE.Mesh(capGeo, material);
+          endCap.position.copy(pts3D[pts3D.length - 1]);
+          group.add(endCap);
+        });
+      });
+
+      return group;
+    }
+
+    // Official PostgreSQL Elephant ("Slonik") SVG paths
+    const BODY_D = 'M402.395 271.23c-50.302 10.376-53.76-6.655-53.76-6.655 53.111-78.808 75.313-178.843 56.153-203.326-52.27-66.785-142.752-35.2-144.262-34.38l-.486.087c-9.938-2.063-21.06-3.292-33.56-3.496-22.761-.373-40.026 5.967-53.127 15.902 0 0-161.411-66.495-153.904 83.63 1.597 31.938 45.776 241.657 98.471 178.312 19.26-23.163 37.869-42.748 37.869-42.748 9.243 6.14 20.308 9.272 31.908 8.147l.901-.765c-.28 2.876-.152 5.689.361 9.019-13.575 15.167-9.586 17.83-36.723 23.416-27.459 5.659-11.328 15.734-.796 18.367 12.768 3.193 42.307 7.716 62.266-20.224l-.796 3.188c5.319 4.26 9.054 27.711 8.428 48.969-.626 21.259-1.044 35.854 3.147 47.254 4.191 11.4 8.368 37.05 44.042 29.406 29.809-6.388 45.256-22.942 47.405-50.555 1.525-19.631 4.976-16.729 5.194-34.28l2.768-8.309c3.192-26.611.507-35.196 18.872-31.203l4.463.392c13.517.615 31.208-2.174 41.591-7 22.358-10.376 35.618-27.7 13.573-23.148z';
+
+    const LINEWORK_D = [
+      'M215.866 286.484c-1.385 49.516.348 99.377 5.193 111.495 4.848 12.118 15.223 35.688 50.9 28.045 29.806-6.39 40.651-18.756 45.357-46.051 3.466-20.082 10.148-75.854 11.005-87.281',
+      'M173.104 38.256S11.583-27.76 19.092 122.365c1.597 31.938 45.779 241.664 98.473 178.316 19.256-23.166 36.671-41.335 36.671-41.335',
+      'M260.349 26.207c-5.591 1.753 89.848-34.889 144.087 34.417 19.159 24.484-3.043 124.519-56.153 203.329',
+      'M348.282 263.953s3.461 17.036 53.764 6.653c22.04-4.552 8.776 12.774-13.577 23.155-18.345 8.514-59.474 10.696-60.146-1.069-1.729-30.355 21.647-21.133 19.96-28.739-1.525-6.85-11.979-13.573-18.894-30.338-6.037-14.633-82.796-126.849 21.287-110.183 3.813-.789-27.146-99.002-124.553-100.599-97.385-1.597-94.19 119.762-94.19 119.762',
+      'M188.604 274.334c-13.577 15.166-9.584 17.829-36.723 23.417-27.459 5.66-11.326 15.733-.797 18.365 12.768 3.195 42.307 7.718 62.266-20.229 6.078-8.509-.036-22.086-8.385-25.547-4.034-1.671-9.428-3.765-16.361 3.994z',
+      'M187.715 274.069c-1.368-8.917 2.93-19.528 7.536-31.942 6.922-18.626 22.893-37.255 10.117-96.339-9.523-44.029-73.396-9.163-73.436-3.193-.039 5.968 2.889 30.26-1.067 58.548-5.162 36.913 23.488 68.132 56.479 64.938',
+      'M350.676 123.432c.863 15.994-3.445 26.888-3.988 43.914-.804 24.748 11.799 53.074-7.191 81.435'
+    ].join(' ');
+
+    const LEFT_TUSK_D = 'M188.604 274.334c-13.577 15.166-9.584 17.829-36.723 23.417-27.459 5.66-11.326 15.733-.797 18.365 12.768 3.195 42.307 7.718 62.266-20.229 6.078-8.509-.036-22.086-8.385-25.547-4.034-1.671-9.428-3.765-16.361 3.994z';
+    const RIGHT_TUSK_D = 'M348.282 263.953s3.461 17.036 53.764 6.653c22.04-4.552 8.776 12.774-13.577 23.155-18.345 8.514-59.474 10.696-60.146-1.069-1.729-30.355 21.647-21.133 19.96-28.739z';
+    const LEFT_EYE_D = 'M172.517 141.7c-.288 2.039 3.733 7.48 8.976 8.207 5.234.73 9.714-3.522 9.998-5.559.284-2.039-3.732-4.285-8.977-5.015-5.237-.731-9.719.333-9.996 2.367z';
+    const RIGHT_EYE_D = 'M331.941 137.543c.284 2.039-3.732 7.48-8.976 8.207-5.238.73-9.718-3.522-10.005-5.559-.277-2.039 3.74-4.285 8.979-5.015 5.239-.73 9.718.333 10.002 2.368z';
+
+    const bodyPts2D = buildShapePointsFromD(BODY_D, 10);
+    const bodyShapeSvg = new THREE.Shape(bodyPts2D);
+    const bodyPerimeterPts = bodyPts2D.map((p) => new THREE.Vector3(p.x, p.y, 0));
+    const bodyPerimeterCurve = new THREE.CatmullRomCurve3(bodyPerimeterPts, true);
+
+    // 1. Outermost White Silhouette Backing + White Border Tube
+    const whiteBackFillGeo = new THREE.ExtrudeGeometry(bodyShapeSvg, {
+      depth: 0.006,
+      bevelEnabled: false
+    });
+    const whiteBackTubeGeo = new THREE.TubeGeometry(bodyPerimeterCurve, 280, 0.0285, 10, true);
+    whiteBackTubeGeo.scale(1, 1, 0.22);
+
+    // 2. Crisp Black Inner Outline Backing + Black Border Tube
+    const blackOutlineFillGeo = new THREE.ExtrudeGeometry(bodyShapeSvg, {
+      depth: 0.008,
+      bevelEnabled: false
+    });
+    const blackOutlineTubeGeo = new THREE.TubeGeometry(bodyPerimeterCurve, 280, 0.0165, 10, true);
+    blackOutlineTubeGeo.scale(1, 1, 0.34);
+
+    // 3. Steel Blue Elephant Body (#336791)
+    const elephantBlueGeo = new THREE.ExtrudeGeometry(bodyShapeSvg, {
+      depth: 0.010,
+      bevelEnabled: true,
+      bevelThickness: 0.0032,
+      bevelSize: 0.0024,
+      bevelSegments: 5
+    });
+
+    // 4. White Tusks & Eyes
+    const leftTuskGeo = new THREE.ExtrudeGeometry(new THREE.Shape(buildShapePointsFromD(LEFT_TUSK_D, 10)), {
+      depth: 0.006,
+      bevelEnabled: true,
+      bevelThickness: 0.002,
+      bevelSize: 0.0016,
+      bevelSegments: 4
+    });
+
+    const rightTuskGeo = new THREE.ExtrudeGeometry(new THREE.Shape(buildShapePointsFromD(RIGHT_TUSK_D, 10)), {
+      depth: 0.006,
+      bevelEnabled: true,
+      bevelThickness: 0.002,
+      bevelSize: 0.0016,
+      bevelSegments: 4
+    });
+
+    const leftEyeGeo = new THREE.ExtrudeGeometry(new THREE.Shape(buildShapePointsFromD(LEFT_EYE_D, 8)), {
+      depth: 0.006,
+      bevelEnabled: true,
+      bevelThickness: 0.0025,
+      bevelSize: 0.0035,
+      bevelSegments: 4
+    });
+
+    const rightEyeGeo = new THREE.ExtrudeGeometry(new THREE.Shape(buildShapePointsFromD(RIGHT_EYE_D, 8)), {
+      depth: 0.006,
+      bevelEnabled: true,
+      bevelThickness: 0.0025,
+      bevelSize: 0.0035,
+      bevelSegments: 4
+    });
+
+    const pupilGeo = new THREE.CylinderGeometry(0.0052, 0.0052, 0.004, 16);
+    pupilGeo.rotateX(Math.PI / 2);
+
+    // Materials for the 3D PostgreSQL Elephant Emblem
+    const whiteElephantMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      emissive: 0xdbeafe,
+      emissiveIntensity: 0.24,
+      roughness: 0.16,
+      metalness: 0.02,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    const blackOutlineMat = new THREE.MeshPhysicalMaterial({
+      color: 0x090e17,
+      emissive: 0x03060c,
+      emissiveIntensity: 0.22,
+      roughness: 0.22,
+      metalness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08
+    });
+
+    const elephantBlueMat = new THREE.MeshPhysicalMaterial({
+      color: 0x336791,
+      emissive: 0x133352,
+      emissiveIntensity: 0.36,
+      roughness: 0.18,
+      metalness: 0.06,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    function createPostgresIcon3D() {
+      const iconGroup = new THREE.Group();
+
+      // White outer border layer
+      const whiteFillMesh = new THREE.Mesh(whiteBackFillGeo, whiteElephantMat);
+      whiteFillMesh.position.z = 0.001;
+      iconGroup.add(whiteFillMesh);
+
+      const whiteTubeMesh = new THREE.Mesh(whiteBackTubeGeo, whiteElephantMat);
+      whiteTubeMesh.position.z = 0.005;
+      iconGroup.add(whiteTubeMesh);
+
+      // Black outline layer
+      const blackFillMesh = new THREE.Mesh(blackOutlineFillGeo, blackOutlineMat);
+      blackFillMesh.position.z = 0.004;
+      iconGroup.add(blackFillMesh);
+
+      const blackTubeMesh = new THREE.Mesh(blackOutlineTubeGeo, blackOutlineMat);
+      blackTubeMesh.position.z = 0.011;
+      iconGroup.add(blackTubeMesh);
+
+      // Steel blue elephant body
+      const blueBodyMesh = new THREE.Mesh(elephantBlueGeo, elephantBlueMat);
+      blueBodyMesh.position.z = 0.014;
+      iconGroup.add(blueBodyMesh);
+
+      // White tusks fill
+      const lTuskMesh = new THREE.Mesh(leftTuskGeo, whiteElephantMat);
+      lTuskMesh.position.z = 0.022;
+      iconGroup.add(lTuskMesh);
+
+      const rTuskMesh = new THREE.Mesh(rightTuskGeo, whiteElephantMat);
+      rTuskMesh.position.z = 0.022;
+      iconGroup.add(rTuskMesh);
+
+      // White linework strokes (ears, forehead, trunk, tusks)
+      const strokeRadius = 6.23 * ICON_SCALE;
+      const lineworkGroup = buildStrokeMeshesFromPath(LINEWORK_D, strokeRadius, 0.44, whiteElephantMat);
+      lineworkGroup.position.z = 0.0275;
+      iconGroup.add(lineworkGroup);
+
+      // White eyes + dark pupils
+      const lEyeMesh = new THREE.Mesh(leftEyeGeo, whiteElephantMat);
+      lEyeMesh.position.z = 0.0235;
+      iconGroup.add(lEyeMesh);
+
+      const rEyeMesh = new THREE.Mesh(rightEyeGeo, whiteElephantMat);
+      rEyeMesh.position.z = 0.0235;
+      iconGroup.add(rEyeMesh);
+
+      const lPupilPos = toIconV3({ x: 182.0, y: 144.4 }, 0.032);
+      const lPupil = new THREE.Mesh(pupilGeo, blackOutlineMat);
+      lPupil.position.copy(lPupilPos);
+      iconGroup.add(lPupil);
+
+      const rPupilPos = toIconV3({ x: 322.5, y: 140.2 }, 0.032);
+      const rPupil = new THREE.Mesh(pupilGeo, blackOutlineMat);
+      rPupil.position.copy(rPupilPos);
+      iconGroup.add(rPupil);
+
+      return iconGroup;
+    }
+
+    function createFaceDetailGroup() {
+      const group = new THREE.Group();
+
+      const typoMesh = new THREE.Mesh(facePlateGeo, typoMaterial);
+      typoMesh.position.z = TOTAL_HALF_Z + 0.0025;
+      group.add(typoMesh);
+
+      const iconGroup = createPostgresIcon3D();
+      iconGroup.position.set(-1.04, 0.0, TOTAL_HALF_Z + 0.0005);
+      group.add(iconGroup);
+
+      return group;
+    }
+
+    badgeRoot.add(createFaceDetailGroup());
+
+    const backFace = createFaceDetailGroup();
+    backFace.rotation.y = Math.PI;
+    badgeRoot.add(backFace);
+
+    // 5D. Outer Royal-Blue Neon Halo on Pure #FFFFFF Background
+    const haloMat = new THREE.MeshBasicMaterial({
+      map: createHaloTexture(),
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 2.35), haloMat);
+    haloMesh.renderOrder = -2;
+    badgeRoot.add(haloMesh);
+
+    const auraMat = new THREE.SpriteMaterial({
+      map: createBillboardAuraTexture(),
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false
+    });
+    const auraSprite = new THREE.Sprite(auraMat);
+    auraSprite.scale.set(4.6, 4.6, 1);
+    auraSprite.renderOrder = -3;
+    scene.add(auraSprite);
+
+    // 6. 360° ORBIT CONTROLS, IDLE FLOAT, HOVER MICRO-TILT & DOUBLE-CLICK RESET
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(INITIAL_TARGET);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 0.9;
+    controls.minDistance = 2.0;
+    controls.maxDistance = 8.5;
+    controls.update();
+
+    let isDragging = false;
+    let isPointerInside = false;
+    let pointerNX = 0;
+    let pointerNY = 0;
+    let isResetting = false;
+
+    const resetStartCam = new THREE.Vector3();
+    const resetStartTarget = new THREE.Vector3();
+    let resetProgress = 0;
+
+    controls.addEventListener('start', () => {
+      isDragging = true;
+      isResetting = false;
+    });
+    controls.addEventListener('end', () => {
+      isDragging = false;
+    });
+
+    const domEl = renderer.domElement;
+    domEl.addEventListener('pointermove', (e) => {
+      isPointerInside = true;
+      pointerNX = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerNY = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+    domEl.addEventListener('pointerleave', () => {
+      isPointerInside = false;
+      pointerNX = 0;
+      pointerNY = 0;
+    });
+    domEl.addEventListener('dblclick', () => {
+      resetStartCam.copy(camera.position);
+      resetStartTarget.copy(controls.target);
+      resetProgress = 0;
+      isResetting = true;
+    });
+
+    // 7. RESIZE & ANIMATION LOOP
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    });
+
+    const clock = new THREE.Clock();
+    const viewDir = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+
+      if (isResetting) {
+        resetProgress = Math.min(resetProgress + dt * 2.4, 1);
+        const ease = 1 - Math.pow(1 - resetProgress, 3);
+        camera.position.lerpVectors(resetStartCam, INITIAL_CAM_POS, ease);
+        controls.target.lerpVectors(resetStartTarget, INITIAL_TARGET, ease);
+        if (resetProgress >= 1) isResetting = false;
+      }
+
+      const idleFloatY = Math.sin(elapsed * 1.45) * 0.022;
+      const idleRotX = Math.sin(elapsed * 0.95) * 0.012;
+      const idleRotY = Math.cos(elapsed * 0.75) * 0.015;
+
+      const targetTiltY = (!isDragging && isPointerInside) ? pointerNX * 0.085 : 0;
+      const targetTiltX = (!isDragging && isPointerInside) ? pointerNY * 0.065 : 0;
+
+      badgeRoot.position.y = THREE.MathUtils.lerp(badgeRoot.position.y, idleFloatY, 0.08);
+      badgeRoot.rotation.x = THREE.MathUtils.lerp(badgeRoot.rotation.x, targetTiltX + idleRotX, 0.07);
+      badgeRoot.rotation.y = THREE.MathUtils.lerp(badgeRoot.rotation.y, targetTiltY + idleRotY, 0.07);
+
+      auraSprite.position.y = badgeRoot.position.y;
+      viewDir.subVectors(camera.position, controls.target).normalize();
+      const edgeFactor = 1.0 - Math.abs(viewDir.z);
+      haloMat.opacity = 0.95 * (1.0 - edgeFactor * 0.65);
+      auraMat.opacity = 0.35 + edgeFactor * 0.28;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
