@@ -385,14 +385,21 @@ export const ProjectsSection: React.FC = () => {
     function fitStageToViewport() {
       if (!scalerEl || !viewportEl) return;
       const winW = window.innerWidth || document.documentElement.clientWidth || 1280;
-      const availableW = Math.min(winW - 28, 1280);
-      const scale = Math.max(0.28, Math.min(1, availableW / 1250));
-      scalerEl.style.transform = `scale(${scale})`;
-      viewportEl.style.height = `${Math.round(540 * scale)}px`;
+      if (winW < 640) {
+        // On mobile: let the card drive height, no scaler transform
+        scalerEl.style.transform = 'scale(1)';
+        viewportEl.style.height = '480px';
+      } else {
+        const availableW = Math.min(winW - 28, 1280);
+        const scale = Math.max(0.28, Math.min(1, availableW / 1250));
+        scalerEl.style.transform = `scale(${scale})`;
+        viewportEl.style.height = `${Math.round(540 * scale)}px`;
+      }
     }
 
     function updateCarousel(animateMeta = true) {
       const activeIdx = activeIndexRef.current;
+      const isMobile = window.innerWidth < 640;
       cardEls.forEach((card, i) => {
         let diff = (i - activeIdx + total) % total;
         if (diff > total / 2) diff -= total;
@@ -407,49 +414,62 @@ export const ProjectsSection: React.FC = () => {
           z = 10,
           pe = 'auto';
 
-        if (diff === 0) {
-          tx = 0;
-          ty = 42;
-          ry = 0;
-          sc = 1;
-          op = 1;
-          z = 30;
-        } else if (diff === -1) {
-          tx = -286;
-          ty = -18;
-          ry = 22;
-          sc = 0.92;
-          op = 0.95;
-          z = 20;
-        } else if (diff === 1) {
-          tx = 286;
-          ty = -18;
-          ry = -22;
-          sc = 0.92;
-          op = 0.95;
-          z = 20;
-        } else if (diff === -2) {
-          tx = -526;
-          ty = -34;
-          ry = 25;
-          sc = 0.8;
-          op = 0.88;
-          z = 10;
-        } else if (diff === 2) {
-          tx = 526;
-          ty = -34;
-          ry = -25;
-          sc = 0.8;
-          op = 0.88;
-          z = 10;
+        if (isMobile) {
+          // Stacked peekaboo layout for mobile — Apple Books style
+          if (diff === 0) {
+            tx = 0; ty = 0; ry = 0; sc = 1; op = 1; z = 30;
+          } else if (diff === -1) {
+            tx = -18; ty = 10; ry = 10; sc = 0.9; op = 0.65; z = 20;
+          } else if (diff === 1) {
+            tx = 18; ty = 10; ry = -10; sc = 0.9; op = 0.65; z = 20;
+          } else {
+            tx = 0; ty = 14; ry = 0; sc = 0.82; op = 0; z = 1; pe = 'none';
+          }
         } else {
-          tx = 0;
-          ty = 42;
-          ry = 0;
-          sc = 0.55;
-          op = 0;
-          z = 1;
-          pe = 'none';
+          if (diff === 0) {
+            tx = 0;
+            ty = 42;
+            ry = 0;
+            sc = 1;
+            op = 1;
+            z = 30;
+          } else if (diff === -1) {
+            tx = -286;
+            ty = -18;
+            ry = 22;
+            sc = 0.92;
+            op = 0.95;
+            z = 20;
+          } else if (diff === 1) {
+            tx = 286;
+            ty = -18;
+            ry = -22;
+            sc = 0.92;
+            op = 0.95;
+            z = 20;
+          } else if (diff === -2) {
+            tx = -526;
+            ty = -34;
+            ry = 25;
+            sc = 0.8;
+            op = 0.88;
+            z = 10;
+          } else if (diff === 2) {
+            tx = 526;
+            ty = -34;
+            ry = -25;
+            sc = 0.8;
+            op = 0.88;
+            z = 10;
+          } else {
+            tx = 0;
+            ty = 42;
+            ry = 0;
+            sc = 0.55;
+            op = 0;
+            z = 1;
+            pe = 'none';
+          }
         }
 
         card.style.transform = `translateX(${tx}px) translateY(${ty}px) rotateY(${ry}deg) scale(${sc})`;
@@ -520,10 +540,11 @@ export const ProjectsSection: React.FC = () => {
       }, 40);
     };
 
+    const onResize = () => { fitStageToViewport(); updateCarousel(false); };
     viewportEl.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('resize', fitStageToViewport);
+    window.addEventListener('resize', onResize);
 
     fitStageToViewport();
     updateCarousel(false);
@@ -579,7 +600,7 @@ export const ProjectsSection: React.FC = () => {
       viewportEl.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('resize', fitStageToViewport);
+      window.removeEventListener('resize', onResize);
       if (animFrameId) cancelAnimationFrame(animFrameId);
     };
   }, []);
@@ -1236,6 +1257,49 @@ export const ProjectsSection: React.FC = () => {
           border-radius: 50%;
           background: #22c55e;
           box-shadow: 0 0 10px #22c55e;
+        }
+
+        /* ───── MOBILE: Stacked peekaboo layout ───── */
+        @media (max-width: 639px) {
+          #projects-section-container .carousel-viewport {
+            height: 480px !important;
+            overflow: visible;
+          }
+
+          #projects-section-container .carousel-scaler {
+            width: 100%;
+            height: 480px;
+            transform: none !important;
+          }
+
+          #projects-section-container .carousel-stage {
+            perspective: 600px;
+            overflow: visible;
+          }
+
+          #projects-section-container .project-card {
+            width: min(82vw, 310px);
+            height: 420px;
+            left: 50%;
+            margin-left: calc(-1 * min(41vw, 155px));
+          }
+
+          #projects-section-container .active-meta-stage {
+            width: min(90vw, 330px);
+            top: 6px;
+          }
+
+          #projects-section-container .active-project-title {
+            font-size: 1.25rem;
+          }
+
+          /* hide cards that are |diff| >= 2 so nothing peeks from far sides */
+          #projects-section-container .project-card[data-pos="2"],
+          #projects-section-container .project-card[data-pos="-2"],
+          #projects-section-container .project-card[data-pos="3"],
+          #projects-section-container .project-card[data-pos="-3"] {
+            display: none;
+          }
         }
       `}</style>
 
