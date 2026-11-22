@@ -237,7 +237,6 @@ export const ProjectsSection: React.FC = () => {
   const dotsRowRef = useRef<HTMLDivElement>(null);
   const metaStageRef = useRef<HTMLDivElement>(null);
   const metaTitleRef = useRef<HTMLHeadingElement>(null);
-  const metaSubtitleRef = useRef<HTMLParagraphElement>(null);
   const toastRef = useRef<HTMLDivElement>(null);
   const toastMsgRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -252,11 +251,10 @@ export const ProjectsSection: React.FC = () => {
     const dotsRow = dotsRowRef.current;
     const metaStage = metaStageRef.current;
     const metaTitle = metaTitleRef.current;
-    const metaSubtitle = metaSubtitleRef.current;
     const toastEl = toastRef.current;
     const toastMsg = toastMsgRef.current;
 
-    if (!viewportEl || !scalerEl || !stageEl || !dotsRow || !metaStage || !metaTitle || !metaSubtitle || !toastEl || !toastMsg) {
+    if (!viewportEl || !scalerEl || !stageEl || !dotsRow || !metaStage || !metaTitle || !toastEl || !toastMsg) {
       return;
     }
 
