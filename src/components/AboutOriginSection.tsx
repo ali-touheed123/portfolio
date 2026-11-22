@@ -828,23 +828,26 @@ export const AboutOriginSection: React.FC = () => {
       {/* Mobile Animated Winding Timeline (< lg) */}
       <div ref={mobileTimelineRef} className="relative z-2 max-w-310 mx-auto px-4 sm:px-8 lg:hidden">
         <div className="relative pl-10 sm:pl-12 py-2">
-          {/* Background idle guide track */}
-          <div className="absolute left-3.5 sm:left-4 top-4 bottom-4 w-1 bg-[#161c30] rounded-full" />
+          {/* Shared unified track container: ensures line tip & orb are 100% physically locked together */}
+          <div className="absolute left-3.5 sm:left-4 top-4 bottom-4 w-1 pointer-events-none">
+            {/* Background idle guide track */}
+            <div className="w-full h-full bg-[#161c30] rounded-full" />
 
-          {/* Active scroll-drawn glowing neon beam */}
-          <div
-            className="absolute left-3.5 sm:left-4 top-4 w-1 rounded-full bg-linear-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)] transition-all duration-150"
-            style={{ height: `${Math.min(100, Math.max(0, mobileProgress * 100))}%` }}
-          />
+            {/* Active scroll-drawn glowing neon beam */}
+            <div
+              className="absolute top-0 left-0 w-full rounded-full bg-linear-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)]"
+              style={{ height: `${Math.min(100, Math.max(0, mobileProgress * 100))}%` }}
+            />
 
-          {/* Glowing comet head orb on mobile */}
-          <div
-            className="absolute left-3 sm:left-3.5 w-3 h-3 rounded-full bg-white shadow-[0_0_14px_#22d3ee,0_0_24px_#a855f7] transition-all duration-150 -translate-y-1/2"
-            style={{
-              top: `calc(1rem + ${Math.min(100, Math.max(0, mobileProgress * 100))}% * 0.95)`,
-              opacity: mobileProgress > 0.02 && mobileProgress < 0.98 ? 1 : 0,
-            }}
-          />
+            {/* Glowing comet head orb — locked exactly at the leading tip of the beam */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_#ffffff,0_0_20px_#22d3ee,0_0_32px_#a855f7]"
+              style={{
+                top: `${Math.min(100, Math.max(0, mobileProgress * 100))}%`,
+                opacity: mobileProgress > 0.01 && mobileProgress < 0.99 ? 1 : 0,
+              }}
+            />
+          </div>
 
           <div className="flex flex-col gap-10">
             {/* ── STEP 01 ── */}

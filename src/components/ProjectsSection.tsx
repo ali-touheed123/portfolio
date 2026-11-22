@@ -386,7 +386,7 @@ export const ProjectsSection: React.FC = () => {
         // On mobile: no scale transform — CSS handles everything
         scalerEl.style.transform = 'none';
         // viewport height controlled by CSS; just ensure scaler height is correct
-        scalerEl.style.height = '470px';
+        scalerEl.style.height = '440px';
         return;
       }
       const availableW = Math.min(winW - 28, 1280);
@@ -1259,17 +1259,16 @@ export const ProjectsSection: React.FC = () => {
 
         /* ───── MOBILE: Stacked peekaboo layout ───── */
         @media (max-width: 639px) {
-          /* Extra top space: side cards peek ~52px ABOVE center card top edge */
           #projects-section-container .carousel-viewport {
-            height: 600px !important;
-            padding-top: 130px;
+            height: 520px !important;
+            padding-top: 75px;
             overflow: visible;
           }
 
           /* scaler: full width, no scale transform, overflow visible for top-peeking */
           #projects-section-container .carousel-scaler {
             width: 100%;
-            height: 470px;
+            height: 440px;
             transform: none !important;
             overflow: visible;
           }
@@ -1279,15 +1278,15 @@ export const ProjectsSection: React.FC = () => {
             overflow: visible;
           }
 
-          /* meta floats above card — in the padding-top zone above the stage */
+          /* meta title placed neatly right above cards */
           #projects-section-container .active-meta-stage {
-            top: -122px;
+            top: -68px;
             width: min(90vw, 320px);
             pointer-events: none;
           }
 
           #projects-section-container .active-project-title {
-            font-size: 1.15rem;
+            font-size: 1.18rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
