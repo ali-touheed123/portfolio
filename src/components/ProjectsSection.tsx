@@ -326,7 +326,6 @@ export const ProjectsSection: React.FC = () => {
           ${getCardArtworkSVG(proj.artType)}
         </div>
         <div class="card-top-bar">
-          <span class="card-index-chip">#${proj.id}</span>
           <span class="card-status-chip">${proj.badge}</span>
         </div>
         <div class="card-content">
@@ -484,17 +483,15 @@ export const ProjectsSection: React.FC = () => {
       dotEls.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
 
       const activeProj = PROJECTS[activeIdx];
-      if (metaStage && metaTitle && metaSubtitle) {
+      if (metaStage && metaTitle) {
         if (animateMeta) {
           metaStage.classList.add('switching');
           setTimeout(() => {
             metaTitle.textContent = activeProj.title;
-            metaSubtitle.innerHTML = `<span>${activeProj.category}</span> • ${activeProj.stackLine}`;
             metaStage.classList.remove('switching');
           }, 160);
         } else {
           metaTitle.textContent = activeProj.title;
-          metaSubtitle.innerHTML = `<span>${activeProj.category}</span> • ${activeProj.stackLine}`;
         }
       }
     }
@@ -1352,9 +1349,6 @@ export const ProjectsSection: React.FC = () => {
               <h3 className="active-project-title" ref={metaTitleRef} id="meta-title">
                 Pyntflow Cloud ERP &amp; POS
               </h3>
-              <p className="active-project-subtitle" ref={metaSubtitleRef} id="meta-subtitle">
-                <span>Cloud ERP &amp; POS</span> • Next.js &amp; Supabase
-              </p>
             </div>
 
             <div className="carousel-stage" ref={stageRef} id="carousel-stage">

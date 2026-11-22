@@ -63,7 +63,7 @@ export function LeftStatsPanel({ hud, onLaunchOrb, onResetArcade, onPlayNextGame
       <div className="stats-glass-card overflow-hidden rounded-2xl p-4 sm:p-5">
         {/* Top luminous accent hairline */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[2px]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-0.5"
           style={{
             background:
               'linear-gradient(90deg, transparent 5%, rgba(34,211,238,0.65) 35%, rgba(168,85,247,0.65) 68%, transparent 95%)',
@@ -168,7 +168,7 @@ export function LeftStatsPanel({ hud, onLaunchOrb, onResetArcade, onPlayNextGame
 
         {/* Captured Skills Progress & Target Skill Matrix */}
         <div className="mt-3.5">
-          <div className="flex items-center justify-between font-mono-tech text-[10.5px] tracking-[0.1em]">
+          <div className="flex items-center justify-between font-mono-tech text-[10.5px] tracking-widest">
             <span className="text-slate-400">
               CAPTURED:{' '}
               <strong className="font-bold text-white tabular-nums">

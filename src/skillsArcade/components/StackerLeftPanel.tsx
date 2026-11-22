@@ -40,23 +40,20 @@ export function StackerLeftPanel({
   return (
     <aside className="relative z-10 flex flex-col justify-between gap-3.5 py-1 lg:py-2">
       {/* Header & Typography */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3 pt-1 lg:pt-2">
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-3 pt-2 lg:pt-4">
           <span className="inline-flex items-center gap-2 rounded-full border border-purple-500/45 bg-purple-950/55 px-3 py-1 font-mono-tech text-[11px] font-semibold tracking-wider text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.22)]">
             <span className="h-1.5 w-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]" />
             03. SKILLS
           </span>
-          <span className="font-mono-tech text-[10.5px] font-medium tracking-[0.14em] text-slate-400 uppercase">
-            ACQUIRED REPERTOIRE · PREVIOUS YEARS
-          </span>
         </div>
 
         <div className="pt-0.5">
-          <h1 className="font-display-sans text-3xl font-extrabold tracking-tight text-white sm:text-4xl xl:text-[40px] xl:leading-[1.06]">
-            Skills I Developed
+          <h1 className="font-display-sans text-3xl font-extrabold tracking-tight text-white sm:text-4xl xl:text-[42px] xl:leading-[1.06]">
+            Skills I Have Developed
           </h1>
-          <p className="font-script-neon neon-script-heading -mt-0.5 text-4xl leading-[1.08] sm:text-[42px] xl:text-[46px]">
-            The Previous Years
+          <p className="font-script-neon neon-script-heading -mt-0.5 text-4xl leading-[1.08] sm:text-[44px] xl:text-[48px]">
+            in Recent Years
           </p>
         </div>
       </div>
@@ -64,7 +61,7 @@ export function StackerLeftPanel({
       {/* Stack Builder Statistics Card */}
       <div className="stats-glass-card overflow-hidden rounded-2xl p-4 sm:p-4.5">
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[2px]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-0.5"
           style={{
             background:
               'linear-gradient(90deg, transparent 5%, rgba(34,211,238,0.65) 35%, rgba(168,85,247,0.65) 68%, transparent 95%)',
@@ -98,7 +95,7 @@ export function StackerLeftPanel({
           </div>
 
           <div className="flex items-center justify-between pt-0.5 font-mono-tech text-[11px]">
-            <span className="tracking-[0.1em] text-slate-400">STABILITY:</span>
+            <span className="tracking-widest text-slate-400">STABILITY:</span>
             <span className={`font-semibold tabular-nums ${stabilityColorClass}`}>
               {hud.stability}%{' '}
               <span className="text-slate-300">
@@ -108,7 +105,7 @@ export function StackerLeftPanel({
           </div>
 
           <div className="flex items-center justify-between font-mono-tech text-[11px]">
-            <span className="tracking-[0.1em] text-slate-400">SKILLS IN PLAY:</span>
+            <span className="tracking-widest text-slate-400">SKILLS IN PLAY:</span>
             <span className="font-bold text-white tabular-nums">
               {hud.skillsInPlay} / {hud.totalTargetSkills}
             </span>

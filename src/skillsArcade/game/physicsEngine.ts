@@ -16,7 +16,7 @@ export const BASE_PADDLE_WIDTH = 1.92;
 export const DOCKER_PADDLE_WIDTH = 2.74;
 export const ORB_RADIUS = 0.165;
 export const BASE_ORB_SPEED = 5.95;
-export const MAX_ORB_SPEED = 8.4;
+export const MAX_ORB_SPEED = 11.5;
 export const DOCKER_POWER_DURATION = 15.0;
 
 export interface EngineEventCallbacks {
@@ -167,7 +167,7 @@ export class SkillBreakerEngine {
     }
 
     this.mode = 'PLAYING';
-    const speed = BASE_ORB_SPEED + (this.wave - 1) * 0.35;
+    const speed = BASE_ORB_SPEED + (this.wave - 1) * 0.65;
     this.orbVx = Math.sin(this.aimAngle) * speed;
     this.orbVy = Math.cos(this.aimAngle) * speed;
     this.orbTrail = [{ x: this.orbX, y: this.orbY }];
@@ -391,9 +391,10 @@ export class SkillBreakerEngine {
 
       const dockerActive = this.dockerPowerTimer > 0;
       const currentSpeed = Math.hypot(this.orbVx, this.orbVy);
+      const waveBaseSpeed = BASE_ORB_SPEED + (this.wave - 1) * 0.65;
       const nextSpeed = Math.min(
         MAX_ORB_SPEED,
-        Math.max(BASE_ORB_SPEED, currentSpeed * (dockerActive ? 1.04 : 1.015))
+        Math.max(waveBaseSpeed, currentSpeed * (dockerActive ? 1.04 : 1.015))
       );
 
       this.orbVx = Math.sin(bounceAngle) * nextSpeed;
@@ -473,10 +474,10 @@ export class SkillBreakerEngine {
         overrideRimHex: brick.overrideRimHex,
         x: brick.x,
         y: brick.y,
-        vy: -1.85 - Math.min(0.6, this.wave * 0.12),
+        vy: -2.0 - (this.wave - 1) * 0.45,
         vx: (Math.random() - 0.5) * 0.55,
         spinY: 0,
-        spinSpeed: 4.4,
+        spinSpeed: 4.4 + (this.wave - 1) * 0.8,
         tiltZ: 0.14,
         width: 1.26,
         height: 0.44,
