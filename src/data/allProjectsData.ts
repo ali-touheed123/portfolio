@@ -1,3 +1,5 @@
+import { mediaUrl } from '../config/media';
+
 export interface ProjectDetail {
   id: string;
   title: string;
@@ -27,8 +29,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#eab308',
     glow: 'rgba(234, 179, 8, 0.45)',
     url: 'https://furniture-showcase-brown.vercel.app/',
-    desktopImg: '/projects/sukoon-desktop.svg',
-    mobileImg: '/projects/sukoon-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/sukoon-desktop.svg', '/projects/sukoon-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/sukoon-mobile.svg', '/projects/sukoon-mobile.svg'),
     isFeatured: true,
   },
   {
@@ -42,8 +44,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#22d3ee',
     glow: 'rgba(34, 211, 238, 0.45)',
     url: 'https://atlas-architects.vercel.app/contact',
-    desktopImg: '/projects/atlas-desktop.svg',
-    mobileImg: '/projects/atlas-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/atlas-desktop.svg', '/projects/atlas-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/atlas-mobile.svg', '/projects/atlas-mobile.svg'),
     isFeatured: true,
   },
   {
@@ -57,8 +59,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#f97316',
     glow: 'rgba(249, 115, 22, 0.5)',
     url: 'https://pyntflow.com/',
-    desktopImg: '/projects/pyntflow-desktop.svg',
-    mobileImg: '/projects/pyntflow-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/pyntflow-desktop.svg', '/projects/pyntflow-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/pyntflow-mobile.svg', '/projects/pyntflow-mobile.svg'),
     isFeatured: true,
     isClientWork: true,
   },
@@ -73,8 +75,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#fb7185',
     glow: 'rgba(251, 113, 133, 0.45)',
     url: 'https://gym-eight-murex-73.vercel.app/',
-    desktopImg: '/projects/forge-desktop.png',
-    mobileImg: '/projects/forge-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/forge-desktop.png', '/projects/forge-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/forge-mobile.png', '/projects/forge-mobile.png'),
     isFeatured: true,
   },
   {
@@ -88,8 +90,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#a855f7',
     glow: 'rgba(168, 85, 247, 0.5)',
     url: 'https://vector-cinematic-story.vercel.app/',
-    desktopImg: '/projects/overpass-desktop.png',
-    mobileImg: '/projects/overpass-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/overpass-desktop.png', '/projects/overpass-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/overpass-mobile.png', '/projects/overpass-mobile.png'),
     isFeatured: true,
   },
   {
@@ -103,8 +105,8 @@ export const FEATURED_CAROUSEL_PROJECTS: ProjectDetail[] = [
     accent: '#38bdf8',
     glow: 'rgba(56, 189, 248, 0.45)',
     url: 'https://halden-e-comerce.vercel.app/',
-    desktopImg: '/projects/halden-desktop.png',
-    mobileImg: '/projects/halden-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/halden-desktop.png', '/projects/halden-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/halden-mobile.png', '/projects/halden-mobile.png'),
     isFeatured: true,
   },
 ];
@@ -121,8 +123,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#f97316',
     glow: 'rgba(249, 115, 22, 0.45)',
     url: 'https://pyntflow.com/',
-    desktopImg: '/projects/pyntflow-desktop.svg',
-    mobileImg: '/projects/pyntflow-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/pyntflow-desktop.svg', '/projects/pyntflow-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/pyntflow-mobile.svg', '/projects/pyntflow-mobile.svg'),
     isFeatured: true,
     isClientWork: true,
   },
@@ -163,8 +165,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#a855f7',
     glow: 'rgba(168, 85, 247, 0.45)',
     url: 'https://halden-e-comerce.vercel.app/',
-    desktopImg: '/projects/halden-desktop.png',
-    mobileImg: '/projects/halden-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/halden-desktop.png', '/projects/halden-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/halden-mobile.png', '/projects/halden-mobile.png'),
     isFeatured: true,
   },
   {
@@ -178,8 +180,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#eab308',
     glow: 'rgba(234, 179, 8, 0.45)',
     url: 'https://furniture-showcase-brown.vercel.app/',
-    desktopImg: '/projects/sukoon-desktop.svg',
-    mobileImg: '/projects/sukoon-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/sukoon-desktop.svg', '/projects/sukoon-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/sukoon-mobile.svg', '/projects/sukoon-mobile.svg'),
     isFeatured: true,
   },
   {
@@ -193,8 +195,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#22d3ee',
     glow: 'rgba(34, 211, 238, 0.45)',
     url: 'https://atlas-architects.vercel.app/contact',
-    desktopImg: '/projects/atlas-desktop.svg',
-    mobileImg: '/projects/atlas-mobile.svg',
+    desktopImg: mediaUrl('projects/carousel/atlas-desktop.svg', '/projects/atlas-desktop.svg'),
+    mobileImg: mediaUrl('projects/carousel/atlas-mobile.svg', '/projects/atlas-mobile.svg'),
     isFeatured: true,
   },
   {
@@ -208,8 +210,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#fb7185',
     glow: 'rgba(251, 113, 133, 0.45)',
     url: 'https://gym-eight-murex-73.vercel.app/',
-    desktopImg: '/projects/forge-desktop.png',
-    mobileImg: '/projects/forge-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/forge-desktop.png', '/projects/forge-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/forge-mobile.png', '/projects/forge-mobile.png'),
     isFeatured: true,
   },
   {
@@ -223,8 +225,8 @@ export const ALL_PORTFOLIO_PROJECTS: ProjectDetail[] = [
     accent: '#c084fc',
     glow: 'rgba(192, 132, 252, 0.45)',
     url: 'https://vector-cinematic-story.vercel.app/',
-    desktopImg: '/projects/overpass-desktop.png',
-    mobileImg: '/projects/overpass-mobile.png',
+    desktopImg: mediaUrl('projects/carousel/overpass-desktop.png', '/projects/overpass-desktop.png'),
+    mobileImg: mediaUrl('projects/carousel/overpass-mobile.png', '/projects/overpass-mobile.png'),
     isFeatured: true,
   },
   {

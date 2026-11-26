@@ -64,7 +64,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
             className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0b0b10] shadow-2xl"
           >
             {/* Header Bar */}
-            <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] px-6 py-4 sm:px-8">
+            <div className="flex items-center justify-between gap-4 border-b border-white/8 px-6 py-4 sm:px-8">
               <div className="min-w-0">
                 <p className="text-xs font-mono tracking-wider text-zinc-400 uppercase truncate">
                   {project.category} · {project.clientType}
@@ -82,7 +82,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
                   href={project.liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden sm:inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[#FF5A1F]/80 bg-[#FF5A1F]/10 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#FF5A1F] whitespace-nowrap"
+                  className="hidden sm:inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#FF5A1F]/80 bg-[#FF5A1F]/10 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#FF5A1F] whitespace-nowrap"
                 >
                   <span>Visit Live</span>
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -92,7 +92,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
                   type="button"
                   onClick={onClose}
                   aria-label="Close case study"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/3 text-zinc-400 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -102,7 +102,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
             {/* Scrollable Body */}
             <div className="custom-scrollbar overflow-y-auto px-6 py-6 sm:px-8 sm:py-8 space-y-7">
               {/* Full Screenshot Preview */}
-              <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050507] aspect-[16/10]">
+              <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050507] aspect-16/10">
                 {!imgError ? (
                   <img
                     src={project.image}
@@ -121,7 +121,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
               </div>
 
               {/* Meta Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-y border-white/[0.08] py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-y border-white/8 py-4">
                 <div>
                   <span className="block text-xs font-mono uppercase tracking-wider text-zinc-500">
                     Role
@@ -193,7 +193,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
                     {project.techStack.map((tech) => (
                       <li
                         key={tech.id}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs text-zinc-200"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-white/8 bg-white/3 px-2.5 py-1 text-xs text-zinc-200"
                       >
                         <TechIcon id={tech.id} className="h-3.5 w-3.5" />
                         <span>{tech.label}</span>
@@ -209,7 +209,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({
                   href={project.liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#FF5A1F] bg-[#FF5A1F] px-5 py-2.5 text-sm font-medium text-white"
+                  className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-full border border-[#FF5A1F] bg-[#FF5A1F] px-5 py-2.5 text-sm font-medium text-white"
                 >
                   <span>View Live Project</span>
                   <ArrowUpRight className="h-4 w-4" aria-hidden="true" />

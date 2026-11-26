@@ -1,4 +1,5 @@
 import { Project } from '../types/project';
+import { mediaUrl } from '../../config/media';
 
 /**
  * Portfolio projects dataset.
@@ -18,7 +19,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Flagship Client Work',
     description:
       'A modern ERP + POS system engineered for commercial paint wholesalers and retail counters, built to unify fast keyboard-driven billing, shade inventory, and multi-branch ledger control.',
-    image: '/assets/aistudio/pyntflowimage_d6302de2.png',
+    image: mediaUrl('projects/showcase/pyntflowimage_d6302de2.png', '/assets/aistudio/pyntflowimage_d6302de2.png'),
     imageAlt: 'PyntFlow ERP and POS register billing interface screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -53,7 +54,7 @@ export const PROJECTS: Project[] = [
     clientType: '1st Client Deployment',
     description:
       'A high-conversion B2B and retail paint storefront enabling contractors and homeowners to order at wholesale rates or book professional application services.',
-    image: '/assets/aistudio/tawakkalimage_f923a218.png',
+    image: mediaUrl('projects/showcase/tawakkalimage_f923a218.png', '/assets/aistudio/tawakkalimage_f923a218.png'),
     imageAlt: 'Tawakkal Paint House B2B and retail storefront hero screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -87,7 +88,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Commercial Enterprise',
     description:
       'An industrial-grade digital flagship for a national heavy civil and commercial contractor executing landmark skyscrapers, transit corridors, and energy infrastructure.',
-    image: '/assets/aistudio/titanimage_5ac946b7.png',
+    image: mediaUrl('projects/showcase/titanimage_5ac946b7.png', '/assets/aistudio/titanimage_5ac946b7.png'),
     imageAlt: 'Titan Build Group commercial construction enterprise website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -121,7 +122,7 @@ export const PROJECTS: Project[] = [
     clientType: 'E-Commerce Boutique',
     description:
       'An editorial fashion commerce experience crafted around heavyweight essentials, clean split-screen merchandising, and tactile lookbook pacing.',
-    image: '/assets/aistudio/haldenimage_630a0bc1.png',
+    image: mediaUrl('projects/showcase/haldenimage_630a0bc1.png', '/assets/aistudio/haldenimage_630a0bc1.png'),
     imageAlt: 'Halden Apparel and Goods minimalist e-commerce storefront screenshot',
     techStack: [
       { id: 'nextjs', label: 'Next.js' },
@@ -155,7 +156,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Advisory & Fractional CFO',
     description:
       'A high-trust financial advisory platform pairing executive typography with an interactive tax liability calculator and live client portal preview.',
-    image: '/assets/aistudio/northbridgeimage_815c17d4.png',
+    image: mediaUrl('projects/showcase/northbridgeimage_815c17d4.png', '/assets/aistudio/northbridgeimage_815c17d4.png'),
     imageAlt: 'Northridge Advisors financial advisory and tax planning website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -189,7 +190,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Corporate Law Practice',
     description:
       'An authoritative corporate law and litigation platform spotlighting senior partners, cross-border practice areas, and landmark case results.',
-    image: '/assets/aistudio/lawfirmimage_c2131f31.png',
+    image: mediaUrl('projects/showcase/lawfirmimage_c2131f31.png', '/assets/aistudio/lawfirmimage_c2131f31.png'),
     imageAlt: 'Apex Legal Partners corporate law firm attorney spotlight screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -223,7 +224,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Wellness & Spa Sanctuary',
     description:
       'A serene wellness and eco-resort booking experience crafted with organic earthy tones, botanical storytelling, and restorative suite reservations.',
-    image: '/assets/aistudio/solaraimage_34c53c76.png',
+    image: mediaUrl('projects/showcase/solaraimage_34c53c76.png', '/assets/aistudio/solaraimage_34c53c76.png'),
     imageAlt: 'Solara Retreat Sanctuary wellness resort website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -257,7 +258,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Luxury Cosmetic Dentistry',
     description:
       'A clinical-luxury healthcare platform for an international cosmetic dental practice spanning Dubai DIFC, London Harley Street, and NYC Park Avenue.',
-    image: '/assets/aistudio/luxoraimage_f0683be1.png',
+    image: mediaUrl('projects/showcase/luxoraimage_f0683be1.png', '/assets/aistudio/luxoraimage_f0683be1.png'),
     imageAlt: 'Luxora Cosmetic Dental Clinic hero interface screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -291,7 +292,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Travel Discovery Platform',
     description:
       'A vibrant destination marketplace empowering travelers to filter 100+ global escapes by travel vibe, daily budget, climate, and curated itineraries.',
-    image: '/assets/aistudio/nomadlyimage_2c0800f2.png',
+    image: mediaUrl('projects/showcase/nomadlyimage_2c0800f2.png', '/assets/aistudio/nomadlyimage_2c0800f2.png'),
     imageAlt: 'Nomadly Travels destination marketplace screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -325,7 +326,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Coastal Villa Sanctuary',
     description:
       'An oceanfront resort and private villa booking experience combining panoramic coastal storytelling with an integrated availability bar.',
-    image: '/assets/aistudio/azureimage_f1145417.png',
+    image: mediaUrl('projects/showcase/azureimage_f1145417.png', '/assets/aistudio/azureimage_f1145417.png'),
     imageAlt: 'Azure Cove Oceanfront Resort coastal sanctuary website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -359,7 +360,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Wood-Fired Gastronomy',
     description:
       'An atmospheric culinary showcase for a London wood-fired hearth restaurant, celebrating seasonal provenance, chef’s table dining, and open-flame craft.',
-    image: '/assets/aistudio/restrauntfiveimage_455f2ebd.png',
+    image: mediaUrl('projects/showcase/restrauntfiveimage_455f2ebd.png', '/assets/aistudio/restrauntfiveimage_455f2ebd.png'),
     imageAlt: "L'Aura Gastronomy and Bar wood-fired restaurant website screenshot",
     techStack: [
       { id: 'react', label: 'React' },
@@ -393,7 +394,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Bespoke Timber Atelier',
     description:
       'A tactile furniture showroom built around architectural bedroom suites and solid-timber centerpieces designed for direct showroom consultation.',
-    image: '/assets/aistudio/furnitureimage_13f5cffb.png',
+    image: mediaUrl('projects/showcase/furnitureimage_13f5cffb.png', '/assets/aistudio/furnitureimage_13f5cffb.png'),
     imageAlt: 'Artisan Woodcraft and Furnishings showroom website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -427,7 +428,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Ultra-Prime Properties',
     description:
       'An ultra-prime real estate showcase presenting trophy penthouses, architectural villas, and bespoke estate search filters with understated dark elegance.',
-    image: '/assets/aistudio/realstateimage_55be6a22.png',
+    image: mediaUrl('projects/showcase/realstateimage_55be6a22.png', '/assets/aistudio/realstateimage_55be6a22.png'),
     imageAlt: 'Haven Luxury Real Estate ultra-prime residences website screenshot',
     techStack: [
       { id: 'nextjs', label: 'Next.js' },
@@ -461,7 +462,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Architectural Atelier',
     description:
       'An architectural furniture studio showcase highlighting sustainably aged solid timber, quiet geometry, and limited seasonal atelier releases.',
-    image: '/assets/aistudio/furniturenewimage_ac7f5aa8.png',
+    image: mediaUrl('projects/showcase/furniturenewimage_ac7f5aa8.png', '/assets/aistudio/furniturenewimage_ac7f5aa8.png'),
     imageAlt: 'Studio Nordic Furnishings architectural furniture studio website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -495,7 +496,7 @@ export const PROJECTS: Project[] = [
     clientType: 'High-Output Training Club',
     description:
       'A high-intensity athletic club platform featuring brutalist grid typography, live facility occupancy telemetry, and multi-location program scheduling.',
-    image: '/assets/aistudio/gymmureximage_c36c0798.png',
+    image: mediaUrl('projects/showcase/gymmureximage_c36c0798.png', '/assets/aistudio/gymmureximage_c36c0798.png'),
     imageAlt: 'IronPulse Performance Gym athletic facility website screenshot',
     techStack: [
       { id: 'react', label: 'React' },
@@ -529,7 +530,7 @@ export const PROJECTS: Project[] = [
     clientType: 'Editorial Launch & Motion',
     description:
       'A bold, editorial product-storytelling showcase uniting kinetic oversized typography, sculptural product staging, and scroll-paced narrative beats.',
-    image: '/assets/aistudio/vectorimage_565823d7.png',
+    image: mediaUrl('projects/showcase/vectorimage_565823d7.png', '/assets/aistudio/vectorimage_565823d7.png'),
     imageAlt: 'Vector Cinematic Studios editorial showcase website screenshot',
     techStack: [
       { id: 'react', label: 'React' },

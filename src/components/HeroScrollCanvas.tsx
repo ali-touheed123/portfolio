@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { type MotionValue, useMotionValueEvent } from 'motion/react';
 import type { ParallaxState } from '../hooks/useParallax';
+import { mediaUrl } from '../config/media';
 
 interface HeroScrollCanvasProps {
   className?: string;
@@ -103,15 +104,24 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
   useEffect(() => {
     let mounted = true;
 
-    const loadSingleFrame = (frameNum: number, idx: number) => {
+    const loadSingleFrame = (frameNum: number, idx: number, attempt = 0) => {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       const numStr = frameNum.toString().padStart(4, '0');
-      img.src = `/assets/animation/frames/frame_${numStr}.webp`;
+      const localPath = `/assets/animation/frames/frame_${numStr}.webp`;
+      const r2Path = `animation/frames/frame_${numStr}.webp`;
+      img.src = mediaUrl(r2Path, localPath);
       img.onload = () => {
         if (!mounted) return;
         imagesRef.current[idx] = img;
         if (idx === currentFrameIndexRef.current || (idx === 0 && currentFrameIndexRef.current === 0)) {
           drawFrame(currentFrameIndexRef.current);
+        }
+      };
+      img.onerror = () => {
+        if (!mounted) return;
+        if (attempt < 1) {
+          window.setTimeout(() => loadSingleFrame(frameNum, idx, attempt + 1), 400);
         }
       };
     };

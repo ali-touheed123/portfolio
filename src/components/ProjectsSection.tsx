@@ -238,7 +238,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
               ? `
             <picture class="card-mockup-picture">
               ${proj.mobileImg ? `<source media="(max-width: 639px)" srcset="${proj.mobileImg}">` : ''}
-              <img src="${proj.desktopImg}" alt="${proj.title}" class="card-mockup-img" loading="lazy" />
+              <img src="${proj.desktopImg}" alt="${proj.title}" class="card-mockup-img" loading="lazy" onerror="this.parentElement.style.display='none'" />
             </picture>
           `
               : `<div class="card-fallback-glow" style="background: radial-gradient(circle at 50% 30%, ${proj.accent}33, transparent 70%);"></div>`

@@ -15,7 +15,7 @@ export const AmbientBackdrop: React.FC = () => {
 
       {/* Top-left subtle purple ambient aura */}
       <div
-        className="absolute -top-40 -left-40 h-[540px] w-[540px] rounded-full opacity-60"
+        className="absolute -top-40 -left-40 h-135 w-135 rounded-full opacity-60"
         style={{
           background:
             'radial-gradient(circle, rgba(126, 34, 206, 0.16) 0%, rgba(88, 28, 135, 0.05) 48%, transparent 72%)',
@@ -24,7 +24,7 @@ export const AmbientBackdrop: React.FC = () => {
 
       {/* Right-side / lower-right subtle purple ambient glow behind the strap */}
       <div
-        className="absolute top-[12%] -right-32 h-[720px] w-[720px] rounded-full opacity-80"
+        className="absolute top-[12%] -right-32 h-180 w-180 rounded-full opacity-80"
         style={{
           background:
             'radial-gradient(circle, rgba(109, 40, 217, 0.18) 0%, rgba(76, 29, 149, 0.06) 45%, transparent 72%)',
@@ -33,7 +33,7 @@ export const AmbientBackdrop: React.FC = () => {
 
       {/* Soft warm counterpoint behind the center focal zone (ultra-subtle) */}
       <div
-        className="absolute top-1/2 right-[18%] h-[360px] w-[360px] -translate-y-1/2 rounded-full opacity-50"
+        className="absolute top-1/2 right-[18%] h-90 w-90 -translate-y-1/2 rounded-full opacity-50"
         style={{
           background:
             'radial-gradient(circle, rgba(255, 90, 31, 0.055) 0%, transparent 68%)',

@@ -59,7 +59,7 @@ export const MobileWorkTopBar: React.FC<MobileWorkTopBarProps> = ({
         </div>
 
         <div
-          className="relative h-[2px] w-14 overflow-hidden rounded-full bg-white/10"
+          className="relative h-0.5 w-14 overflow-hidden rounded-full bg-white/10"
           role="progressbar"
           aria-valuenow={activeIndex + 1}
           aria-valuemin={1}
@@ -82,7 +82,7 @@ export const MobileWorkTopBar: React.FC<MobileWorkTopBarProps> = ({
             type="button"
             onClick={onPrev}
             aria-label="Previous project"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-zinc-300 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/3 text-zinc-300 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
           >
             <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -90,7 +90,7 @@ export const MobileWorkTopBar: React.FC<MobileWorkTopBarProps> = ({
             type="button"
             onClick={onNext}
             aria-label="Next project"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-zinc-300 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/3 text-zinc-300 transition-colors hover:border-white/25 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
           >
             <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -137,7 +137,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
           }}
         >
           {/* MOBILE BOTTOM INFO DOCK */}
-          <div className="md:hidden rounded-2xl border border-white/[0.08] bg-[#0a0a0f]/85 backdrop-blur-md px-4 py-3.5">
+          <div className="md:hidden rounded-2xl border border-white/8 bg-[#0a0a0f]/85 backdrop-blur-md px-4 py-3.5">
             <div className="flex items-baseline justify-between gap-2">
               <h1 className="font-display text-[1.375rem] sm:text-[1.6rem] font-bold tracking-tight text-white leading-[1.12] truncate">
                 <span>{project.titleLead}</span>
@@ -164,7 +164,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
               {project.techStack.map((tech) => (
                 <li
                   key={tech.id}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-zinc-200 whitespace-nowrap"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/9 bg-white/3 px-2.5 py-1 text-[11px] font-medium text-zinc-200 whitespace-nowrap"
                 >
                   <TechIcon id={tech.id} className="h-3 w-3 shrink-0" />
                   <span>{tech.label}</span>
@@ -177,7 +177,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                 href={project.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex flex-1 min-h-[40px] items-center justify-center gap-2 rounded-full border border-[#FF5A1F]/85 bg-[#FF5A1F]/[0.1] px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-[#FF5A1F] hover:border-[#FF5A1F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] whitespace-nowrap"
+                className="group inline-flex flex-1 min-h-10 items-center justify-center gap-2 rounded-full border border-[#FF5A1F]/85 bg-[#FF5A1F]/10 px-4 py-2 text-xs font-medium text-white transition-all duration-200 hover:bg-[#FF5A1F] hover:border-[#FF5A1F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] whitespace-nowrap"
               >
                 <span>View Live Project</span>
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -186,7 +186,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
               <button
                 type="button"
                 onClick={onOpenCaseStudy}
-                className="group inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:border-white/30 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer whitespace-nowrap"
+                className="group inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/4 px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:border-white/30 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer whitespace-nowrap"
               >
                 <span>Case Study</span>
                 <ArrowRight
@@ -233,7 +233,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
               {project.techStack.map((tech) => (
                 <li
                   key={tech.id}
-                  className="inline-flex items-center gap-2 rounded-md border border-white/[0.09] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-200 whitespace-nowrap"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/9 bg-white/3 px-3 py-1.5 text-xs font-medium text-zinc-200 whitespace-nowrap"
                 >
                   <TechIcon id={tech.id} className="h-3.5 w-3.5 shrink-0" />
                   <span>{tech.label}</span>
@@ -247,7 +247,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
                 href={project.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex min-h-[44px] items-center gap-3 rounded-full border border-[#FF5A1F]/80 bg-[#FF5A1F]/[0.06] px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-[#FF5A1F] hover:border-[#FF5A1F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507] whitespace-nowrap shrink-0"
+                className="group inline-flex min-h-11 items-center gap-3 rounded-full border border-[#FF5A1F]/80 bg-[#FF5A1F]/6 px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-[#FF5A1F] hover:border-[#FF5A1F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507] whitespace-nowrap shrink-0"
               >
                 <span>View Live Project</span>
                 <ArrowRight
@@ -259,7 +259,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
               <button
                 type="button"
                 onClick={onOpenCaseStudy}
-                className="group inline-flex min-h-[44px] items-center gap-2.5 border-b border-white/35 pb-1 text-sm font-medium text-zinc-200 transition-colors duration-200 hover:border-[#FF5A1F] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507] cursor-pointer whitespace-nowrap shrink-0"
+                className="group inline-flex min-h-11 items-center gap-2.5 border-b border-white/35 pb-1 text-sm font-medium text-zinc-200 transition-colors duration-200 hover:border-[#FF5A1F] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507] cursor-pointer whitespace-nowrap shrink-0"
               >
                 <span>Case Study</span>
                 <ArrowRight
@@ -288,7 +288,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
 
         {/* Compositor-only Animated Progress Indicator */}
         <div
-          className="relative h-[2px] w-36 overflow-hidden rounded-full bg-white/10"
+          className="relative h-0.5 w-36 overflow-hidden rounded-full bg-white/10"
           role="progressbar"
           aria-valuenow={activeIndex + 1}
           aria-valuemin={1}
@@ -312,7 +312,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
             type="button"
             onClick={onPrev}
             aria-label="Previous project"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-zinc-400 transition-colors duration-150 hover:border-white/25 hover:bg-white/[0.06] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/2 text-zinc-400 transition-colors duration-150 hover:border-white/25 hover:bg-white/6 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
           >
             <ChevronUp className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -320,7 +320,7 @@ export const ProjectInfoPanel: React.FC<ProjectInfoPanelProps> = ({
             type="button"
             onClick={onNext}
             aria-label="Next project"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-zinc-400 transition-colors duration-150 hover:border-white/25 hover:bg-white/[0.06] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/2 text-zinc-400 transition-colors duration-150 hover:border-white/25 hover:bg-white/6 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] cursor-pointer"
           >
             <ChevronDown className="h-4 w-4" aria-hidden="true" />
           </button>

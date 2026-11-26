@@ -297,12 +297,12 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
   const activeProject = projects[wrapIndex(activeIndex, projects.length)];
 
   return (
-    <main className="relative h-[100dvh] md:h-screen w-full overflow-hidden bg-[#050507] text-zinc-100">
+    <main className="relative h-dvh md:h-screen w-full overflow-hidden bg-[#050507] text-zinc-100">
       {/* Ambient Purple Lighting & Minimal Curved Background Lines */}
       <AmbientBackdrop />
 
       {/* Main Responsive Showcase Container (Single-screen stack on mobile, 2-column grid on desktop) */}
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1440px] flex-col md:grid md:grid-cols-12 md:items-center gap-2 md:gap-6 px-4 pt-3.5 pb-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-360 flex-col md:grid md:grid-cols-12 md:items-center gap-2 md:gap-6 px-4 pt-3.5 pb-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         {/* MOBILE TOP BAR: Label, Counter, Progress & Stepper */}
         <MobileWorkTopBar
           activeIndex={activeIndex}
@@ -331,7 +331,7 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
         {/* RIGHT COLUMN (Desktop) / MIDDLE STAGE (Mobile): Watch-Strap Showcase */}
         <section
           aria-label="Interactive 3D project cards"
-          className="order-1 md:order-2 flex-1 min-h-0 md:flex-none md:col-span-6 lg:col-span-7 relative md:h-[88vh] md:max-h-[840px] w-full flex items-center justify-center"
+          className="order-1 md:order-2 flex-1 min-h-0 md:flex-none md:col-span-6 lg:col-span-7 relative md:h-[88vh] md:max-h-210 w-full flex items-center justify-center"
         >
           <WatchStrapShowcase
             projects={projects}

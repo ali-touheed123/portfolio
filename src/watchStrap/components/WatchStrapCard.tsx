@@ -272,7 +272,7 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
               className="h-full w-full object-cover object-top bg-[#09090e] pointer-events-none"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-900 via-[#0e0e14] to-zinc-950 p-6">
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-zinc-900 via-[#0e0e14] to-zinc-950 p-6">
               <span className="font-display text-base font-semibold text-zinc-300">
                 {project.title}
               </span>
