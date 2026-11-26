@@ -244,14 +244,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
               : `<div class="card-fallback-glow" style="background: radial-gradient(circle at 50% 30%, ${proj.accent}33, transparent 70%);"></div>`
           }
         </div>
-        <div class="card-top-bar">
-          <span class="card-status-chip">${proj.badge}</span>
-        </div>
         <div class="card-content">
-          <p class="card-desc">${proj.desc}</p>
-          <div class="card-tags">
-            ${proj.tags.map((t) => `<span class="tech-tag">${t}</span>`).join('')}
-          </div>
           <div class="redirect-btn-wrap">
             <button class="redirect-btn" type="button" data-url="${proj.url}" data-title="${proj.title}">
               <span class="btn-launch-fill"></span>
