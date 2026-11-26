@@ -22,9 +22,46 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
   const [buttonsPop, setButtonsPop] = useState<boolean>(false);
   const [cvDownloaded, setCvDownloaded] = useState<boolean>(false);
   const [hoveredBtn, setHoveredBtn] = useState<'cv' | 'connect' | null>(null);
+  const [fontsReady, setFontsReady] = useState<boolean>(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true
+  );
 
-  // Directly activate as soon as curtain begins lifting (zero font-blocking delays)
-  const introActive = revealActive;
+  // Sync with active breakpoint so hidden mobile/desktop trees don't run duplicate timers
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  // Pre-wait for Google Fonts during the 980ms EntryCurtain hold (capped at 400ms safety)
+  useEffect(() => {
+    let active = true;
+    const fallbackTimer = window.setTimeout(() => {
+      if (active) setFontsReady(true);
+    }, 400);
+
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (active) {
+          window.clearTimeout(fallbackTimer);
+          setFontsReady(true);
+        }
+      });
+    } else {
+      setFontsReady(true);
+    }
+
+    return () => {
+      active = false;
+      window.clearTimeout(fallbackTimer);
+    };
+  }, []);
+
+  // Activate as soon as curtain begins lifting and handwritten fonts are ready
+  const introActive = revealActive && fontsReady;
 
   // Once typing completes (~680ms), pop the action buttons into view
   useEffect(() => {
@@ -360,6 +397,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
       }`}
     >
       {/* ─── DESKTOP HERO (lg:grid) — Preserves Original 3-Column Studio Layout ─── */}
+      {isDesktop && (
       <div className="hidden lg:grid grid-cols-[minmax(280px,0.94fr)_minmax(340px,1.12fr)_minmax(280px,0.94fr)] items-center gap-6 w-full flex-1 min-h-0">
         {/* LEFT COLUMN — Name, Collab Note & Primary Actions */}
         <section className="flex flex-col items-start max-w-105 xl:max-w-116.25 pointer-events-auto mt-8">
@@ -463,8 +501,10 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           </div>
         </aside>
       </div>
+      )}
 
       {/* ─── MOBILE HERO (lg:hidden) — Clean Vertical Stack With Zero Overlap ─── */}
+      {!isDesktop && (
       <div className="flex lg:hidden flex-col justify-between w-full flex-1 min-h-0">
         {/* TOP: Identity & Role (Moved lower for comfortable breathing room from TopNav on mobile) */}
         <div className="flex flex-col items-start pointer-events-auto pt-14 xs:pt-18 mt-2 xs:mt-3">
@@ -535,6 +575,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           {renderActionButtons(true)}
         </div>
       </div>
+      )}
 
       {/* BOTTOM CENTER SCROLL CUE — Slightly more compact + shorter side inward arrows */}
       <div className="relative flex flex-col items-center pointer-events-auto z-30">

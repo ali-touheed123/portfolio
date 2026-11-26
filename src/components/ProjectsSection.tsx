@@ -491,7 +491,12 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           color: palette[Math.floor(Math.random() * palette.length)],
         }));
 
+        let isCanvasVisible = true;
         const animateStars = () => {
+          if (!isCanvasVisible || document.hidden) {
+            animFrameId = 0;
+            return;
+          }
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           for (const s of stars) {
             s.y += s.vy;
@@ -508,7 +513,30 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           ctx.globalAlpha = 1;
           animFrameId = requestAnimationFrame(animateStars);
         };
+
+        const observer = typeof IntersectionObserver !== 'undefined'
+          ? new IntersectionObserver(([entry]) => {
+              isCanvasVisible = entry.isIntersecting;
+              if (isCanvasVisible && !document.hidden && animFrameId === 0) {
+                animateStars();
+              }
+            }, { rootMargin: '200px' })
+          : null;
+        observer?.observe(canvas);
+
+        const onVis = () => {
+          if (!document.hidden && isCanvasVisible && animFrameId === 0) {
+            animateStars();
+          }
+        };
+        document.addEventListener('visibilitychange', onVis);
         animateStars();
+
+        // Store cleanup on canvas element for return
+        (canvas as HTMLCanvasElement & { _cleanupObs?: () => void })._cleanupObs = () => {
+          observer?.disconnect();
+          document.removeEventListener('visibilitychange', onVis);
+        };
       }
     }
 
@@ -521,6 +549,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('resize', onResize);
       if (animFrameId) cancelAnimationFrame(animFrameId);
+      (canvas as (HTMLCanvasElement & { _cleanupObs?: () => void }) | null)?._cleanupObs?.();
     };
   }, []);
 

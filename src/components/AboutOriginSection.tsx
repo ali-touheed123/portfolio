@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 
 interface FrictionChip {
   label: string;
@@ -92,6 +93,9 @@ export const AboutOriginSection: React.FC = () => {
   const ribbonText1Ref = useRef<SVGTextPathElement>(null);
   const ribbonText2Ref = useRef<SVGTextPathElement>(null);
   const nodeRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const isSectionActive = useIsInViewport(starCanvasRef, '300px');
+  const isSectionActiveRef = useRef<boolean>(isSectionActive);
+  isSectionActiveRef.current = isSectionActive;
 
   const [reachedSteps, setReachedSteps] = useState<boolean[]>([false, false, false, false]);
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
@@ -104,6 +108,7 @@ export const AboutOriginSection: React.FC = () => {
 
   // 1. Subtle Cosmic Starfield Canvas Backdrop
   useEffect(() => {
+    if (!isSectionActive) return;
     const canvas = starCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -158,7 +163,7 @@ export const AboutOriginSection: React.FC = () => {
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('resize', initStars);
     };
-  }, []);
+  }, [isSectionActive]);
 
   // 2. Scroll-Drawn Winding Path + Leading Comet Orb + Side Ribbons (Desktop + Mobile)
   useEffect(() => {
@@ -265,10 +270,17 @@ export const AboutOriginSection: React.FC = () => {
         setActiveChapterIdx(activeIdx);
       }
 
-      rafId = window.requestAnimationFrame(tick);
+      rafId = isSectionActiveRef.current ? window.requestAnimationFrame(tick) : 0;
+    };
+
+    const resumeTick = () => {
+      if (isSectionActiveRef.current && rafId === 0) {
+        rafId = window.requestAnimationFrame(tick);
+      }
     };
 
     window.addEventListener('scroll', computeTargetProgress, { passive: true });
+    window.addEventListener('scroll', resumeTick, { passive: true });
     window.addEventListener('resize', computeTargetProgress);
     computeTargetProgress();
     rafId = window.requestAnimationFrame(tick);
@@ -276,6 +288,7 @@ export const AboutOriginSection: React.FC = () => {
     return () => {
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', computeTargetProgress);
+      window.removeEventListener('scroll', resumeTick);
       window.removeEventListener('resize', computeTargetProgress);
     };
   }, []);

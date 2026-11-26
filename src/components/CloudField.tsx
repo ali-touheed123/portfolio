@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSkyTheme } from '../context/ThemeContext';
+import { useHomeVisible } from '../context/VisibilityContext';
 
 interface Cloud {
   x: number;
@@ -13,15 +14,49 @@ interface Cloud {
   currOffsetY: number;
 }
 
+function createCloudSprite(): HTMLCanvasElement {
+  const off = document.createElement('canvas');
+  off.width = 280;
+  off.height = 170;
+  const octx = off.getContext('2d');
+  if (!octx) return off;
+
+  octx.save();
+  octx.translate(140, 85);
+
+  const grad = octx.createLinearGradient(0, -60, 0, 45);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+  grad.addColorStop(0.65, 'rgba(244, 249, 255, 0.92)');
+  grad.addColorStop(1, 'rgba(216, 232, 248, 0.72)');
+
+  octx.fillStyle = grad;
+  octx.shadowColor = 'rgba(148, 184, 224, 0.28)';
+  octx.shadowBlur = 24;
+  octx.shadowOffsetY = 10;
+
+  octx.beginPath();
+  octx.arc(-62, 10, 34, 0, Math.PI * 2);
+  octx.arc(-20, -14, 46, 0, Math.PI * 2);
+  octx.arc(32, -8, 40, 0, Math.PI * 2);
+  octx.arc(72, 12, 30, 0, Math.PI * 2);
+  octx.roundRect(-86, 4, 178, 36, 18);
+  octx.fill();
+  octx.restore();
+  return off;
+}
+
 export const CloudField: React.FC = () => {
   const { isDay } = useSkyTheme();
+  const homeVisible = useHomeVisible();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: -9999, y: -9999, active: false });
 
   useEffect(() => {
-    if (!isDay) return;
+    if (!isDay || !homeVisible) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const cloudSprite = createCloudSprite();
 
     // Seed gentle clouds across the upper sky and lower horizon
     const clouds: Cloud[] = Array.from({ length: 14 }, (_, idx) => {
@@ -40,7 +75,7 @@ export const CloudField: React.FC = () => {
     });
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const width = canvas.parentElement?.clientWidth || window.innerWidth;
       const height = canvas.parentElement?.clientHeight || window.innerHeight;
       canvas.width = width * dpr;
@@ -62,35 +97,12 @@ export const CloudField: React.FC = () => {
     window.addEventListener('mousemove', onMove, { passive: true });
     document.addEventListener('mouseleave', onLeave);
 
-    const drawCloud = (ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, alpha: number) => {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(s, s);
-      ctx.globalAlpha = alpha;
-
-      // Soft atmospheric cloud silhouette built from layered sunlit puffs
-      const grad = ctx.createLinearGradient(0, -60, 0, 45);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
-      grad.addColorStop(0.65, 'rgba(244, 249, 255, 0.92)');
-      grad.addColorStop(1, 'rgba(216, 232, 248, 0.72)');
-
-      ctx.fillStyle = grad;
-      ctx.shadowColor = 'rgba(148, 184, 224, 0.28)';
-      ctx.shadowBlur = 24;
-      ctx.shadowOffsetY = 10;
-
-      ctx.beginPath();
-      ctx.arc(-62, 10, 34, 0, Math.PI * 2);
-      ctx.arc(-20, -14, 46, 0, Math.PI * 2);
-      ctx.arc(32, -8, 40, 0, Math.PI * 2);
-      ctx.arc(72, 12, 30, 0, Math.PI * 2);
-      ctx.roundRect(-86, 4, 178, 36, 18);
-      ctx.fill();
-      ctx.restore();
-    };
-
     let rafId = 0;
     const render = () => {
+      if (document.hidden) {
+        rafId = 0;
+        return;
+      }
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       const width = canvas.parentElement?.clientWidth || window.innerWidth;
@@ -123,11 +135,28 @@ export const CloudField: React.FC = () => {
         c.currOffsetX += (targetOX - c.currOffsetX) * 0.06;
         c.currOffsetY += (targetOY - c.currOffsetY) * 0.06;
 
-        drawCloud(ctx, baseX + c.currOffsetX, baseY + c.currOffsetY, c.scale, c.opacity);
+        const drawW = cloudSprite.width * c.scale;
+        const drawH = cloudSprite.height * c.scale;
+        ctx.globalAlpha = c.opacity;
+        ctx.drawImage(
+          cloudSprite,
+          baseX + c.currOffsetX - drawW * 0.5,
+          baseY + c.currOffsetY - drawH * 0.5,
+          drawW,
+          drawH
+        );
       }
+      ctx.globalAlpha = 1;
 
       rafId = requestAnimationFrame(render);
     };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && rafId === 0) {
+        rafId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
     rafId = requestAnimationFrame(render);
 
     return () => {
@@ -135,8 +164,9 @@ export const CloudField: React.FC = () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [isDay]);
+  }, [isDay, homeVisible]);
 
   return (
     <div

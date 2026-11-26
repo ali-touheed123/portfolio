@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, type RefObject } from 'react';
 import { useSkyTheme } from '../context/ThemeContext';
 import type { ParallaxState } from '../hooks/useParallax';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 
 interface HeroSkyAtmosphereProps {
-  parallax?: ParallaxState;
+  parallaxRef?: RefObject<ParallaxState | null>;
 }
 
 interface DustParticle {
@@ -20,10 +21,11 @@ interface DustParticle {
  * Pure procedural WebGL-style atmospheric stage replacing background.webp & background-layer.webp.
  * Renders depth-sorted atmospheric particles and horizon aura synced cleanly with Moon (Night) / Sun (Day).
  */
-export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallax }) => {
+export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRef }) => {
   const { isDay, isNight } = useSkyTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const parallaxRef = useRef<ParallaxState>({ x: 0, y: 0 });
+  const isActive = useIsInViewport(canvasRef, '200px');
+  const isActiveRef = useRef<boolean>(isActive);
   const isDayRef = useRef<boolean>(isDay);
 
   useEffect(() => {
@@ -31,10 +33,8 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallax }
   }, [isDay]);
 
   useEffect(() => {
-    if (parallax) {
-      parallaxRef.current = parallax;
-    }
-  }, [parallax]);
+    isActiveRef.current = isActive;
+  }, [isActive]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -73,10 +73,15 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallax }
     };
 
     const draw = (time: number) => {
+      if (!isActiveRef.current) {
+        animId = 0;
+        return;
+      }
       ctx.clearRect(0, 0, width, height);
       const day = isDayRef.current;
-      const px = parallaxRef.current.x * 26;
-      const py = parallaxRef.current.y * 18;
+      const p = parallaxRef?.current;
+      const px = (p?.x ?? 0) * 26;
+      const py = (p?.y ?? 0) * 18;
 
       // Subtle atmospheric aura centered around hero figure stage
       const cx = width * 0.5 + px * 0.45;
@@ -161,14 +166,16 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallax }
     };
 
     init();
-    animId = window.requestAnimationFrame(draw);
+    if (isActiveRef.current) {
+      animId = window.requestAnimationFrame(draw);
+    }
     window.addEventListener('resize', init);
 
     return () => {
       window.removeEventListener('resize', init);
       window.cancelAnimationFrame(animId);
     };
-  }, []);
+  }, [isActive]);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">

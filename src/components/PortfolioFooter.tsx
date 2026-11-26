@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 
 export const PortfolioFooter: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -6,6 +7,7 @@ export const PortfolioFooter: React.FC = () => {
   const planeRef = useRef<HTMLDivElement | null>(null);
   const trailRef = useRef<SVGPathElement | null>(null);
   const contactBtnRef = useRef<HTMLButtonElement | null>(null);
+  const isFooterActive = useIsInViewport(canvasRef, '200px');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -24,6 +26,7 @@ export const PortfolioFooter: React.FC = () => {
 
   // 1. Starry Sky Canvas
   useEffect(() => {
+    if (!isFooterActive) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -103,7 +106,7 @@ export const PortfolioFooter: React.FC = () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', initStars);
     };
-  }, []);
+  }, [isFooterActive]);
 
   // 2. Paper Plane flight & Sparks
   const isFlyingRef = useRef(false);

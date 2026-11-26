@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, type RefObject } from 'react';
 import { type MotionValue, useMotionValueEvent } from 'motion/react';
 import type { ParallaxState } from '../hooks/useParallax';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 import { mediaUrl } from '../config/media';
 
 interface HeroScrollCanvasProps {
@@ -8,7 +9,7 @@ interface HeroScrollCanvasProps {
   scrollProgress: MotionValue<number>;
   onAnimationComplete?: (isComplete: boolean) => void;
   onFrameChange?: (frameNum: number) => void;
-  parallax?: ParallaxState;
+  parallaxRef?: RefObject<ParallaxState | null>;
 }
 
 const ACTIVE_FRAMES: number[] = Array.from({ length: 36 }, (_, i) => i + 5);
@@ -19,9 +20,12 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
   scrollProgress,
   onAnimationComplete,
   onFrameChange,
-  parallax,
+  parallaxRef,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stageBoxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isActive = useIsInViewport(containerRef, '200px');
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_ACTIVE_FRAMES).fill(null));
   const currentFrameIndexRef = useRef<number>(0);
   const [activeFrameIndex, setActiveFrameIndex] = useState<number>(0);
@@ -172,17 +176,40 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
   const progressRatio = activeFrameIndex / (TOTAL_ACTIVE_FRAMES - 1);
   const scaleDepth = 1 + progressRatio * 0.06;
 
-  const px = parallax ? parallax.x * 20 : 0;
-  const py = parallax ? parallax.y * 16 : 0;
-  const rotY = parallax ? parallax.x * 5 : 0;
-  const rotX = parallax ? -parallax.y * 5 : 0;
+  // Apply parallax transform directly to DOM without React re-renders
+  useEffect(() => {
+    if (!isActive) return;
+    let rafId = 0;
+    let lastTransform = '';
+
+    const updateTransform = () => {
+      const box = stageBoxRef.current;
+      if (box) {
+        const p = parallaxRef?.current;
+        const px = (p?.x ?? 0) * 20;
+        const py = (p?.y ?? 0) * 16;
+        const rotY = (p?.x ?? 0) * 5;
+        const rotX = -(p?.y ?? 0) * 5;
+        const nextTransform = `perspective(1100px) translate3d(${px.toFixed(2)}px, ${(py + currentDropY).toFixed(2)}px, 0) rotateY(${rotY.toFixed(2)}deg) rotateX(${rotX.toFixed(2)}deg) scale(${scaleDepth.toFixed(4)})`;
+        if (nextTransform !== lastTransform) {
+          box.style.transform = nextTransform;
+          lastTransform = nextTransform;
+        }
+      }
+      rafId = window.requestAnimationFrame(updateTransform);
+    };
+
+    rafId = window.requestAnimationFrame(updateTransform);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isActive, parallaxRef, currentDropY, scaleDepth]);
 
   return (
-    <div className={`relative flex items-center justify-center ${className}`}>
+    <div ref={containerRef} className={`relative flex items-center justify-center ${className}`}>
       <div
+        ref={stageBoxRef}
         className="relative w-56 xs:w-64 sm:w-80 md:w-96 lg:w-124 max-h-[42vh] sm:max-h-[55vh] lg:max-h-[78vh] aspect-375/666 flex items-center justify-center -translate-y-8 xs:-translate-y-10 sm:translate-y-[-4%] lg:translate-y-[-8%] pointer-events-auto will-change-transform"
         style={{
-          transform: `perspective(1100px) translate3d(${px}px, ${py + currentDropY}px, 0) rotateY(${rotY}deg) rotateX(${rotX}deg) scale(${scaleDepth})`,
+          transform: `perspective(1100px) translate3d(0px, ${currentDropY}px, 0) scale(${scaleDepth})`,
           transition: isEntranceActive ? 'transform 0.85s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
         }}
       >

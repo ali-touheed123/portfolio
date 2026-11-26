@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, type RefObject } from 'react';
 import { useSkyTheme } from '../context/ThemeContext';
 import type { ParallaxState } from '../hooks/useParallax';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 
 interface HeroOrbitalIconsProps {
   visible: boolean;
-  parallax?: ParallaxState;
+  parallaxRef?: RefObject<ParallaxState | null>;
 }
 
 interface OrbitItemSpec {
@@ -59,15 +60,17 @@ const ORBIT_ITEMS: OrbitItemSpec[] = [
  * and front lower arc sweeps in front of the mossy island (z-15), never crossing the character's face.
  * Hovering smoothly accelerates the orbital revolution speed.
  */
-export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, parallax }) => {
+export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, parallaxRef }) => {
   const { isDay } = useSkyTheme();
   const [hovered, setHovered] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
+  const backRingRef = useRef<HTMLDivElement>(null);
+  const frontRingRef = useRef<HTMLDivElement>(null);
+  const isActive = useIsInViewport(stageRef, '200px');
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hoveredRef = useRef(false);
   const visibleRef = useRef(visible);
-  const parallaxRef = useRef<ParallaxState>({ x: 0, y: 0 });
   const angleRef = useRef(0.35);
   const speedRef = useRef(0.34);
   const revealBlendRef = useRef(0);
@@ -81,10 +84,7 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
   }, [visible]);
 
   useEffect(() => {
-    if (parallax) parallaxRef.current = parallax;
-  }, [parallax]);
-
-  useEffect(() => {
+    if (!isActive) return;
     const prefersReduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -119,9 +119,18 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
       const cosT = Math.cos(tiltRad);
       const sinT = Math.sin(tiltRad);
 
-      const px = parallaxRef.current.x * 16;
-      const py = parallaxRef.current.y * 10;
+      const p = parallaxRef?.current;
+      const pRawX = p?.x ?? 0;
+      const pRawY = p?.y ?? 0;
+      const px = pRawX * 16;
+      const py = pRawY * 10;
       const reveal = revealBlendRef.current;
+
+      const ringTransform = `translate3d(${pRawX * 10}px, ${pRawY * 6 + 42}px, 0) scale(${
+        visibleRef.current ? 1 : 0.78
+      })`;
+      if (backRingRef.current) backRingRef.current.style.transform = ringTransform;
+      if (frontRingRef.current) frontRingRef.current.style.transform = ringTransform;
 
       ORBIT_ITEMS.forEach((_, idx) => {
         const el = itemRefs.current[idx];
@@ -158,7 +167,7 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
 
     animId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(animId);
-  }, []);
+  }, [isActive]);
 
   const ringOpacityBack = visible ? (isDay ? 0.55 : 0.85) : 0;
   const ringOpacityFront = visible ? (isDay ? 0.48 : 0.75) : 0;
@@ -171,12 +180,10 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
     >
       {/* BACK LUMINOUS ORBITAL ARCS (z-5 — strictly BEHIND HeroScrollCanvas z-10) */}
       <div
+        ref={backRingRef}
         className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
         style={{
           opacity: ringOpacityBack,
-          transform: `translate3d(${(parallax?.x ?? 0) * 10}px, ${(parallax?.y ?? 0) * 6 + 42}px, 0) scale(${
-            visible ? 1 : 0.78
-          })`,
         }}
       >
         <svg viewBox="0 0 820 340" fill="none" className="w-[min(92vw,700px)] h-auto overflow-visible">
@@ -239,12 +246,10 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
 
       {/* FRONT LOWER FOREGROUND RIM (z-15 — sweeps gently ONLY under lower half around mossy rock) */}
       <div
+        ref={frontRingRef}
         className="pointer-events-none absolute inset-0 z-15 flex items-center justify-center transition-all duration-700 -translate-y-8 xs:-translate-y-10 sm:translate-y-0"
         style={{
           opacity: ringOpacityFront,
-          transform: `translate3d(${(parallax?.x ?? 0) * 10}px, ${(parallax?.y ?? 0) * 6 + 42}px, 0) scale(${
-            visible ? 1 : 0.78
-          })`,
         }}
       >
         <svg viewBox="0 0 820 340" fill="none" className="w-[min(92vw,700px)] h-auto overflow-visible">

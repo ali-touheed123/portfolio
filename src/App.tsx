@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Lenis from 'lenis';
 import { useScroll, useSpring, useTransform } from 'motion/react';
 import { ThemeProvider, useSkyTheme } from './context/ThemeContext';
+import { HomeVisibilityProvider } from './context/VisibilityContext';
 import { useParallax } from './hooks/useParallax';
 import { HeroScrollCanvas } from './components/HeroScrollCanvas';
 import { HeroSkyAtmosphere } from './components/HeroSkyAtmosphere';
@@ -28,8 +29,9 @@ interface PortfolioShellProps {
 
 function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: PortfolioShellProps) {
   const { isDay } = useSkyTheme();
-  const parallax = useParallax();
+  const parallaxRef = useParallax();
   const heroTrackRef = useRef<HTMLElement>(null);
+  const stackSectionRef = useRef<HTMLElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -49,6 +51,28 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
   const [activeSection, setActiveSection] = useState<string>('top');
   // Track whether curtain is still covering the screen
   const [curtainDone, setCurtainDone] = useState<boolean>(false);
+  // Defer downloading & mounting the heavy 5MB Three.js/Rapier3D SkillsArcade until user scrolls near #stack
+  const [skillsNearViewport, setSkillsNearViewport] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!curtainDone || skillsNearViewport) return;
+    const el = stackSectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setSkillsNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setSkillsNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '600px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [curtainDone, skillsNearViewport]);
 
   const handleCurtainOpenStart = useCallback(() => {
     setHeroRevealed(true);
@@ -159,6 +183,7 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
   };
 
   return (
+    <HomeVisibilityProvider value={isVisible}>
     <div
       id="top"
       className={`relative min-h-screen w-full overflow-x-clip transition-colors duration-700 ${
@@ -181,12 +206,12 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
       {/* 260vh STICKY 3D SCROLL STAGE HERO */}
       <section ref={heroTrackRef} className="relative w-full h-[260vh] z-10">
         <div className="sticky top-0 w-full h-screen flex items-center justify-center overflow-hidden">
-          <HeroSkyAtmosphere parallax={parallax} />
-          <HeroOrbitalIcons visible={showOrbitalOverlay} parallax={parallax} />
+          <HeroSkyAtmosphere parallaxRef={parallaxRef} />
+          <HeroOrbitalIcons visible={showOrbitalOverlay} parallaxRef={parallaxRef} />
           <HeroScrollCanvas
             className="w-full h-full z-10"
             scrollProgress={heroFrameProgress}
-            parallax={parallax}
+            parallaxRef={parallaxRef}
             onFrameChange={setCurrentFrame}
             onAnimationComplete={setIsHeroComplete}
           />
@@ -203,10 +228,14 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
       <main className="relative z-10">
         <CrossedRibbonBridge />
         <AboutOriginSection />
-        <section id="stack" className="relative w-full z-10">
-          <Suspense fallback={<div className="min-h-100 w-full" />}>
-            <SkillsSectionApp />
-          </Suspense>
+        <section id="stack" ref={stackSectionRef} className="relative w-full z-10">
+          {curtainDone && skillsNearViewport ? (
+            <Suspense fallback={<div className="min-h-100 w-full" />}>
+              <SkillsSectionApp />
+            </Suspense>
+          ) : (
+            <div className="min-h-100 w-full" />
+          )}
         </section>
         <section id="work" className="relative w-full z-10">
           <ProjectsSection onOpenAllProjects={onOpenAllProjects} />
@@ -216,6 +245,7 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
         </section>
       </main>
     </div>
+    </HomeVisibilityProvider>
   );
 }
 

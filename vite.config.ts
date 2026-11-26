@@ -28,6 +28,24 @@ export default defineConfig(() => {
         },
       },
     ],
+    build: {
+      rolldownOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('@dimforge/rapier3d')) return 'vendor-rapier';
+            if (id.includes('/three/') || id.includes('\\three\\')) return 'vendor-three';
+            if (id.includes('matter-js')) return 'vendor-matter';
+            if (id.includes('gsap') || id.includes('motion') || id.includes('lenis')) {
+              return 'vendor-motion';
+            }
+            if (id.includes('react-dom') || id.includes('/react/') || id.includes('\\react\\')) {
+              return 'vendor-react';
+            }
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

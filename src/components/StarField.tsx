@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSkyTheme } from '../context/ThemeContext';
+import { useHomeVisible } from '../context/VisibilityContext';
 
 type StarType = 'sparkle_lg' | 'sparkle_sm' | 'dot_glow' | 'micro_dot';
 
@@ -12,9 +13,7 @@ interface Star {
   vy: number;
   radius: number;
   type: StarType;
-  color: string;
-  glowColor: string;
-  glowBlur: number;
+  paletteIdx: number;
   baseAlpha: number;
   twinkleSpeed: number;
   phase: number;
@@ -27,54 +26,114 @@ const STAR_PALETTE = [
   { color: '#fef9c3', glow: 'rgba(250, 204, 21, 0.75)', weight: 10 },
 ];
 
-function pickColor() {
+function pickPaletteIdx(): number {
   const r = Math.random() * 100;
   let sum = 0;
-  for (const item of STAR_PALETTE) {
-    sum += item.weight;
-    if (r <= sum) return item;
+  for (let i = 0; i < STAR_PALETTE.length; i++) {
+    sum += STAR_PALETTE[i].weight;
+    if (r <= sum) return i;
   }
-  return STAR_PALETTE[0];
+  return 0;
+}
+
+function drawSparkleStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - R);
+  ctx.quadraticCurveTo(cx, cy, cx + R, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy + R);
+  ctx.quadraticCurveTo(cx, cy, cx - R, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy - R);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function createStarSprite(type: StarType, paletteIdx: number): HTMLCanvasElement {
+  const palette = STAR_PALETTE[paletteIdx];
+  const baseRadius =
+    type === 'sparkle_lg' ? 11 : type === 'sparkle_sm' ? 6 : type === 'dot_glow' ? 2.4 : 1.2;
+  const blur =
+    type === 'sparkle_lg' ? 14 : type === 'sparkle_sm' ? 10 : type === 'dot_glow' ? 6 : 0;
+  const pad = blur + 4;
+  const size = Math.ceil((baseRadius + pad) * 2);
+  const off = document.createElement('canvas');
+  off.width = size;
+  off.height = size;
+  const octx = off.getContext('2d');
+  if (!octx) return off;
+
+  const c = size / 2;
+  if (type === 'sparkle_lg' || type === 'sparkle_sm') {
+    octx.shadowColor = palette.glow;
+    octx.shadowBlur = blur;
+    octx.fillStyle = palette.color;
+    drawSparkleStar(octx, c, c, baseRadius);
+    octx.shadowBlur = 0;
+    octx.fillStyle = '#ffffff';
+    drawSparkleStar(octx, c, c, baseRadius * 0.45);
+  } else if (type === 'dot_glow') {
+    octx.shadowColor = palette.glow;
+    octx.shadowBlur = blur;
+    octx.fillStyle = palette.color;
+    octx.beginPath();
+    octx.arc(c, c, baseRadius, 0, Math.PI * 2);
+    octx.fill();
+    octx.shadowBlur = 0;
+    octx.fillStyle = '#ffffff';
+    octx.beginPath();
+    octx.arc(c, c, baseRadius * 0.5, 0, Math.PI * 2);
+    octx.fill();
+  } else {
+    octx.fillStyle = palette.color;
+    octx.beginPath();
+    octx.arc(c, c, baseRadius, 0, Math.PI * 2);
+    octx.fill();
+  }
+  return off;
 }
 
 export const StarField: React.FC = () => {
   const { isNight } = useSkyTheme();
+  const homeVisible = useHomeVisible();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
   const animFrameRef = useRef<number | null>(null);
   const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: -9999, y: -9999, active: false });
 
   useEffect(() => {
-    if (!isNight) return;
+    if (!isNight || !homeVisible) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Pre-render 16 tiny offscreen sprites once (eliminates ~4,320 shadowBlur calls/sec)
+    const types: StarType[] = ['sparkle_lg', 'sparkle_sm', 'dot_glow', 'micro_dot'];
+    const sprites: Record<string, HTMLCanvasElement> = {};
+    for (const t of types) {
+      for (let p = 0; p < STAR_PALETTE.length; p++) {
+        sprites[`${t}_${p}`] = createStarSprite(t, p);
+      }
+    }
 
     const totalStars = 150;
     const generated: Star[] = [];
 
     for (let i = 0; i < totalStars; i++) {
-      const palette = pickColor();
+      const paletteIdx = pickPaletteIdx();
       const roll = Math.random();
       let type: StarType;
       let radius: number;
-      let glowBlur: number;
 
       if (roll < 0.06) {
         type = 'sparkle_lg';
         radius = 8 + Math.random() * 5;
-        glowBlur = 12 + Math.random() * 6;
       } else if (roll < 0.16) {
         type = 'sparkle_sm';
         radius = 4 + Math.random() * 3.5;
-        glowBlur = 8 + Math.random() * 4;
       } else if (roll < 0.48) {
         type = 'dot_glow';
         radius = 1.8 + Math.random() * 0.9;
-        glowBlur = 5 + Math.random() * 2.5;
       } else {
         type = 'micro_dot';
         radius = 0.8 + Math.random() * 0.6;
-        glowBlur = 0;
       }
 
       generated.push({
@@ -86,9 +145,7 @@ export const StarField: React.FC = () => {
         vy: 0,
         radius,
         type,
-        color: palette.color,
-        glowColor: palette.glow,
-        glowBlur,
+        paletteIdx,
         baseAlpha: 0.45 + Math.random() * 0.55,
         twinkleSpeed: 0.01 + Math.random() * 0.025,
         phase: Math.random() * Math.PI * 2,
@@ -99,7 +156,7 @@ export const StarField: React.FC = () => {
 
     const resizeCanvas = () => {
       if (!canvas) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const width = canvas.parentElement?.clientWidth || window.innerWidth;
       const height = canvas.parentElement?.clientHeight || window.innerHeight;
 
@@ -132,23 +189,16 @@ export const StarField: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     document.addEventListener('mouseleave', handleMouseLeave);
 
-    const drawSparkleStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number) => {
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - R);
-      ctx.quadraticCurveTo(cx, cy, cx + R, cy);
-      ctx.quadraticCurveTo(cx, cy, cx, cy + R);
-      ctx.quadraticCurveTo(cx, cy, cx - R, cy);
-      ctx.quadraticCurveTo(cx, cy, cx, cy - R);
-      ctx.closePath();
-      ctx.fill();
-    };
-
     const REPEL_RADIUS = 110;
     const MAX_PUSH_FORCE = 3.2;
     const SPRING_FACTOR = 0.055;
     const DAMPING = 0.84;
 
     const render = () => {
+      if (document.hidden) {
+        animFrameRef.current = null;
+        return;
+      }
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -192,46 +242,26 @@ export const StarField: React.FC = () => {
         star.phase += star.twinkleSpeed;
         const currentAlpha = star.baseAlpha * (0.65 + 0.35 * Math.sin(star.phase));
 
-        const sx = star.currX;
-        const sy = star.currY;
+        const sprite = sprites[`${star.type}_${star.paletteIdx}`];
+        const baseR =
+          star.type === 'sparkle_lg' ? 11 : star.type === 'sparkle_sm' ? 6 : star.type === 'dot_glow' ? 2.4 : 1.2;
+        const scale = star.radius / baseR;
+        const drawSize = sprite.width * scale;
 
-        ctx.save();
         ctx.globalAlpha = Math.max(0.1, Math.min(1, currentAlpha));
-
-        if (star.type === 'sparkle_lg' || star.type === 'sparkle_sm') {
-          ctx.shadowColor = star.glowColor;
-          ctx.shadowBlur = star.glowBlur;
-          ctx.fillStyle = star.color;
-          drawSparkleStar(ctx, sx, sy, star.radius);
-
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffffff';
-          drawSparkleStar(ctx, sx, sy, star.radius * 0.45);
-        } else if (star.type === 'dot_glow') {
-          ctx.shadowColor = star.glowColor;
-          ctx.shadowBlur = star.glowBlur;
-          ctx.fillStyle = star.color;
-          ctx.beginPath();
-          ctx.arc(sx, sy, star.radius, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(sx, sy, star.radius * 0.5, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillStyle = star.color;
-          ctx.beginPath();
-          ctx.arc(sx, sy, star.radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        ctx.restore();
+        ctx.drawImage(sprite, star.currX - drawSize * 0.5, star.currY - drawSize * 0.5, drawSize, drawSize);
       }
+      ctx.globalAlpha = 1;
 
       animFrameRef.current = requestAnimationFrame(render);
     };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && animFrameRef.current === null) {
+        animFrameRef.current = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     animFrameRef.current = requestAnimationFrame(render);
 
@@ -239,9 +269,13 @@ export const StarField: React.FC = () => {
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
     };
-  }, [isNight]);
+  }, [isNight, homeVisible]);
 
   return (
     <canvas

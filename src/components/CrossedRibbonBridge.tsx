@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSkyTheme } from '../context/ThemeContext';
+import { useIsInViewport } from '../hooks/useIsInViewport';
 
 const RIBBON_BACK_PATH =
   'M -140 118 C 180 124, 340 44, 620 82 C 880 116, 1080 42, 1580 58';
@@ -26,8 +27,10 @@ export const CrossedRibbonBridge: React.FC = () => {
   const frontPathRef = useRef<SVGPathElement>(null);
   const backTextRef = useRef<SVGTextPathElement>(null);
   const frontTextRef = useRef<SVGTextPathElement>(null);
+  const isActive = useIsInViewport(containerRef, '150px');
 
   useEffect(() => {
+    if (!isActive) return;
     const prefersReduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -97,7 +100,7 @@ export const CrossedRibbonBridge: React.FC = () => {
 
     rafId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(rafId);
-  }, []);
+  }, [isActive]);
 
   return (
     <div

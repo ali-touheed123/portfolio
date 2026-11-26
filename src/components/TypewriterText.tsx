@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface TypewriterTextProps {
   text: string;
@@ -19,38 +19,58 @@ export const TypewriterText: React.FC<TypewriterTextProps> = ({
   style,
   onComplete,
 }) => {
-  const [displayedText, setDisplayedText] = useState<string>('');
+  const [charCount, setCharCount] = useState<number>(0);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (!active) {
-      setDisplayedText('');
+      setCharCount(0);
       return;
     }
 
-    let timeoutId: number;
-    let intervalId: number;
-    let currentIndex = 0;
+    let rafId = 0;
+    let startTime: number | null = null;
+    let completed = false;
+    let lastCount = 0;
 
-    timeoutId = window.setTimeout(() => {
-      intervalId = window.setInterval(() => {
-        currentIndex++;
-        setDisplayedText(text.slice(0, currentIndex));
-        if (currentIndex >= text.length) {
-          window.clearInterval(intervalId);
-          if (onComplete) onComplete();
+    const tick = (now: number) => {
+      if (startTime === null) {
+        startTime = now;
+      }
+      const elapsed = now - startTime - delay;
+      if (elapsed >= 0) {
+        const nextCount = Math.min(text.length, Math.floor(elapsed / speed) + 1);
+        if (nextCount !== lastCount) {
+          lastCount = nextCount;
+          setCharCount(nextCount);
         }
-      }, speed);
-    }, delay);
+        if (nextCount >= text.length) {
+          if (!completed) {
+            completed = true;
+            onCompleteRef.current?.();
+          }
+          return;
+        }
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
 
+    rafId = window.requestAnimationFrame(tick);
     return () => {
-      window.clearTimeout(timeoutId);
-      window.clearInterval(intervalId);
+      window.cancelAnimationFrame(rafId);
     };
   }, [text, speed, delay, active]);
 
   return (
-    <span className={className} style={style}>
-      {displayedText}
+    <span className={`relative inline-block ${className}`} style={style}>
+      {/* Reserve final text dimensions from frame 0 to prevent layout shift */}
+      <span aria-hidden="true" className="opacity-0 select-none pointer-events-none">
+        {text}
+      </span>
+      <span className="absolute inset-0">
+        {text.slice(0, charCount)}
+      </span>
     </span>
   );
 };
