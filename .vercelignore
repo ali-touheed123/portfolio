@@ -1,0 +1,9 @@
+# This folder is a historical standalone prototype; its content has been
+# absorbed into src/watchStrap/ in the main app. Tell Vercel to ignore it
+# so it is not auto-detected as a separate deployable project.
+my-work-—-3d-watch-strap-portfolio-showcase/
+
+# Misc files that don't belong in the deployment
+new models/
+footer.html
+"projects section.html"

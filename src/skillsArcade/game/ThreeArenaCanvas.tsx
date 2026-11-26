@@ -741,7 +741,11 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
       syncBricksToScene(engine.bricks);
     }
 
-    renderer.compile(scene, camera);
+    requestAnimationFrame(() => {
+      if (renderer && scene && camera) {
+        renderer.compile(scene, camera);
+      }
+    });
 
     const updateSize = () => {
       const w = container.clientWidth;

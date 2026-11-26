@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { useSkyTheme } from '../../context/ThemeContext';
 import { useIsInViewport } from '../../hooks/useIsInViewport';
 import { detectSoftwareWebGL, disposeObjectSubtree } from '../../utils/webgl';
+import { mediaUrl } from '../../config/media';
 
-const DEPTH_3D = 42;
+const DEPTH_3D = 24;
 const REMOVE_WHITE_BG = true;
 const MAGNET_RADIUS = 42;
 const MAGNET_PULL = 0.4;
@@ -12,9 +13,9 @@ const CAMERA_FOV = 45;
 
 // Seat/hands horizontal line in character.png (y = 282 / 480 = 0.5875 from top)
 // Matches the exact perched proportions over the arcade bezel
-const CHAR_MAX_DIM = 202;
-const VIRTUAL_STAGE_HEIGHT = 220;
-const SEAT_CENTER_OFFSET_RATIO = 0.0804; // (0.5804 - 0.5) of rendered character box height
+const CHAR_MAX_DIM = 480;
+const VIRTUAL_STAGE_HEIGHT = 480;
+const SEAT_CENTER_OFFSET_RATIO = 0.0875; // (282 - 240) / 480 = 0.0875 of rendered character box height
 
 interface SampledPoint {
   x: number;
@@ -34,12 +35,25 @@ interface ArcadeLedgeMorphProps {
   anchorRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function loadImageFromSrc(src: string): Promise<HTMLImageElement> {
+function loadImageFromSrc(src: string, fallbackSrc?: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
+    const tryLoad = (url: string, isFallback: boolean) => {
+      const img = new Image();
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        img.crossOrigin = 'anonymous';
+      }
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        if (!isFallback && fallbackSrc && fallbackSrc !== url) {
+          tryLoad(fallbackSrc, true);
+        } else {
+          reject(new Error(`Failed to load image from ${url}`));
+        }
+      };
+      img.src = url;
+    };
+
+    tryLoad(src, false);
   });
 }
 
@@ -49,9 +63,9 @@ function createCircleTexture(): THREE.CanvasTexture {
   c.height = 64;
   const ctx = c.getContext('2d');
   if (ctx) {
-    const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.86)');
+    grad.addColorStop(0.78, 'rgba(255,255,255,0.96)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 64, 64);
@@ -61,39 +75,32 @@ function createCircleTexture(): THREE.CanvasTexture {
   return tex;
 }
 
-function rethemeCharacterColor(
+function extractCharacterColor(
   r255: number,
   g255: number,
   b255: number
 ): [number, number, number] {
-  let r = r255 / 255;
-  let g = g255 / 255;
-  let b = b255 / 255;
+  const r = r255 / 255;
+  const g = g255 / 255;
+  const b = b255 / 255;
 
   const maxC = Math.max(r, g, b);
   const minC = Math.min(r, g, b);
   const sat = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-  // Shift cyan left-rim lighting toward Neon Lime (#39FF14)
-  const isCyanRim = b > r * 1.18 && g > r * 1.12 && sat > 0.26;
-  // Shift purple/magenta right-rim lighting toward Neon Red (#FF073A)
-  const isPurpleRim = r > g * 1.16 && b > g * 1.16 && sat > 0.24;
+  // Preserve 100% natural true colors for skin, curly hair, black hoodie, pants and shoes.
+  // Only enhance extreme outer rim saturation slightly for vibrant atmospheric backlight integration.
+  const isCyanRim = b > r * 1.35 && g > r * 1.25 && sat > 0.45;
+  const isPurpleRim = r > g * 1.35 && b > g * 1.35 && sat > 0.45;
 
   if (isCyanRim) {
-    const strength = Math.min(0.9, sat * 1.15);
-    const lumScale = Math.max(0.45, Math.min(1.05, (g + b) * 0.62));
-    r += (0.224 * lumScale - r) * strength;
-    g += (1.0 * lumScale - g) * strength;
-    b += (0.078 * lumScale - b) * strength;
-  } else if (isPurpleRim) {
-    const strength = Math.min(0.9, sat * 1.15);
-    const lumScale = Math.max(0.45, Math.min(1.05, (r + b) * 0.64));
-    r += (1.0 * lumScale - r) * strength;
-    g += (0.027 * lumScale - g) * strength;
-    b += (0.227 * lumScale - b) * strength;
+    return [Math.max(0.08, r), Math.min(1.0, g * 1.12), Math.min(1.0, b * 1.08)];
+  }
+  if (isPurpleRim) {
+    return [Math.min(1.0, r * 1.12), Math.max(0.06, g), Math.min(1.0, b * 1.1)];
   }
 
-  return [Math.max(0.08, r), Math.max(0.08, g), Math.max(0.1, b)];
+  return [r, g, b];
 }
 
 function sampleCharacterPoints(img: HTMLImageElement, maxDim: number): SampledPoint[] {
@@ -120,21 +127,21 @@ function sampleCharacterPoints(img: HTMLImageElement, maxDim: number): SampledPo
       const a = data[i + 3];
 
       if (a < 40) continue;
-      if (REMOVE_WHITE_BG && r255 > 235 && g255 > 235 && b255 > 235) continue;
+      if (REMOVE_WHITE_BG && r255 > 238 && g255 > 238 && b255 > 238) continue;
 
       const px = x - w / 2;
       const py = -(y - h / 2);
 
       const lum = (0.299 * r255 + 0.587 * g255 + 0.114 * b255) / 255;
       const distFromCenter = Math.hypot(px / (w / 2), py / (h / 2));
-      const zFactor =
-        Math.max(0, 1 - distFromCenter * 0.6) * 0.6 +
-        lum * 0.4 +
-        (Math.random() - 0.5) * 0.22;
-      const pz = zFactor * DEPTH_3D - DEPTH_3D * 0.4;
+      // Smooth subtle planar depth without random jitter for pristine facial feature clarity
+      const zFactor = Math.max(0, 1 - distFromCenter * 0.5) * 0.35 + lum * 0.15;
+      const pz = zFactor * 12 - 5;
 
-      const [r, g, b] = rethemeCharacterColor(r255, g255, b255);
-      pts.push({ x: px, y: py, z: pz, r, g, b });
+      const [r, g, b] = extractCharacterColor(r255, g255, b255);
+      // Double sub-pixel density yields ~70,000 micro-particles with zero gap coverage
+      pts.push({ x: px - 0.22, y: py + 0.22, z: pz, r, g, b });
+      pts.push({ x: px + 0.22, y: py - 0.22, z: pz, r, g, b });
     }
   }
   return pts;
@@ -179,7 +186,7 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isSoftwareGl = detectSoftwareWebGL();
-    const maxParticles = isSoftwareGl ? 9000 : 18500;
+    const maxParticles = isSoftwareGl ? 35000 : 75000;
 
     let width = Math.max(host.clientWidth, 1);
     let height = Math.max(host.clientHeight, 1);
@@ -189,7 +196,7 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
     let seatWorldX = 0;
     let charCenterWorldY = 0;
     let charUnitScale = 1;
-    let currentPointSize = 8.8;
+    let currentPointSize = 3.6;
 
     const measureLedgePlacement = () => {
       width = Math.max(host.clientWidth, 1);
@@ -198,17 +205,17 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
 
       const vw = window.innerWidth || width;
       let fracX = 0.5;
-      let charBoxHeightPx = 156;
+      let charBoxHeightPx = 200;
 
       if (vw >= 1024) {
         fracX = 0.69;
-        charBoxHeightPx = 234;
+        charBoxHeightPx = 390;
       } else if (vw >= 768) {
-        fracX = 0.64;
-        charBoxHeightPx = 192;
+        fracX = 0.65;
+        charBoxHeightPx = 310;
       } else if (vw >= 640) {
-        fracX = 0.6;
-        charBoxHeightPx = 192;
+        fracX = 0.62;
+        charBoxHeightPx = 250;
       }
 
       // Use layout offsets (immune to CSS transform scale on revealEl)
@@ -222,7 +229,7 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
       seatWorldX = seatPxX - width / 2;
       charCenterWorldY = -(charCenterPxY - height / 2);
       charUnitScale = charBoxHeightPx / VIRTUAL_STAGE_HEIGHT;
-      currentPointSize = vw >= 1024 ? 9.0 : vw >= 640 ? 7.8 : 6.6;
+      currentPointSize = vw >= 1024 ? 4.2 : vw >= 640 ? 3.6 : 3.0;
     };
 
     const scene = new THREE.Scene();
@@ -384,7 +391,10 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
     smoothScroll = targetScrollRef.current;
     applySectionReveal(smoothScroll);
 
-    loadImageFromSrc('/assets/origin/character.png')
+    const localWebpUrl = '/assets/origin/character.webp';
+    const fallbackPngUrl = '/assets/origin/character.png';
+
+    loadImageFromSrc(localWebpUrl, fallbackPngUrl)
       .then((img) => {
         if (disposed) return;
         const cPts = sampleCharacterPoints(img, CHAR_MAX_DIM);
@@ -498,14 +508,14 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
         }
       });
 
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       if (disposed || contextLost) return;
       rafId = window.requestAnimationFrame(animate);
       if (!isActiveRef.current || !pointsMesh) return;
 
-      const time = clock.getElapsedTime();
+      const time = (performance.now() - startTime) * 0.001;
       const lerpSpeed = prefersReducedMotion ? 0.22 : 0.09;
       smoothScroll += (targetScrollRef.current - smoothScroll) * lerpSpeed;
 
@@ -516,7 +526,9 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
       const pos = posAttr.array as Float32Array;
       const col = colAttr.array as Float32Array;
 
-      const floatAmp = prefersReducedMotion ? 0 : 0.45 - smoothScroll * 0.25;
+      // Coherent whole-body subtle breathing at rest (zero relative jitter between facial pixels)
+      const bodyBreatheY = prefersReducedMotion ? 0 : Math.sin(time * 1.25) * 0.42 * smoothScroll;
+      const flightWiggle = prefersReducedMotion ? 0 : Math.max(0, 0.45 - smoothScroll * 0.5);
 
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
@@ -544,7 +556,7 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
 
         // Exact dynamic target coordinate perched on the arcade top border
         const targetX = seatWorldX + charLocalPos[i3] * charUnitScale;
-        const targetY = charCenterWorldY + charLocalPos[i3 + 1] * charUnitScale;
+        const targetY = charCenterWorldY + charLocalPos[i3 + 1] * charUnitScale + bodyBreatheY;
         const targetZ = charLocalPos[i3 + 2] * charUnitScale;
 
         // Helical mid-flight swirl as particles fly forward and snap into character
@@ -561,8 +573,8 @@ export const ArcadeLedgeMorph: React.FC<ArcadeLedgeMorphProps> = ({
         const baseY = originY + (targetY - originY) * t + swirlY;
         const baseZ = originZ + (targetZ - originZ) * t;
 
-        const floatX = floatAmp > 0 ? Math.sin(time * 1.2 + i * 0.01) * floatAmp : 0;
-        const floatY = floatAmp > 0 ? Math.cos(time * 1.1 + i * 0.013) * floatAmp : 0;
+        const floatX = flightWiggle > 0 ? Math.sin(time * 1.2 + i * 0.01) * flightWiggle : 0;
+        const floatY = flightWiggle > 0 ? Math.cos(time * 1.1 + i * 0.013) * flightWiggle : 0;
 
         let targetHoverX = 0;
         let targetHoverY = 0;

@@ -25,8 +25,11 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
   const { isDay, isNight } = useSkyTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isActive = useIsInViewport(canvasRef, '200px');
-  const isActiveRef = useRef<boolean>(isActive);
+  const isActiveRef = useRef<boolean>(true); // Hero starts in-view immediately on page load
   const isDayRef = useRef<boolean>(isDay);
+  const animIdRef = useRef<number | null>(null);
+  const drawRef = useRef<((time: number) => void) | null>(null);
+  const particlesRef = useRef<DustParticle[]>([]);
 
   useEffect(() => {
     isDayRef.current = isDay;
@@ -34,6 +37,9 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
 
   useEffect(() => {
     isActiveRef.current = isActive;
+    if (isActive && animIdRef.current === null && drawRef.current) {
+      animIdRef.current = window.requestAnimationFrame(drawRef.current);
+    }
   }, [isActive]);
 
   useEffect(() => {
@@ -48,8 +54,6 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
 
     let width = 0;
     let height = 0;
-    let particles: DustParticle[] = [];
-    let animId = 0;
 
     const init = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -61,20 +65,27 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
 
       const hues: Array<'violet' | 'cyan' | 'amber'> = ['violet', 'cyan', 'amber'];
       const count = width < 768 ? 28 : 48;
-      particles = Array.from({ length: count }, (_, i) => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        z: 0.35 + Math.random() * 0.9,
-        vx: (Math.random() - 0.5) * 0.16,
-        vy: -0.06 - Math.random() * 0.18,
-        radius: 1 + Math.random() * 2.2,
-        hue: hues[i % hues.length],
-      }));
+      if (particlesRef.current.length === 0) {
+        particlesRef.current = Array.from({ length: count }, (_, i) => ({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          z: 0.35 + Math.random() * 0.9,
+          vx: (Math.random() - 0.5) * 0.16,
+          vy: -0.06 - Math.random() * 0.18,
+          radius: 1 + Math.random() * 2.2,
+          hue: hues[i % hues.length],
+        }));
+      } else {
+        particlesRef.current.forEach((p) => {
+          if (p.x > width) p.x = Math.random() * width;
+          if (p.y > height) p.y = Math.random() * height;
+        });
+      }
     };
 
     const draw = (time: number) => {
       if (!isActiveRef.current) {
-        animId = 0;
+        animIdRef.current = null;
         return;
       }
       ctx.clearRect(0, 0, width, height);
@@ -120,6 +131,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
       ctx.restore();
 
       // Floating atmospheric motes
+      const particles = particlesRef.current;
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         if (!prefersReduced) {
@@ -161,21 +173,24 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
       }
 
       if (!prefersReduced) {
-        animId = window.requestAnimationFrame(draw);
+        animIdRef.current = window.requestAnimationFrame(draw);
       }
     };
 
+    drawRef.current = draw;
     init();
-    if (isActiveRef.current) {
-      animId = window.requestAnimationFrame(draw);
-    }
+    animIdRef.current = window.requestAnimationFrame(draw);
     window.addEventListener('resize', init);
 
     return () => {
+      drawRef.current = null;
       window.removeEventListener('resize', init);
-      window.cancelAnimationFrame(animId);
+      if (animIdRef.current !== null) {
+        window.cancelAnimationFrame(animIdRef.current);
+        animIdRef.current = null;
+      }
     };
-  }, [isActive]);
+  }, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -186,7 +201,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
         }`}
         style={{
           background:
-            'radial-gradient(circle at 50% 42%, rgba(57, 255, 20, 0.09) 0%, rgba(26, 26, 26, 0.48) 48%, #000000 100%)',
+            'radial-gradient(circle at 50% 42%, rgba(57, 255, 20, 0.08) 0%, rgba(15, 23, 42, 0.28) 48%, rgba(0, 0, 0, 0.45) 100%)',
         }}
       />
 

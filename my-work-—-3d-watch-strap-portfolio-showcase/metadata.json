@@ -1,6 +1,0 @@
-{
-  "name": "My Work — 3D Watch-Strap Portfolio Showcase",
-  "description": "A standalone interactive 3D watch-strap project showcase page featuring scroll-driven perspective transitions and project case studies.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

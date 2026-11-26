@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, type RefObject } from 'react';
 import { type MotionValue, useMotionValueEvent } from 'motion/react';
 import type { ParallaxState } from '../hooks/useParallax';
-import { useIsInViewport } from '../hooks/useIsInViewport';
 import { mediaUrl } from '../config/media';
 
 interface HeroScrollCanvasProps {
@@ -25,7 +24,6 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const stageBoxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isActive = useIsInViewport(containerRef, '200px');
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_ACTIVE_FRAMES).fill(null));
   const currentFrameIndexRef = useRef<number>(0);
   const [activeFrameIndex, setActiveFrameIndex] = useState<number>(0);
@@ -175,33 +173,6 @@ export const HeroScrollCanvas: React.FC<HeroScrollCanvasProps> = ({
 
   const progressRatio = activeFrameIndex / (TOTAL_ACTIVE_FRAMES - 1);
   const scaleDepth = 1 + progressRatio * 0.06;
-
-  // Apply parallax transform directly to DOM without React re-renders
-  useEffect(() => {
-    if (!isActive) return;
-    let rafId = 0;
-    let lastTransform = '';
-
-    const updateTransform = () => {
-      const box = stageBoxRef.current;
-      if (box) {
-        const p = parallaxRef?.current;
-        const px = (p?.x ?? 0) * 20;
-        const py = (p?.y ?? 0) * 16;
-        const rotY = (p?.x ?? 0) * 5;
-        const rotX = -(p?.y ?? 0) * 5;
-        const nextTransform = `perspective(1100px) translate3d(${px.toFixed(2)}px, ${(py + currentDropY).toFixed(2)}px, 0) rotateY(${rotY.toFixed(2)}deg) rotateX(${rotX.toFixed(2)}deg) scale(${scaleDepth.toFixed(4)})`;
-        if (nextTransform !== lastTransform) {
-          box.style.transform = nextTransform;
-          lastTransform = nextTransform;
-        }
-      }
-      rafId = window.requestAnimationFrame(updateTransform);
-    };
-
-    rafId = window.requestAnimationFrame(updateTransform);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [isActive, parallaxRef, currentDropY, scaleDepth]);
 
   return (
     <div ref={containerRef} className={`relative flex items-center justify-center ${className}`}>

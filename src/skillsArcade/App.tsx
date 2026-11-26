@@ -155,10 +155,10 @@ export default function App() {
 
       <div
         ref={revealContainerRef}
-        className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-6 will-change-[opacity,transform]"
+        className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-6 will-change-[opacity,transform]"
       >
         {/* Section Header */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:pr-[260px] md:pr-[295px] lg:pr-[340px]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:pr-70 md:pr-82.5 lg:pr-97.5 xl:pr-107.5">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
               <span
@@ -167,9 +167,6 @@ export default function App() {
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(22,163,74,0.5)] dark:bg-[#39FF14] dark:shadow-[0_0_10px_#39FF14] animate-pulse" />
                 My Skills
-              </span>
-              <span className="font-mono text-xs tracking-[0.14em] uppercase text-rose-600 dark:text-[#FF073A] transition-colors duration-700">
-                03. Interactive Skills Arcade
               </span>
             </div>
 
@@ -187,7 +184,7 @@ export default function App() {
         {/* Full-Width 3D Skill Breaker & Catcher Game with Perched Character Morph */}
         <div
           ref={arcadeFrameRef}
-          className="relative mt-20 sm:mt-4 lg:mt-0 h-[520px] sm:h-[580px] lg:h-[640px] w-full"
+          className="relative mt-20 sm:mt-4 lg:mt-0 h-130 sm:h-145 lg:h-160 w-full"
         >
           <ArenaViewportFrame
             engineRef={engineRef}

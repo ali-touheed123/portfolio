@@ -157,8 +157,8 @@ export const StarField: React.FC = () => {
     const resizeCanvas = () => {
       if (!canvas) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      const width = canvas.parentElement?.clientWidth || window.innerWidth;
-      const height = canvas.parentElement?.clientHeight || window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
 
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -169,10 +169,10 @@ export const StarField: React.FC = () => {
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       starsRef.current.forEach((s) => {
-        if (s.currX === -1) {
-          s.currX = s.x * width;
-          s.currY = s.y * height;
-        }
+        s.currX = s.x * width;
+        s.currY = s.y * height;
+        s.vx = 0;
+        s.vy = 0;
       });
     };
 
@@ -202,8 +202,8 @@ export const StarField: React.FC = () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const width = canvas.parentElement?.clientWidth || window.innerWidth;
-      const height = canvas.parentElement?.clientHeight || window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       ctx.clearRect(0, 0, width, height);
 
       const mouse = mouseRef.current;

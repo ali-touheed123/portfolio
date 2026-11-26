@@ -14,15 +14,51 @@ import { CloudField } from './components/CloudField';
 import { HandwrittenHero } from './components/HandwrittenHero';
 import { TopNav } from './components/TopNav';
 import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
-import { AboutOriginSection } from './components/AboutOriginSection';
-import { ProjectsSection } from './components/ProjectsSection';
-import { PortfolioFooter } from './components/PortfolioFooter';
-import { AllProjectsPage } from './pages/AllProjectsPage';
 
+// ── Lazy-loaded below-fold sections ──────────────────────────────────────────
+// These are NOT in the main JS chunk. Each is pre-fetched via IntersectionObserver
+// with a large rootMargin so the chunk is downloaded well before the user scrolls to it.
 const HeroCelestialOrbRobo = lazy(() =>
   import('./components/HeroCelestialOrbRobo').then((m) => ({ default: m.HeroCelestialOrbRobo }))
 );
-const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
+const loadSkillsArcadeChunk = () => import('./skillsArcade/App');
+const SkillsSectionApp      = lazy(loadSkillsArcadeChunk);
+const AboutOriginSection    = lazy(() =>
+  import('./components/AboutOriginSection').then((m) => ({ default: m.AboutOriginSection }))
+);
+const ProjectsSection       = lazy(() =>
+  import('./components/ProjectsSection').then((m) => ({ default: m.ProjectsSection }))
+);
+const PortfolioFooter       = lazy(() =>
+  import('./components/PortfolioFooter').then((m) => ({ default: m.PortfolioFooter }))
+);
+const AllProjectsPage       = lazy(() =>
+  import('./pages/AllProjectsPage').then((m) => ({ default: m.AllProjectsPage }))
+);
+
+// ── Cyberpunk / Retro Arcade Skeleton Loader Fallback ─────────────────────────
+function ArcadeSkeletonLoader() {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative mx-auto w-full max-w-[1280px] h-[520px] sm:h-[580px] lg:h-[640px] rounded-3xl border border-slate-900/10 dark:border-white/10 bg-white/40 dark:bg-slate-950/50 backdrop-blur-md p-6 flex flex-col justify-between overflow-hidden my-4"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#39FF14]" />
+        <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400 tracking-widest uppercase">
+          INITIALIZING 3D SKILLS ARCADE SUBSYSTEM...
+        </span>
+      </div>
+      <div className="flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 rounded-full border-2 border-emerald-500/25 border-t-emerald-500 dark:border-t-[#39FF14] animate-spin" />
+        <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 tracking-wider">
+          PRE-WARMING VECTOR ARENA
+        </span>
+      </div>
+      <div className="h-10 w-full rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-900/5 dark:border-white/5 animate-pulse" />
+    </div>
+  );
+}
 
 interface PortfolioShellProps {
   onOpenAllProjects: () => void;
@@ -35,6 +71,8 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
   const parallaxRef = useParallax();
   const heroTrackRef = useRef<HTMLElement>(null);
   const stackSectionRef = useRef<HTMLElement>(null);
+  const workSectionRef = useRef<HTMLElement>(null);
+  const contactSectionRef = useRef<HTMLElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -54,9 +92,46 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
   const [activeSection, setActiveSection] = useState<string>('top');
   // Track whether curtain is still covering the screen
   const [curtainDone, setCurtainDone] = useState<boolean>(false);
-  // Defer downloading & mounting the heavy 5MB Three.js/Rapier3D SkillsArcade until user scrolls near #stack
-  const [skillsNearViewport, setSkillsNearViewport] = useState<boolean>(false);
 
+  // ── Below-fold pre-fetch gates ─────────────────────────────────────────────
+  // Each section's JS chunk is downloaded BEFORE the user reaches it, so there
+  // is zero loading flash when scrolling. aboutReady fires immediately after the
+  // curtain so the chunk is ready long before the user finishes the 260vh hero scroll.
+  const [aboutReady, setAboutReady] = useState<boolean>(false);
+  const [skillsNearViewport, setSkillsNearViewport] = useState<boolean>(false);
+  const [projectsReady, setProjectsReady] = useState<boolean>(false);
+  const [footerReady, setFooterReady] = useState<boolean>(false);
+
+  // AboutOriginSection: pre-fetch immediately when curtain completes.
+  // The hero is 260vh so user takes several seconds to scroll past — plenty of time.
+  useEffect(() => {
+    if (!curtainDone || aboutReady) return;
+    // Small delay so the curtain unmount itself settles first
+    const id = window.setTimeout(() => setAboutReady(true), 150);
+    return () => window.clearTimeout(id);
+  }, [curtainDone, aboutReady]);
+
+  // Stage 1 (Silent Network-Only Prefetch):
+  // When user is in AboutOriginSection (aboutReady is true), the Hero section has
+  // already finished and exited the viewport. We trigger background chunk download
+  // during idle time with zero CPU/WebGL initialization and zero Hero interference!
+  useEffect(() => {
+    if (!curtainDone || !aboutReady) return;
+    const idleId = (typeof window !== 'undefined' && 'requestIdleCallback' in window)
+      ? window.requestIdleCallback(() => { loadSkillsArcadeChunk(); }, { timeout: 2500 })
+      : window.setTimeout(() => { loadSkillsArcadeChunk(); }, 1200);
+
+    return () => {
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId as number);
+      } else {
+        window.clearTimeout(idleId as number);
+      }
+    };
+  }, [curtainDone, aboutReady]);
+
+  // Stage 2 (Mount on Proximity):
+  // Mount the interactive game when user is within 500px of #stack
   useEffect(() => {
     if (!curtainDone || skillsNearViewport) return;
     const el = stackSectionRef.current;
@@ -71,11 +146,53 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
           observer.disconnect();
         }
       },
-      { rootMargin: '600px' }
+      { rootMargin: '500px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [curtainDone, skillsNearViewport]);
+
+  // ProjectsSection: pre-fetch when user is 1000px above #work (i.e. still in AboutOrigin)
+  useEffect(() => {
+    if (!curtainDone || projectsReady) return;
+    const el = workSectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setProjectsReady(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setProjectsReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '1000px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [curtainDone, projectsReady]);
+
+  // PortfolioFooter: pre-fetch when user is 1000px above #contact (i.e. still in ProjectsSection)
+  useEffect(() => {
+    if (!curtainDone || footerReady) return;
+    const el = contactSectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setFooterReady(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFooterReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '1000px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [curtainDone, footerReady]);
 
   const handleCurtainOpenStart = useCallback(() => {
     setHeroRevealed(true);
@@ -235,21 +352,35 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
       {/* BELOW-HERO PORTFOLIO EXPERIENCE */}
       <main className="relative z-10">
         <CrossedRibbonBridge />
-        <AboutOriginSection />
+
+        {/* AboutOriginSection — lazy, pre-fetched 150ms after curtain completes */}
+        <Suspense fallback={<div className="min-h-screen w-full" />}>
+          {aboutReady && <AboutOriginSection />}
+        </Suspense>
+
+        {/* SkillsArcade — Two-stage prefetch & proximity mount with Arcade Skeleton fallback */}
         <section id="stack" ref={stackSectionRef} className="relative w-full z-10">
           {curtainDone && skillsNearViewport ? (
-            <Suspense fallback={<div className="min-h-100 w-full" />}>
+            <Suspense fallback={<ArcadeSkeletonLoader />}>
               <SkillsSectionApp />
             </Suspense>
           ) : (
             <div className="min-h-100 w-full" />
           )}
         </section>
-        <section id="work" className="relative w-full z-10">
-          <ProjectsSection onOpenAllProjects={onOpenAllProjects} />
+
+        {/* ProjectsSection — lazy, pre-fetched 1000px before #work enters viewport */}
+        <section id="work" ref={workSectionRef} className="relative w-full z-10">
+          <Suspense fallback={<div className="min-h-[600px] w-full" />}>
+            {projectsReady && <ProjectsSection onOpenAllProjects={onOpenAllProjects} />}
+          </Suspense>
         </section>
-        <section id="contact" className="relative w-full z-10">
-          <PortfolioFooter />
+
+        {/* PortfolioFooter — lazy, pre-fetched 1000px before #contact enters viewport */}
+        <section id="contact" ref={contactSectionRef} className="relative w-full z-10">
+          <Suspense fallback={<div className="min-h-[400px] w-full" />}>
+            {footerReady && <PortfolioFooter />}
+          </Suspense>
         </section>
       </main>
     </div>
@@ -315,7 +446,9 @@ export function App() {
       </div>
 
       {route === 'projects' && (
-        <AllProjectsPage onBack={goToHome} />
+        <Suspense fallback={<div className="min-h-screen w-full bg-black" />}>
+          <AllProjectsPage onBack={goToHome} />
+        </Suspense>
       )}
     </ThemeProvider>
   );

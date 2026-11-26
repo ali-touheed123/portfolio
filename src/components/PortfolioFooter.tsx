@@ -8,12 +8,12 @@ export const PortfolioFooter: React.FC = () => {
   const isDayRef = useRef<boolean>(isDay);
   isDayRef.current = isDay;
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const planeRef = useRef<HTMLDivElement | null>(null);
   const trailRef = useRef<SVGPathElement | null>(null);
   const contactBtnRef = useRef<HTMLButtonElement | null>(null);
-  const isFooterActive = useIsInViewport(canvasRef, '200px');
+  // Use stageRef as the viewport sentinel (canvasRef removed — starfield is handled by global StarField)
+  const isFooterActive = useIsInViewport(stageRef, '200px');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -30,94 +30,7 @@ export const PortfolioFooter: React.FC = () => {
     }, 2400);
   };
 
-  // 1. Starry Sky Canvas
-  useEffect(() => {
-    if (!isFooterActive) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let stars: Array<{
-      x: number;
-      y: number;
-      r: number;
-      alpha: number;
-      speed: number;
-      phase: number;
-      isSparkle: boolean;
-    }> = [];
-
-    const initStars = () => {
-      const parent = canvas.parentElement;
-      if (!parent) return;
-      const rect = parent.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      const count = Math.floor((rect.width * rect.height) / 3800);
-      stars = Array.from({ length: count }, () => ({
-        x: Math.random() * rect.width,
-        y: Math.random() * rect.height * 0.88,
-        r: Math.random() * 1.35 + 0.35,
-        alpha: Math.random() * 0.75 + 0.15,
-        speed: Math.random() * 0.018 + 0.005,
-        phase: Math.random() * Math.PI * 2,
-        isSparkle: Math.random() > 0.94,
-      }));
-    };
-
-    const drawStars = (time: number) => {
-      const dpr = window.devicePixelRatio || 1;
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-      const dayMode = isDayRef.current;
-      ctx.clearRect(0, 0, w, h);
-
-      for (const s of stars) {
-        const twinkle = 0.55 + 0.45 * Math.sin(time * s.speed + s.phase);
-        const a = s.alpha * twinkle;
-
-        if (s.isSparkle) {
-          ctx.fillStyle = dayMode ? `rgba(22, 163, 74, ${a * 0.6})` : `rgba(57, 255, 20, ${a})`;
-          ctx.beginPath();
-          const len = s.r * 3.8;
-          ctx.moveTo(s.x, s.y - len);
-          ctx.lineTo(s.x + 1, s.y - 1);
-          ctx.lineTo(s.x + len, s.y);
-          ctx.lineTo(s.x + 1, s.y + 1);
-          ctx.lineTo(s.x, s.y + len);
-          ctx.lineTo(s.x - 1, s.y + 1);
-          ctx.lineTo(s.x - len, s.y);
-          ctx.lineTo(s.x - 1, s.y - 1);
-          ctx.closePath();
-          ctx.fill();
-        } else {
-          ctx.fillStyle = dayMode
-            ? `rgba(15, 23, 42, ${a * 0.16})`
-            : `rgba(235, 240, 255, ${a})`;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      animId = requestAnimationFrame(drawStars);
-    };
-
-    initStars();
-    animId = requestAnimationFrame(drawStars);
-    window.addEventListener('resize', initStars);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', initStars);
-    };
-  }, [isFooterActive]);
-
-  // 2. Paper Plane flight & Sparks
+  // Paper Plane flight & Sparks
   const isFlyingRef = useRef(false);
 
   const spawnSparks = () => {
@@ -1130,9 +1043,6 @@ export const PortfolioFooter: React.FC = () => {
           color: #FFFFFF;
         }
       `}</style>
-
-      {/* Starry Sky Canvas */}
-      <canvas ref={canvasRef} className="footer-stars" id="footerStars" />
 
       {/* Bottom Fluid Gradient Waves */}
       <svg className="footer-waves" viewBox="0 0 1440 385" preserveAspectRatio="none" aria-hidden="true">

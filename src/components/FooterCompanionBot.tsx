@@ -99,7 +99,7 @@ export const FooterCompanionBot: React.FC<FooterCompanionBotProps> = ({ classNam
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.04;
     renderer.shadowMap.enabled = !isSoftwareGl;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -711,7 +711,8 @@ export const FooterCompanionBot: React.FC<FooterCompanionBotProps> = ({ classNam
     const limeRim = new THREE.Color(0x39ff14);
     const angryRim = new THREE.Color(0xff073a);
 
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
+    const startTime = performance.now();
     let rafId = 0;
 
     const animate = () => {
@@ -719,8 +720,10 @@ export const FooterCompanionBot: React.FC<FooterCompanionBotProps> = ({ classNam
       rafId = window.requestAnimationFrame(animate);
       if (!isActiveRef.current) return;
 
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const t = clock.getElapsedTime();
+      const now = performance.now();
+      const dt = Math.min((now - lastTime) * 0.001, 0.05);
+      lastTime = now;
+      const t = (now - startTime) * 0.001;
 
       if (angryTimer > 0) {
         angryTimer -= dt;

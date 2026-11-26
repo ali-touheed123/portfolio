@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Moon, Sun } from 'lucide-react';
 import { useSkyTheme } from '../context/ThemeContext';
@@ -87,21 +87,57 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
   const { isDay, toggleTheme } = useSkyTheme();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [clickedId, setClickedId] = useState<string>(activeSection);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const lastScrollYRef = useRef<number>(0);
 
   useEffect(() => {
     setClickedId(activeSection);
   }, [activeSection]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const prevScrollY = lastScrollYRef.current;
+      const diff = currentScrollY - prevScrollY;
+
+      // When near the top of the page, keep navbar visible
+      if (currentScrollY < 60) {
+        setIsVisible(true);
+      } else if (diff > 8) {
+        // Scrolling down -> hide navbar
+        setIsVisible(false);
+      } else if (diff < -8) {
+        // Scrolling up -> reveal navbar
+        setIsVisible(true);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const highlightedId = hoveredId ?? clickedId;
 
   return (
-    <header className="fixed top-0 inset-x-0 z-40 bg-transparent border-b border-transparent pointer-events-none">
-      <div className="max-w-7xl mx-auto h-16 px-3 sm:px-8 flex items-center justify-center gap-2 sm:gap-4">
+    <header
+      className={`fixed top-3 sm:top-5 inset-x-0 z-40 flex justify-center pointer-events-none px-3 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-24 opacity-0 pointer-events-none'
+      }`}
+    >
+      <div
+        className={`pointer-events-auto inline-flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 rounded-full border backdrop-blur-xl transition-all duration-300 overflow-visible ${
+          isDay
+            ? 'bg-white/85 border-slate-900/10 shadow-[0_8px_30px_rgba(15,23,42,0.08)]'
+            : 'bg-[#111111]/85 border-white/14 shadow-[0_12px_36px_rgba(0,0,0,0.7),0_0_16px_rgba(57,255,20,0.05)]'
+        }`}
+      >
         {/* Centered Handwritten Nav Links with | Dividers & Natural Hand-Drawn Loop Highlight */}
         <nav
           aria-label="Primary Navigation"
           onMouseLeave={() => setHoveredId(null)}
-          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-1.5 sm:px-3"
+          className="flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-visible scrollbar-none [&::-webkit-scrollbar]:hidden py-1 px-3.5 sm:px-4"
         >
           {NAV_LINKS.map((item, idx) => {
             const isHighlighted = highlightedId === item.id;
@@ -117,7 +153,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
                     onNavigate(item.id);
                   }}
                   style={{ fontFamily: "'Caveat', cursive" }}
-                  className={`relative px-1.5 xs:px-2.5 sm:px-4 py-0.5 text-[1.12rem] xs:text-[1.25rem] sm:text-[1.6rem] font-bold tracking-wide transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                  className={`relative px-1.5 xs:px-2 sm:px-3.5 py-2.5 text-[1.12rem] xs:text-[1.25rem] sm:text-[1.55rem] font-bold tracking-wide transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer select-none overflow-visible ${
                     isHighlighted
                       ? 'text-slate-950 dark:text-white'
                       : 'text-slate-700/85 dark:text-slate-300/85 hover:text-slate-950 dark:hover:text-white'
@@ -130,7 +166,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
                 {idx < NAV_LINKS.length - 1 && (
                   <span
                     aria-hidden="true"
-                    className="text-slate-400/70 dark:text-slate-500/75 text-xs sm:text-base font-light select-none"
+                    className="text-slate-400/60 dark:text-slate-500/70 text-xs sm:text-base font-light select-none"
                   >
                     |
                   </span>
@@ -140,17 +176,20 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
           })}
         </nav>
 
-        {/* Subtle Mid-Page Theme Toggle */}
+        {/* Vertical thin capsule divider */}
+        <div className="h-5 w-px bg-slate-900/10 dark:bg-white/15 shrink-0 mx-0.5" aria-hidden="true" />
+
+        {/* Subtle Theme Toggle integrated cleanly in pill */}
         <button
           type="button"
           onClick={toggleTheme}
           aria-label={isDay ? 'Switch to Night mode' : 'Switch to Day mode'}
           aria-pressed={isDay}
           title={isDay ? 'Switch to Night mode' : 'Switch to Day mode'}
-          className={`pointer-events-auto inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 ${
+          className={`inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 ${
             isDay
-              ? 'bg-white/90 border-slate-900/12 text-slate-800 shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:border-emerald-600/50 hover:text-emerald-700 focus-visible:ring-emerald-600'
-              : 'bg-[#1A1A1A]/90 border-white/15 text-slate-200 shadow-[0_6px_18px_rgba(0,0,0,0.45)] hover:border-[#39FF14]/60 hover:text-[#39FF14] focus-visible:ring-[#39FF14]'
+              ? 'bg-slate-100/80 border-slate-900/10 text-slate-800 hover:border-emerald-600/50 hover:text-emerald-700 focus-visible:ring-emerald-600'
+              : 'bg-white/10 border-white/15 text-slate-200 hover:border-[#39FF14]/60 hover:text-[#39FF14] focus-visible:ring-[#39FF14]'
           }`}
         >
           {isDay ? (
