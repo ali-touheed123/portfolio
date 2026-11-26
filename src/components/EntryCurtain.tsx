@@ -10,7 +10,7 @@ const DUR = 0.95;
 const STAGGER = 0.16;
 const DELAYS = [0, STAGGER, STAGGER * 2, STAGGER * 3]; // [0, 0.16, 0.32, 0.48]
 const EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
-const HOLD_MS = 250; // Snappy 250ms hold so curtain starts lifting immediately on page open
+const HOLD_MS = 980; // Allows the energetic multi-rebound pop-bounce animation to play fully before curtains open
 
 // Total time from lift trigger until last panel is fully gone
 const TOTAL_LIFT_MS = Math.round((STAGGER * 3 + DUR) * 1000); // ~1430ms
@@ -155,44 +155,133 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
           willChange: 'transform',
         }}
       >
+        <style>{`
+          @keyframes curtainLogoBounce {
+            0% {
+              opacity: 0;
+              transform: scale(0.1);
+            }
+            30% {
+              opacity: 1;
+              transform: scale(1.36);
+            }
+            50% {
+              transform: scale(0.86);
+            }
+            70% {
+              transform: scale(1.15);
+            }
+            85% {
+              transform: scale(0.96);
+            }
+            94% {
+              transform: scale(1.03);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+
+          @keyframes curtainNameBounce {
+            0% {
+              opacity: 0;
+              transform: scale(0.2) translateY(28px);
+            }
+            32% {
+              opacity: 1;
+              transform: scale(1.32) translateY(-8px);
+            }
+            52% {
+              transform: scale(0.88) translateY(4px);
+            }
+            72% {
+              transform: scale(1.14) translateY(-2px);
+            }
+            86% {
+              transform: scale(0.97) translateY(1px);
+            }
+            95% {
+              transform: scale(1.02) translateY(0);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+
+          @keyframes curtainTagBounce {
+            0% {
+              opacity: 0;
+              transform: scale(0.35) translateY(20px);
+            }
+            35% {
+              opacity: 1;
+              transform: scale(1.22) translateY(-5px);
+            }
+            55% {
+              transform: scale(0.92) translateY(2px);
+            }
+            75% {
+              transform: scale(1.1) translateY(-1px);
+            }
+            90% {
+              transform: scale(0.98) translateY(0);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+        `}</style>
+
         {/* Logo */}
-        <svg width="88" height="46" viewBox="0 0 88 46" fill="none" aria-hidden="true">
-          <polygon points="4,42 26,6 39,6 17,42"  fill="#070A11" />
-          <polygon points="26,42 48,6 61,6 39,42" fill="#ffffff" />
-          <polygon points="50,42 70,8 84,8 84,42"  fill="#070A11" />
-          <text
-            x="67" y="33"
-            textAnchor="middle"
-            fill="#a3e635"
-            fontSize="13"
-            fontWeight="900"
-            fontFamily="system-ui,-apple-system,sans-serif"
-          >
-            AT.
-          </text>
-        </svg>
+        <div style={{
+          animation: 'curtainLogoBounce 0.72s cubic-bezier(0.25, 1, 0.5, 1) 0.05s both',
+          willChange: 'transform, opacity',
+        }}>
+          <svg width="88" height="46" viewBox="0 0 88 46" fill="none" aria-hidden="true">
+            <polygon points="4,42 26,6 39,6 17,42" fill="#070A11" />
+            <polygon points="26,42 48,6 61,6 39,42" fill="#ffffff" />
+            <polygon points="50,42 70,8 84,8 84,42" fill="#070A11" />
+            <text
+              x="67" y="33"
+              textAnchor="middle"
+              fill="#a3e635"
+              fontSize="13"
+              fontWeight="900"
+              fontFamily="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+            >
+              AT.
+            </text>
+          </svg>
+        </div>
 
         {/* Name + Tagline */}
         <div style={{ marginTop: 14, textAlign: 'center' }}>
           <div style={{
             color: '#070A11',
-            fontSize: 'clamp(18px, 2.5vw, 30px)',
+            fontSize: 'clamp(20px, 3vw, 34px)',
             letterSpacing: '0.24em',
             fontWeight: 900,
             textTransform: 'uppercase',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
             lineHeight: 1,
+            animation: 'curtainNameBounce 0.75s cubic-bezier(0.25, 1, 0.5, 1) 0.12s both',
+            willChange: 'transform, opacity',
           }}>
             ALI TOUHEED
           </div>
           <div style={{
-            marginTop: 6,
-            color: 'rgba(7,10,17,0.8)',
+            marginTop: 8,
+            color: 'rgba(7,10,17,0.85)',
             fontSize: 11,
-            letterSpacing: '0.34em',
+            letterSpacing: '0.36em',
             fontWeight: 700,
             textTransform: 'uppercase',
-            fontFamily: 'monospace',
+            fontFamily: "'JetBrains Mono', monospace",
+            animation: 'curtainTagBounce 0.68s cubic-bezier(0.25, 1, 0.5, 1) 0.22s both',
+            willChange: 'transform, opacity',
           }}>
             CREATIVE ENGINEERING
           </div>

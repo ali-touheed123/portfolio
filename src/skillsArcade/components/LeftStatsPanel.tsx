@@ -43,9 +43,15 @@ export function LeftStatsPanel({ hud, onLaunchOrb, onResetArcade, onPlayNextGame
       {/* Header & Typography */}
       <div className="space-y-2.5">
         <div className="flex flex-wrap items-center gap-3 pt-2 lg:pt-4">
-          <span className="inline-flex items-center gap-2 rounded-full border border-purple-500/45 bg-purple-950/55 px-3 py-1 font-mono-tech text-[11px] font-semibold tracking-wider text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.22)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]" />
-            03. SKILLS
+          <span
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/5 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+            style={{ fontFamily: "'Caveat', cursive" }}
+          >
+            <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-pulse" />
+            My Skills
+          </span>
+          <span className="font-mono text-xs tracking-[0.14em] uppercase text-[#a855f7]">
+            03. Interactive Skills Arcade
           </span>
         </div>
 

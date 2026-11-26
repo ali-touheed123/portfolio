@@ -1,99 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { FEATURED_CAROUSEL_PROJECTS, type ProjectDetail } from '../data/allProjectsData';
 
-interface ProjectItem {
-  id: string;
-  title: string;
-  category: string;
-  stackLine: string;
-  badge: string;
-  desc: string;
-  tags: string[];
-  accent: string;
-  glow: string;
-  url: string;
-  artType: 'erp' | 'paint' | 'workflow' | 'telemetry' | 'ledger' | 'arcade';
-}
-
-const PROJECTS: ProjectItem[] = [
-  {
-    id: '01',
-    title: 'Pyntflow Cloud ERP & POS',
-    category: 'Cloud ERP & POS',
-    stackLine: 'Next.js, Supabase & PostgreSQL',
-    badge: '+60% Faster POS',
-    desc: 'End-to-end multi-branch cloud ERP, tinting formula calculator & high-speed counter checkout for paint wholesalers.',
-    tags: ['Next.js', 'Supabase', 'Cloud POS'],
-    accent: '#22c55e',
-    glow: 'rgba(34, 197, 94, 0.48)',
-    url: 'https://portfolio-eosin-seven-15.vercel.app/',
-    artType: 'erp',
-  },
-  {
-    id: '02',
-    title: 'Tawakkal Paint Portal',
-    category: 'B2B E-Commerce',
-    stackLine: 'React, Node.js & Express',
-    badge: '1st Client',
-    desc: 'Transformed paper shade catalogs into a searchable contractor ordering portal with multi-can inventory & ledgers.',
-    tags: ['React', 'Node.js', 'Express'],
-    accent: '#22d3ee',
-    glow: 'rgba(34, 211, 238, 0.48)',
-    url: 'https://github.com/',
-    artType: 'paint',
-  },
-  {
-    id: '03',
-    title: 'FlowForge Automator',
-    category: 'Workflow Automation',
-    stackLine: 'Python, Node.js & Webhooks',
-    badge: 'AI Pipelines',
-    desc: 'Visual node-based automation engine syncing WhatsApp alerts, CRM leads & cloud databases with zero manual work.',
-    tags: ['Python', 'Webhooks', 'Automation'],
-    accent: '#a855f7',
-    glow: 'rgba(168, 85, 247, 0.5)',
-    url: 'https://github.com/',
-    artType: 'workflow',
-  },
-  {
-    id: '04',
-    title: 'DevPulse Cloud Monitor',
-    category: 'DevOps Telemetry',
-    stackLine: 'TypeScript, Docker & AWS',
-    badge: '99.9% Uptime',
-    desc: 'Real-time microservice health dashboard tracking container latency, API throughput & instant Discord alerts.',
-    tags: ['TypeScript', 'Docker', 'AWS'],
-    accent: '#fb7185',
-    glow: 'rgba(251, 113, 133, 0.48)',
-    url: 'https://github.com/',
-    artType: 'telemetry',
-  },
-  {
-    id: '05',
-    title: 'KhaataSync Smart Ledger',
-    category: 'FinTech SaaS',
-    stackLine: 'Next.js, PostgreSQL & PDFKit',
-    badge: 'Auto Billing',
-    desc: 'Automated retail credit ledger that generates digital invoices and schedules WhatsApp payment reminders.',
-    tags: ['Next.js', 'PostgreSQL', 'FinTech'],
-    accent: '#38bdf8',
-    glow: 'rgba(56, 189, 248, 0.48)',
-    url: 'https://github.com/',
-    artType: 'ledger',
-  },
-  {
-    id: '06',
-    title: 'Arcade Skill Breaker',
-    category: 'Interactive Web UI',
-    stackLine: 'React, Canvas 60FPS & WebAudio',
-    badge: '60 FPS Physics',
-    desc: 'Gamified interactive web engine with paddle physics, power-ups & responsive particle collisions inside the browser.',
-    tags: ['React', 'Canvas', 'Physics'],
-    accent: '#c084fc',
-    glow: 'rgba(192, 132, 252, 0.5)',
-    url: 'https://portfolio-eosin-seven-15.vercel.app/',
-    artType: 'arcade',
-  },
-];
+const PROJECTS: ProjectDetail[] = FEATURED_CAROUSEL_PROJECTS;
 
 function getCardArtworkSVG(type: string): string {
   const artworks: Record<string, string> = {
@@ -229,7 +137,11 @@ function getCardArtworkSVG(type: string): string {
   return artworks[type] || artworks.erp;
 }
 
-export const ProjectsSection: React.FC = () => {
+export interface ProjectsSectionProps {
+  onOpenAllProjects?: () => void;
+}
+
+export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProjects }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
@@ -265,7 +177,7 @@ export const ProjectsSection: React.FC = () => {
     let isDragging = false;
     let didDrag = false;
 
-    function triggerButtonLaunch(btn: HTMLElement, project: ProjectItem) {
+    function triggerButtonLaunch(btn: HTMLElement, project: ProjectDetail) {
       if (btn.classList.contains('is-launching')) return;
 
       const ripple = document.createElement('span');
@@ -321,7 +233,16 @@ export const ProjectsSection: React.FC = () => {
 
       card.innerHTML = `
         <div class="card-artwork">
-          ${getCardArtworkSVG(proj.artType)}
+          ${
+            proj.desktopImg
+              ? `
+            <picture class="card-mockup-picture">
+              ${proj.mobileImg ? `<source media="(max-width: 639px)" srcset="${proj.mobileImg}">` : ''}
+              <img src="${proj.desktopImg}" alt="${proj.title}" class="card-mockup-img" loading="lazy" />
+            </picture>
+          `
+              : `<div class="card-fallback-glow" style="background: radial-gradient(circle at 50% 30%, ${proj.accent}33, transparent 70%);"></div>`
+          }
         </div>
         <div class="card-top-bar">
           <span class="card-status-chip">${proj.badge}</span>
@@ -871,13 +792,18 @@ export const ProjectsSection: React.FC = () => {
           pointer-events: none;
         }
 
+        #projects-section-container .card-artwork picture,
+        #projects-section-container .card-artwork img,
         #projects-section-container .card-artwork svg {
           width: 100%;
           height: 100%;
+          display: block;
           object-fit: cover;
+          object-position: top center;
           transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
+        #projects-section-container .project-card[data-pos="0"]:hover .card-artwork img,
         #projects-section-container .project-card[data-pos="0"]:hover .card-artwork svg {
           transform: scale(1.05);
         }
@@ -1222,6 +1148,52 @@ export const ProjectsSection: React.FC = () => {
           transform: scale(0.92);
         }
 
+        #projects-section-container .view-more-wrap {
+          margin-top: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 15;
+          position: relative;
+        }
+
+        #projects-section-container .view-more-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          padding: 13px 30px;
+          border-radius: 999px;
+          background: rgba(13, 19, 38, 0.92);
+          border: 1px solid rgba(168, 85, 247, 0.45);
+          color: #f1f5f9;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.78rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          cursor: pointer;
+          backdrop-filter: blur(14px);
+          box-shadow: 0 0 24px rgba(168, 85, 247, 0.22);
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #projects-section-container .view-more-btn:hover {
+          background: rgba(168, 85, 247, 0.22);
+          border-color: #22d3ee;
+          color: #ffffff;
+          transform: translateY(-2px);
+          box-shadow: 0 10px 32px rgba(34, 211, 238, 0.38);
+        }
+
+        #projects-section-container .view-more-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #22d3ee;
+          box-shadow: 0 0 10px #22d3ee;
+          animation: pulseDotProj 2s infinite;
+        }
+
         #projects-section-container .toast {
           position: fixed;
           bottom: 24px;
@@ -1324,9 +1296,17 @@ export const ProjectsSection: React.FC = () => {
       {/* 04. PROJECTS SECTION */}
       <main className="projects-section" id="projects">
         <header className="section-header">
-          <div className="section-pill">
-            <span className="pill-dot" />
-            04. PROJECTS
+          <div className="flex flex-wrap items-center gap-3.5 mb-3">
+            <span
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/5 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+              style={{ fontFamily: "'Caveat', cursive" }}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-pulse" />
+              My Projects
+            </span>
+            <span className="font-mono text-xs tracking-[0.14em] uppercase text-[#a855f7]">
+              04. Featured Projects
+            </span>
           </div>
           <h2 className="section-title">
             Our Featured{' '}
@@ -1344,7 +1324,7 @@ export const ProjectsSection: React.FC = () => {
           <div className="carousel-scaler" ref={scalerRef} id="carousel-scaler">
             <div className="active-meta-stage" ref={metaStageRef} id="active-meta">
               <h3 className="active-project-title" ref={metaTitleRef} id="meta-title">
-                Pyntflow Cloud ERP &amp; POS
+                Pyntflow
               </h3>
             </div>
 
@@ -1366,6 +1346,21 @@ export const ProjectsSection: React.FC = () => {
           </button>
           <button className="ctrl-next" id="btn-next" aria-label="Next Project">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* View More Projects Button */}
+        <div className="view-more-wrap">
+          <button
+            type="button"
+            onClick={onOpenAllProjects}
+            className="view-more-btn"
+          >
+            <span className="view-more-dot" />
+            <span>View More Projects (17+ Live)</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>

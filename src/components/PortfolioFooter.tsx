@@ -994,11 +994,14 @@ export const PortfolioFooter: React.FC = () => {
       <div className="footer-inner">
         {/* Left Column */}
         <div className="footer-cta">
-          <div className="get-in-touch-pill">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z" fill="#a87dff" />
-            </svg>
-            <span>Get In Touch</span>
+          <div className="flex flex-wrap items-center gap-3.5 mb-5">
+            <span
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/5 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+              style={{ fontFamily: "'Caveat', cursive" }}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-pulse" />
+              Get In Touch
+            </span>
           </div>
 
           <h2 className="footer-heading">

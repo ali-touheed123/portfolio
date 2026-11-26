@@ -16,10 +16,17 @@ import { CrossedRibbonBridge } from './components/CrossedRibbonBridge';
 import { AboutOriginSection } from './components/AboutOriginSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { PortfolioFooter } from './components/PortfolioFooter';
+import { AllProjectsPage } from './pages/AllProjectsPage';
 
 const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
-function PortfolioShell() {
+interface PortfolioShellProps {
+  onOpenAllProjects: () => void;
+  isVisible: boolean;
+  restoreScrollY?: number;
+}
+
+function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: PortfolioShellProps) {
   const { isDay } = useSkyTheme();
   const parallax = useParallax();
   const heroTrackRef = useRef<HTMLElement>(null);
@@ -94,12 +101,22 @@ function PortfolioShell() {
     };
   }, []);
 
-  // Start Lenis smooth scroll only after curtain is fully gone
+  // Handle Lenis & scroll restoration when returning from projects route
   useEffect(() => {
-    if (curtainDone && lenisRef.current) {
-      lenisRef.current.start();
+    if (isVisible) {
+      if (curtainDone && lenisRef.current) {
+        lenisRef.current.start();
+      }
+      if (typeof restoreScrollY === 'number' && restoreScrollY > 0) {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: restoreScrollY, behavior: 'instant' });
+          lenisRef.current?.scrollTo(restoreScrollY, { immediate: true });
+        });
+      }
+    } else {
+      lenisRef.current?.stop();
     }
-  }, [curtainDone]);
+  }, [isVisible, curtainDone, restoreScrollY]);
 
   useEffect(() => {
     const sections = ['story', 'stack', 'work', 'contact'];
@@ -192,7 +209,7 @@ function PortfolioShell() {
           </Suspense>
         </section>
         <section id="work" className="relative w-full z-10">
-          <ProjectsSection />
+          <ProjectsSection onOpenAllProjects={onOpenAllProjects} />
         </section>
         <section id="contact" className="relative w-full z-10">
           <PortfolioFooter />
@@ -203,9 +220,65 @@ function PortfolioShell() {
 }
 
 export function App() {
+  const [route, setRoute] = useState<'home' | 'projects'>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+    return path === '/projects' || path === '/projects/' || hash === '#projects' ? 'projects' : 'home';
+  });
+
+  const savedHomeScrollYRef = useRef<number>(0);
+  const [restoreY, setRestoreY] = useState<number>(0);
+
+  const goToProjects = useCallback(() => {
+    savedHomeScrollYRef.current = window.scrollY || document.documentElement.scrollTop || 0;
+    window.history.pushState({}, '', '/projects');
+    setRoute('projects');
+  }, []);
+
+  const goToHome = useCallback(() => {
+    window.history.pushState({}, '', '/');
+    let targetY = savedHomeScrollYRef.current;
+    if (!targetY) {
+      const workEl = document.getElementById('work');
+      if (workEl) targetY = workEl.offsetTop;
+    }
+    setRestoreY(targetY);
+    setRoute('home');
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      const nextRoute = path === '/projects' || path === '/projects/' || hash === '#projects' ? 'projects' : 'home';
+      setRoute(nextRoute);
+      if (nextRoute === 'home') {
+        let targetY = savedHomeScrollYRef.current;
+        if (!targetY) {
+          const workEl = document.getElementById('work');
+          if (workEl) targetY = workEl.offsetTop;
+        }
+        setRestoreY(targetY);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   return (
     <ThemeProvider>
-      <PortfolioShell />
+      <div style={{ display: route === 'home' ? 'block' : 'none' }}>
+        <PortfolioShell
+          onOpenAllProjects={goToProjects}
+          isVisible={route === 'home'}
+          restoreScrollY={restoreY}
+        />
+      </div>
+
+      {route === 'projects' && (
+        <AllProjectsPage onBack={goToHome} />
+      )}
     </ThemeProvider>
   );
 }
