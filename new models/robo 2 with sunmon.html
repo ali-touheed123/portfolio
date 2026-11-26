@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moon &amp; Sun — Realistic Interactive 3D Robo</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #030611;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #sky-canvas, #robo-canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #sky-canvas {
+      z-index: 1;
+    }
+
+    #robo-canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Invisible circular hitbox matched directly to the Moon / Sun orb */
+    #orb-trigger {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 3;
+      width: 44vmin;
+      height: 44vmin;
+      transform: translate(-50%, -50%);
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #orb-trigger:focus-visible {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+    }
+
+    /* 3D-tracked Angry Speech Bubble */
+    #angry-bubble {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 4;
+      pointer-events: none;
+      padding: 10px 16px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(38, 10, 18, 0.92), rgba(18, 6, 12, 0.94));
+      border: 1.5px solid rgba(255, 88, 72, 0.78);
+      color: #fff3f2;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.45),
+        0 0 22px rgba(255, 58, 42, 0.36);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.7);
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+
+    #angry-bubble::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -8px;
+      width: 14px;
+      height: 14px;
+      background: rgba(24, 7, 13, 0.94);
+      border-right: 1.5px solid rgba(255, 88, 72, 0.78);
+      border-bottom: 1.5px solid rgba(255, 88, 72, 0.78);
+      transform: translateX(-50%) rotate(45deg);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+</head>
+<body>
+
+  <canvas id="sky-canvas"></canvas>
+  <canvas id="robo-canvas"></canvas>
+  <button
+    id="orb-trigger"
+    type="button"
+    aria-label="Click to transform Moon into Sun"
+    aria-pressed="false"
+  ></button>
+  <div id="angry-bubble" role="status" aria-live="polite">Hey! Don't poke me! 😠</div>
+
+  <script>
+    (() => {
+      const skyCanvas   = document.getElementById('sky-canvas');
+      const roboCanvas  = document.getElementById('robo-canvas');
+      const trigger     = document.getElementById('orb-trigger');
+      const angryBubble = document.getElementById('angry-bubble');
+
+      // =========================================================================
+      // 1. MOON / SUN WEBGL SHADER BACKGROUND
+      // =========================================================================
+      const gl = skyCanvas.getContext('webgl', { antialias: true, alpha: false });
+      if (!gl) {
+        document.body.textContent = 'WebGL is required to view this scene.';
+        return;
+      }
+
+      const vertexSource = `
+        attribute vec2 a_position;
+        void main() {
+          gl_Position = vec4(a_position, 0.0, 1.0);
+        }
+      `;
+
+      const fragmentSource = `
+        precision highp float;
+
+        uniform vec2  u_resolution;
+        uniform float u_time;
+        uniform float u_progress;   // 0.0 = Moon (Night), 1.0 = Sun (Day)
+        uniform float u_hover;      // 0.0 -> 1.0 hover warmth
+        uniform vec2  u_mouse;      // Normalized subtle parallax
+
+        #define PI 3.14159265359
+
+        float hash21(vec2 p) {
+          p = fract(p * vec2(234.34, 435.345));
+          p += dot(p, p + 34.23);
+          return fract(p.x * p.y);
+        }
+
+        vec2 hash22(vec2 p) {
+          vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+          p3 += dot(p3, p3.yzx + 33.33);
+          return fract((p3.xx + p3.yz) * p3.zy);
+        }
+
+        float noise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+
+          float a = hash21(i);
+          float b = hash21(i + vec2(1.0, 0.0));
+          float c = hash21(i + vec2(0.0, 1.0));
+          float d = hash21(i + vec2(1.0, 1.0));
+
+          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+        }
+
+        float fbm(vec2 p) {
+          float v = 0.0;
+          float amp = 0.5;
+          mat2 rot = mat2(0.80, -0.60, 0.60, 0.80);
+          for (int i = 0; i < 5; i++) {
+            v += amp * noise(p);
+            p = rot * p * 2.04 + vec2(1.7, 9.2);
+            amp *= 0.5;
+          }
+          return v;
+        }
+
+        float craterLayer(vec2 p, float scale) {
+          vec2 sp = p * scale;
+          vec2 id = floor(sp);
+          vec2 gv = fract(sp) - 0.5;
+          float h = 0.0;
+
+          for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+              vec2 offs = vec2(float(x), float(y));
+              vec2 rnd = hash22(id + offs);
+              vec2 center = offs + (rnd - 0.5) * 0.65;
+              float dist = length(gv - center);
+              float radius = 0.14 + 0.24 * fract(rnd.x * 13.7);
+
+              float bowl = smoothstep(radius, radius * 0.25, dist);
+              float rim  = exp(-pow((dist - radius * 0.96) / (radius * 0.22), 2.0));
+              h += (-0.55 * bowl + 0.26 * rim) * step(0.32, rnd.y);
+            }
+          }
+          return h;
+        }
+
+        float lunarHeight(vec2 p) {
+          float base = fbm(p * 3.1) * 0.35;
+          float c1 = craterLayer(p, 3.6) * 0.55;
+          float c2 = craterLayer(p + vec2(4.2, 1.9), 8.2) * 0.24;
+          return base + c1 + c2;
+        }
+
+        float stars(vec2 uv, float time) {
+          float s = 0.0;
+          for (int i = 0; i < 2; i++) {
+            float scale = (i == 0) ? 46.0 : 88.0;
+            vec2 gv = fract(uv * scale) - 0.5;
+            vec2 id = floor(uv * scale);
+            vec2 rnd = hash22(id + float(i) * 19.3);
+
+            vec2 pos = (rnd - 0.5) * 0.72;
+            float d = length(gv - pos);
+            float size = (i == 0) ? 0.045 : 0.032;
+            float star = smoothstep(size, 0.0, d);
+            float twinkle = 0.62 + 0.38 * sin(time * (1.2 + rnd.x * 2.5) + rnd.y * 6.2831);
+            float rarity = smoothstep(0.80, 0.99, rnd.x);
+            s += star * twinkle * rarity * (i == 0 ? 1.0 : 0.65);
+          }
+          return s;
+        }
+
+        vec3 tonemapACES(vec3 x) {
+          float a = 2.51;
+          float b = 0.03;
+          float c = 2.43;
+          float d = 0.59;
+          float e = 0.14;
+          return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+        }
+
+        void main() {
+          float minDim = min(u_resolution.x, u_resolution.y);
+          vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / minDim;
+
+          vec2 parallax = u_mouse * 0.012;
+          vec2 p = uv - parallax * 0.5;
+
+          float t = smoothstep(0.0, 1.0, u_progress);
+          float twilight = sin(t * PI);
+
+          float yGrad = clamp(uv.y + 0.5, 0.0, 1.0);
+          vec3 nightSky = mix(vec3(0.024, 0.045, 0.115), vec3(0.008, 0.014, 0.042), yGrad);
+          vec3 twilightSky = mix(vec3(0.76, 0.34, 0.28), vec3(0.11, 0.16, 0.35), pow(yGrad, 0.85));
+          vec3 daySky = mix(vec3(0.46, 0.76, 0.95), vec3(0.11, 0.38, 0.72), pow(yGrad, 0.75));
+
+          vec3 sky = mix(nightSky, daySky, t);
+          sky = mix(sky, twilightSky, twilight * 0.55);
+
+          float starMask = smoothstep(0.55, 0.0, t);
+          float distFromCenter = length(p);
+          float starFadeNearOrb = smoothstep(0.22, 0.44, distFromCenter);
+          sky += vec3(0.84, 0.90, 1.0) * stars(uv + parallax * 0.25, u_time) * starMask * starFadeNearOrb * 0.95;
+
+          float breath = 1.0 + 0.035 * t + 0.012 * u_hover + 0.015 * sin(t * PI);
+          float R = 0.21 * breath;
+          float d = length(p);
+
+          float angle = atan(p.y, p.x);
+
+          float moonHalo = exp(-max(0.0, d - R * 0.85) * 6.5) * 0.38
+                         + exp(-max(0.0, d - R * 0.9) * 2.2) * 0.10;
+          vec3 moonAuraColor = vec3(0.62, 0.77, 1.0) * moonHalo * (1.0 + 0.25 * u_hover);
+
+          float flareNoise = fbm(vec2(angle * 3.0 + u_time * 0.08, d * 4.5 - u_time * 0.18));
+          float softRays = 0.82 + 0.18 * sin(angle * 7.0 + u_time * 0.15 + flareNoise * 3.0);
+          float sunHaloInner = exp(-max(0.0, d - R * 0.94) * 14.0) * (1.15 + 0.35 * flareNoise);
+          float sunHaloMid   = exp(-max(0.0, d - R * 0.85) * 4.2) * 0.62 * softRays;
+          float sunHaloWide  = exp(-max(0.0, d - R * 0.5) * 1.45) * 0.30;
+
+          vec3 sunAuraColor = vec3(1.0, 0.88, 0.55) * sunHaloInner
+                            + vec3(1.0, 0.62, 0.22) * sunHaloMid
+                            + vec3(1.0, 0.78, 0.45) * sunHaloWide;
+          sunAuraColor *= (1.0 + 0.22 * u_hover);
+
+          float pulseRing = exp(-pow((d - (R + 0.04 + t * 0.22)) / 0.06, 2.0)) * twilight * 0.38;
+          vec3 pulseColor = vec3(1.0, 0.64, 0.28) * pulseRing;
+
+          vec3 col = sky + mix(moonAuraColor, sunAuraColor, t) + pulseColor;
+
+          float edgeAA = 1.8 / minDim;
+          float orbMask = 1.0 - smoothstep(R - edgeAA, R + edgeAA, d);
+
+          if (orbMask > 0.001) {
+            vec2 np = p / R;
+            float z = sqrt(max(0.0, 1.0 - dot(np, np)));
+            vec3 N = normalize(vec3(np, z));
+            vec2 sUV = N.xy / (0.62 + 0.38 * N.z);
+
+            float eps = 0.008;
+            float h0 = lunarHeight(sUV);
+            float hx = lunarHeight(sUV + vec2(eps, 0.0));
+            float hy = lunarHeight(sUV + vec2(0.0, eps));
+            vec3 craterN = normalize(N + vec3((h0 - hx) * 1.6, (h0 - hy) * 1.6, 0.0));
+
+            float maria = smoothstep(0.40, 0.66, fbm(sUV * 1.35 + vec2(2.4, -1.3)));
+            vec3 regolith = mix(vec3(0.86, 0.88, 0.93), vec3(0.46, 0.50, 0.58), maria * 0.75);
+            regolith *= (0.86 + 0.28 * h0);
+
+            vec3 moonLightDir = normalize(vec3(-0.62 + u_mouse.x * 0.14, 0.38 + u_mouse.y * 0.14, 0.68));
+            float diff = max(dot(craterN, moonLightDir), 0.0);
+            float limb = pow(max(N.z, 0.0), 0.35);
+
+            vec3 earthshine = vec3(0.07, 0.10, 0.18) * (0.65 + 0.35 * N.z);
+            vec3 moonCol = regolith * (diff * 1.18 + 0.06) * limb + earthshine * (1.0 - diff);
+            moonCol += vec3(0.55, 0.72, 1.0) * pow(1.0 - N.z, 3.2) * 0.22 * (0.6 + 0.4 * u_hover);
+
+            vec2 sunUV = sUV * 2.6;
+            float warp1 = fbm(sunUV + vec2(u_time * 0.07, -u_time * 0.05));
+            float warp2 = fbm(sunUV * 1.8 - vec2(u_time * 0.09, u_time * 0.06) + warp1 * 1.6);
+            float plasma = fbm(sunUV * 2.5 + vec2(warp1, warp2) * 1.4 + u_time * 0.04);
+
+            float sunLimb = pow(max(N.z, 0.0), 0.42);
+            vec3 sunCore  = vec3(1.22, 1.06, 0.72);
+            vec3 sunMid   = vec3(1.08, 0.66, 0.18);
+            vec3 sunEdge  = vec3(0.92, 0.28, 0.05);
+
+            vec3 sunCol = mix(sunEdge, sunMid, smoothstep(0.15, 0.65, sunLimb));
+            sunCol = mix(sunCol, sunCore, smoothstep(0.45, 0.92, sunLimb * (0.72 + 0.45 * plasma)));
+            sunCol += vec3(1.0, 0.92, 0.60) * smoothstep(0.56, 0.85, plasma) * 0.35 * sunLimb;
+            sunCol += vec3(1.0, 0.55, 0.16) * pow(1.0 - N.z, 2.8) * 0.55;
+
+            float igniteEmber = smoothstep(0.15, 0.55, twilight) * (0.4 + 0.6 * (1.0 - maria));
+            vec3 emberGlow = vec3(1.0, 0.48, 0.14) * igniteEmber * 0.65;
+
+            vec3 orbCol = mix(moonCol, sunCol, t) + emberGlow;
+            col = mix(col, orbCol, orbMask);
+          }
+
+          col = tonemapACES(col);
+          col = pow(col, vec3(0.95));
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `;
+
+      function compileShader(type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          console.error(gl.getShaderInfoLog(shader));
+          gl.deleteShader(shader);
+          return null;
+        }
+        return shader;
+      }
+
+      const vs = compileShader(gl.VERTEX_SHADER, vertexSource);
+      const fs = compileShader(gl.FRAGMENT_SHADER, fragmentSource);
+      const program = gl.createProgram();
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+      gl.useProgram(program);
+
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+        gl.STATIC_DRAW
+      );
+
+      const posLoc = gl.getAttribLocation(program, 'a_position');
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes   = gl.getUniformLocation(program, 'u_resolution');
+      const uTime  = gl.getUniformLocation(program, 'u_time');
+      const uProg  = gl.getUniformLocation(program, 'u_progress');
+      const uHover = gl.getUniformLocation(program, 'u_hover');
+      const uMouse = gl.getUniformLocation(program, 'u_mouse');
+
+      // =========================================================================
+      // 2. PROCEDURAL SUIT NORMAL & ROUGHNESS MAPS FOR HIGH REALISM
+      // =========================================================================
+      function createSuitTextures() {
+        const size = 256;
+        const nCanvas = document.createElement('canvas');
+        nCanvas.width = size; nCanvas.height = size;
+        const nCtx = nCanvas.getContext('2d');
+
+        const rCanvas = document.createElement('canvas');
+        rCanvas.width = size; rCanvas.height = size;
+        const rCtx = rCanvas.getContext('2d');
+
+        // Base neutral normal (#8080ff) and base roughness
+        nCtx.fillStyle = 'rgb(128, 128, 255)';
+        nCtx.fillRect(0, 0, size, size);
+
+        rCtx.fillStyle = 'rgb(96, 96, 96)';
+        rCtx.fillRect(0, 0, size, size);
+
+        // Micro polymer weave pattern
+        for (let y = 0; y < size; y += 4) {
+          for (let x = 0; x < size; x += 4) {
+            const alt = ((x + y) / 4) % 2 === 0;
+            nCtx.fillStyle = alt ? 'rgb(134, 130, 255)' : 'rgb(122, 126, 255)';
+            nCtx.fillRect(x, y, 3, 3);
+
+            rCtx.fillStyle = alt ? 'rgb(104, 104, 104)' : 'rgb(88, 88, 88)';
+            rCtx.fillRect(x, y, 4, 4);
+          }
+        }
+
+        // Subtle technical seam lines
+        nCtx.strokeStyle = 'rgb(106, 106, 245)';
+        nCtx.lineWidth = 2;
+        rCtx.strokeStyle = 'rgb(145, 145, 145)';
+        rCtx.lineWidth = 2;
+        [64, 192].forEach((pos) => {
+          nCtx.beginPath(); nCtx.moveTo(0, pos); nCtx.lineTo(size, pos); nCtx.stroke();
+          rCtx.beginPath(); rCtx.moveTo(0, pos); rCtx.lineTo(size, pos); rCtx.stroke();
+        });
+
+        const normalMap = new THREE.CanvasTexture(nCanvas);
+        normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+        normalMap.repeat.set(4, 4);
+
+        const roughnessMap = new THREE.CanvasTexture(rCanvas);
+        roughnessMap.wrapS = roughnessMap.wrapT = THREE.RepeatWrapping;
+        roughnessMap.repeat.set(4, 4);
+
+        return { normalMap, roughnessMap };
+      }
+
+      // =========================================================================
+      // 3. THREE.JS 3D ASTRO-ROBO MODEL & SURFACE WALKING SCENE
+      // =========================================================================
+      const hasThree = typeof THREE !== 'undefined';
+      let renderer, scene, camera;
+      let occluderMesh, robotRoot, bodyGroup, torsoGroup, headGroup, shadowDisc;
+      let leftArmGroup, rightArmGroup, leftElbowGroup, rightElbowGroup;
+      let leftFingers = [], rightFingers = [];
+      let leftThumb, rightThumb;
+      let leftLegGroup, rightLegGroup, leftKneeGroup, rightKneeGroup, leftFootGroup, rightFootGroup;
+      let faceCanvas, faceCtx, faceTex;
+      let chestCanvas, chestCtx, chestTex;
+      let earGlowMat, thrusterGlowMat, angryLight, shadowMat;
+      let orbPointLight, hemiLight, frontFillLight, rimDirLight;
+      let sparks = [];
+      let robotHitMeshes = [];
+
+      const CAM_Z = 10;
+      const CAM_FOV = 38;
+
+      if (hasThree) {
+        renderer = new THREE.WebGLRenderer({
+          canvas: roboCanvas,
+          alpha: true,
+          antialias: true,
+          powerPreference: 'high-performance'
+        });
+        renderer.setClearColor(0x000000, 0);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.12;
+
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(CAM_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, CAM_Z);
+
+        // High-Realism Procedural Studio Environment Scene via PMREMGenerator
+        const envScene = new THREE.Scene();
+        envScene.background = new THREE.Color(0x0b1024);
+
+        const softboxMain = new THREE.Mesh(
+          new THREE.PlaneGeometry(10, 7),
+          new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 3.3, 3.6), side: THREE.DoubleSide })
+        );
+        softboxMain.position.set(-5, 6, 8);
+        softboxMain.lookAt(0, 0, 0);
+        envScene.add(softboxMain);
+
+        const softboxRim = new THREE.Mesh(
+          new THREE.PlaneGeometry(12, 4),
+          new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 2.2, 3.4), side: THREE.DoubleSide })
+        );
+        softboxRim.position.set(6, 2, -7);
+        softboxRim.lookAt(0, 0, 0);
+        envScene.add(softboxRim);
+
+        const floorBounce = new THREE.Mesh(
+          new THREE.PlaneGeometry(16, 16),
+          new THREE.MeshBasicMaterial({ color: new THREE.Color(0.35, 0.42, 0.65), side: THREE.DoubleSide })
+        );
+        floorBounce.position.set(0, -8, 0);
+        floorBounce.lookAt(0, 0, 0);
+        envScene.add(floorBounce);
+
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(envScene, 0.045).texture;
+        pmrem.dispose();
+
+        // Multi-directional Realistic Lighting
+        hemiLight = new THREE.HemisphereLight(0xaad0ff, 0x1e2848, 0.92);
+        scene.add(hemiLight);
+
+        orbPointLight = new THREE.PointLight(0xaad0ff, 2.2, 22, 1.4);
+        orbPointLight.position.set(0, 0, 0);
+        scene.add(orbPointLight);
+
+        frontFillLight = new THREE.DirectionalLight(0xeef5ff, 1.15);
+        frontFillLight.position.set(-2.6, 3.4, 8.2);
+        scene.add(frontFillLight);
+
+        rimDirLight = new THREE.DirectionalLight(0x8cbaff, 0.85);
+        rimDirLight.position.set(4.5, 1.5, -4.5);
+        scene.add(rimDirLight);
+
+        // Depth-only invisible sphere matching the shader Moon/Sun orb
+        occluderMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(1, 56, 40),
+          new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true })
+        );
+        occluderMesh.renderOrder = -10;
+        scene.add(occluderMesh);
+
+        // =====================================================================
+        // BUILD HIGHLY REALISTIC 3D ASTRO-ROBO CHARACTER
+        // =====================================================================
+        const { normalMap: suitNorm, roughnessMap: suitRough } = createSuitTextures();
+
+        // Satin-ceramic helmet shell
+        const helmetWhiteMat = new THREE.MeshPhysicalMaterial({
+          color: 0xf4f5fc,
+          roughness: 0.22,
+          metalness: 0.05,
+          clearcoat: 0.65,
+          clearcoatRoughness: 0.14,
+          envMapIntensity: 1.05
+        });
+
+        // Padded astro-fabric spacesuit with micro-weave normal & fabric sheen
+        const suitFabricMat = new THREE.MeshPhysicalMaterial({
+          color: 0xf0f1fa,
+          roughness: 0.44,
+          metalness: 0.03,
+          normalMap: suitNorm,
+          normalScale: new THREE.Vector2(0.28, 0.28),
+          roughnessMap: suitRough,
+          sheen: 0.45,
+          sheenRoughness: 0.55,
+          sheenColor: new THREE.Color(0xdcd8ff),
+          clearcoat: 0.12,
+          clearcoatRoughness: 0.35,
+          envMapIntensity: 0.85
+        });
+
+        const lavenderTrimMat = new THREE.MeshPhysicalMaterial({
+          color: 0x9978df,
+          roughness: 0.26,
+          metalness: 0.18,
+          clearcoat: 0.45,
+          clearcoatRoughness: 0.18,
+          envMapIntensity: 1.0
+        });
+
+        const jointMetalMat = new THREE.MeshStandardMaterial({
+          color: 0x6c5ba8,
+          roughness: 0.32,
+          metalness: 0.58,
+          envMapIntensity: 1.1
+        });
+
+        const deepPurpleMat = new THREE.MeshPhysicalMaterial({
+          color: 0x6747ba,
+          roughness: 0.48,
+          metalness: 0.12,
+          normalMap: suitNorm,
+          normalScale: new THREE.Vector2(0.2, 0.2),
+          clearcoat: 0.18
+        });
+
+        const pinkAccentMat = new THREE.MeshPhysicalMaterial({
+          color: 0xe67ac8,
+          roughness: 0.28,
+          metalness: 0.1,
+          clearcoat: 0.4
+        });
+
+        earGlowMat = new THREE.MeshPhysicalMaterial({
+          color: 0xd95ec4,
+          emissive: new THREE.Color(0x9b2488),
+          emissiveIntensity: 0.42,
+          roughness: 0.22,
+          clearcoat: 0.6
+        });
+
+        thrusterGlowMat = new THREE.MeshStandardMaterial({
+          color: 0x4ae8ff,
+          emissive: new THREE.Color(0x28d7ff),
+          emissiveIntensity: 1.35,
+          roughness: 0.2
+        });
+
+        const visorDarkMat = new THREE.MeshPhysicalMaterial({
+          color: 0x04060d,
+          roughness: 0.14,
+          metalness: 0.12,
+          clearcoat: 0.6
+        });
+
+        const visorGlassMat = new THREE.MeshPhysicalMaterial({
+          color: 0x090d1c,
+          transparent: true,
+          opacity: 0.24,
+          roughness: 0.03,
+          metalness: 0.08,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.02,
+          envMapIntensity: 1.65,
+          depthWrite: false
+        });
+
+        // Animated Face OLED CanvasTexture
+        faceCanvas = document.createElement('canvas');
+        faceCanvas.width = 512;
+        faceCanvas.height = 512;
+        faceCtx = faceCanvas.getContext('2d');
+        faceTex = new THREE.CanvasTexture(faceCanvas);
+        faceTex.encoding = THREE.sRGBEncoding;
+
+        const faceScreenMat = new THREE.MeshStandardMaterial({
+          map: faceTex,
+          emissiveMap: faceTex,
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 1.7,
+          transparent: true,
+          roughness: 0.25,
+          depthWrite: false
+        });
+
+        // Animated Chest Screen CanvasTexture
+        chestCanvas = document.createElement('canvas');
+        chestCanvas.width = 256;
+        chestCanvas.height = 160;
+        chestCtx = chestCanvas.getContext('2d');
+        chestTex = new THREE.CanvasTexture(chestCanvas);
+        chestTex.encoding = THREE.sRGBEncoding;
+
+        const chestScreenMat = new THREE.MeshStandardMaterial({
+          map: chestTex,
+          emissiveMap: chestTex,
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 1.3,
+          roughness: 0.12
+        });
+
+        // Soft Contact Shadow Disc on Moon/Sun Surface
+        const shadCanvas = document.createElement('canvas');
+        shadCanvas.width = 128;
+        shadCanvas.height = 128;
+        const sCtx = shadCanvas.getContext('2d');
+        const sGrad = sCtx.createRadialGradient(64, 64, 6, 64, 64, 60);
+        sGrad.addColorStop(0.0, 'rgba(6, 8, 20, 0.65)');
+        sGrad.addColorStop(0.55, 'rgba(6, 8, 20, 0.24)');
+        sGrad.addColorStop(1.0, 'rgba(6, 8, 20, 0.0)');
+        sCtx.fillStyle = sGrad;
+        sCtx.fillRect(0, 0, 128, 128);
+        const shadTex = new THREE.CanvasTexture(shadCanvas);
+
+        shadowMat = new THREE.MeshBasicMaterial({
+          map: shadTex,
+          transparent: true,
+          depthWrite: false,
+          opacity: 0.78
+        });
+
+        robotRoot = new THREE.Group();
+        scene.add(robotRoot);
+
+        shadowDisc = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 1.05), shadowMat);
+        shadowDisc.rotation.x = -Math.PI / 2;
+        shadowDisc.position.set(0, 0.015, 0.02);
+        robotRoot.add(shadowDisc);
+
+        bodyGroup = new THREE.Group();
+        robotRoot.add(bodyGroup);
+
+        angryLight = new THREE.PointLight(0xff2a1a, 0, 3.5);
+        angryLight.position.set(0, 0.68, 0.68);
+        bodyGroup.add(angryLight);
+
+        // --- TORSO & PELVIS ---
+        torsoGroup = new THREE.Group();
+        bodyGroup.add(torsoGroup);
+
+        const chestMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.265, 0.20, 20, 40), suitFabricMat);
+        chestMesh.position.set(0, 0.16, 0);
+        chestMesh.scale.set(1.08, 1.0, 0.94);
+        torsoGroup.add(chestMesh);
+
+        // Sculpted Chest Harness Straps
+        [-1, 1].forEach((side) => {
+          const strap = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.016, 10, 28, Math.PI * 0.65), lavenderTrimMat);
+          strap.position.set(side * 0.14, 0.22, 0.03);
+          strap.rotation.y = Math.PI / 2;
+          strap.rotation.x = -0.35;
+          torsoGroup.add(strap);
+        });
+
+        const waistRing = new THREE.Mesh(new THREE.TorusGeometry(0.258, 0.036, 18, 44), lavenderTrimMat);
+        waistRing.rotation.x = Math.PI / 2;
+        waistRing.position.set(0, -0.01, 0);
+        waistRing.scale.set(1.06, 0.94, 1);
+        torsoGroup.add(waistRing);
+
+        const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.055, 0.045), jointMetalMat);
+        beltBuckle.position.set(0, -0.01, 0.245);
+        torsoGroup.add(beltBuckle);
+
+        const pelvisMesh = new THREE.Mesh(new THREE.SphereGeometry(0.262, 36, 26), suitFabricMat);
+        pelvisMesh.position.set(0, -0.10, 0);
+        pelvisMesh.scale.set(1.06, 0.78, 0.94);
+        torsoGroup.add(pelvisMesh);
+
+        const collarRing = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.044, 18, 44), lavenderTrimMat);
+        collarRing.rotation.x = Math.PI / 2;
+        collarRing.position.set(0, 0.42, 0.01);
+        torsoGroup.add(collarRing);
+
+        const neckJoint = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.10, 28), jointMetalMat);
+        neckJoint.position.set(0, 0.44, 0);
+        torsoGroup.add(neckJoint);
+
+        // Chest Control Unit with Glass Cover & Tactile Buttons
+        const chestPanelGroup = new THREE.Group();
+        chestPanelGroup.position.set(0, 0.17, 0.242);
+        chestPanelGroup.rotation.x = -0.12;
+        torsoGroup.add(chestPanelGroup);
+
+        const panelFrame = new THREE.Mesh(new THREE.BoxGeometry(0.255, 0.16, 0.036), lavenderTrimMat);
+        chestPanelGroup.add(panelFrame);
+
+        const panelScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.165, 0.105), chestScreenMat);
+        panelScreen.position.set(-0.022, 0, 0.019);
+        chestPanelGroup.add(panelScreen);
+
+        const panelGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.175, 0.112), visorGlassMat);
+        panelGlass.position.set(-0.022, 0, 0.021);
+        chestPanelGroup.add(panelGlass);
+
+        const panelButton = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.018, 22), pinkAccentMat);
+        panelButton.rotation.x = Math.PI / 2;
+        panelButton.position.set(0.088, 0.014, 0.016);
+        chestPanelGroup.add(panelButton);
+
+        const panelLed = new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 12), thrusterGlowMat);
+        panelLed.position.set(0.088, -0.034, 0.019);
+        chestPanelGroup.add(panelLed);
+
+        // --- BACKPACK ---
+        const backpackGroup = new THREE.Group();
+        backpackGroup.position.set(0, 0.15, -0.27);
+        torsoGroup.add(backpackGroup);
+
+        const packUpper = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.12, 16, 32), helmetWhiteMat);
+        packUpper.position.set(0, 0.11, 0);
+        packUpper.scale.set(1.18, 0.86, 0.72);
+        backpackGroup.add(packUpper);
+
+        const packLower = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.12, 16, 32), helmetWhiteMat);
+        packLower.position.set(0, -0.09, 0);
+        packLower.scale.set(1.18, 0.86, 0.72);
+        backpackGroup.add(packLower);
+
+        const packBand = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.034, 0.24), lavenderTrimMat);
+        packBand.position.set(0, 0.01, 0.01);
+        backpackGroup.add(packBand);
+
+        [-1, 1].forEach((side) => {
+          const latch = new THREE.Mesh(new THREE.CapsuleGeometry(0.032, 0.07, 10, 18), deepPurpleMat);
+          latch.position.set(side * 0.21, 0.08, 0.01);
+          backpackGroup.add(latch);
+
+          const latchLow = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.06, 10, 18), deepPurpleMat);
+          latchLow.position.set(side * 0.21, -0.08, 0.01);
+          backpackGroup.add(latchLow);
+
+          const nozzleRim = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.064, 0.06, 22), jointMetalMat);
+          nozzleRim.position.set(side * 0.10, -0.26, -0.01);
+          backpackGroup.add(nozzleRim);
+
+          const nozzleGlow = new THREE.Mesh(new THREE.SphereGeometry(0.044, 16, 12), thrusterGlowMat);
+          nozzleGlow.position.set(side * 0.10, -0.29, -0.01);
+          nozzleGlow.scale.set(1, 0.55, 1);
+          backpackGroup.add(nozzleGlow);
+        });
+
+        // --- HEAD, HELMET, VISOR & HEADPHONES ---
+        headGroup = new THREE.Group();
+        headGroup.position.set(0, 0.45, 0);
+        bodyGroup.add(headGroup);
+
+        const helmetOuter = new THREE.Mesh(new THREE.SphereGeometry(0.455, 52, 40), helmetWhiteMat);
+        helmetOuter.position.set(0, 0.34, -0.02);
+        helmetOuter.scale.set(1.06, 0.96, 1.02);
+        headGroup.add(helmetOuter);
+
+        // Recessed Helmet Trim Ring around Visor
+        const visorBezel = new THREE.Mesh(new THREE.TorusGeometry(0.335, 0.045, 22, 52), helmetWhiteMat);
+        visorBezel.position.set(0, 0.32, 0.24);
+        visorBezel.scale.set(1.08, 0.92, 0.9);
+        headGroup.add(visorBezel);
+
+        const visorInnerTrim = new THREE.Mesh(new THREE.TorusGeometry(0.305, 0.016, 16, 48), jointMetalMat);
+        visorInnerTrim.position.set(0, 0.32, 0.26);
+        visorInnerTrim.scale.set(1.08, 0.92, 0.9);
+        headGroup.add(visorInnerTrim);
+
+        const visorDark = new THREE.Mesh(new THREE.SphereGeometry(0.415, 48, 36), visorDarkMat);
+        visorDark.position.set(0, 0.32, 0.10);
+        visorDark.scale.set(1.04, 0.90, 0.85);
+        headGroup.add(visorDark);
+
+        const facePatch = new THREE.Mesh(
+          new THREE.SphereGeometry(
+            0.419, 40, 28,
+            Math.PI / 2 - 0.66, 1.32,
+            Math.PI / 2 - 0.46, 0.92
+          ),
+          faceScreenMat
+        );
+        facePatch.position.set(0, 0.32, 0.101);
+        facePatch.scale.set(1.04, 0.90, 0.85);
+        facePatch.renderOrder = 2;
+        headGroup.add(facePatch);
+
+        const visorGlass = new THREE.Mesh(new THREE.SphereGeometry(0.425, 48, 36), visorGlassMat);
+        visorGlass.position.set(0, 0.32, 0.102);
+        visorGlass.scale.set(1.04, 0.90, 0.85);
+        visorGlass.renderOrder = 3;
+        headGroup.add(visorGlass);
+
+        // Headphones with metallic swivel hinges
+        const headband = new THREE.Mesh(
+          new THREE.TorusGeometry(0.49, 0.044, 20, 52, Math.PI * 1.04),
+          lavenderTrimMat
+        );
+        headband.position.set(0, 0.34, -0.02);
+        headband.rotation.z = -Math.PI * 0.02;
+        headband.rotation.x = -0.14;
+        headGroup.add(headband);
+
+        [-1, 1].forEach((side) => {
+          const earCupGroup = new THREE.Group();
+          earCupGroup.position.set(side * 0.475, 0.31, -0.02);
+          headGroup.add(earCupGroup);
+
+          const cupBase = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.155, 0.085, 34), lavenderTrimMat);
+          cupBase.rotation.z = Math.PI / 2;
+          earCupGroup.add(cupBase);
+
+          const cupHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.095, 20), jointMetalMat);
+          cupHinge.rotation.z = Math.PI / 2;
+          cupHinge.position.set(-side * 0.015, 0.12, 0);
+          earCupGroup.add(cupHinge);
+
+          const cupRing = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.025, 18, 36), helmetWhiteMat);
+          cupRing.rotation.y = Math.PI / 2;
+          cupRing.position.x = side * 0.02;
+          earCupGroup.add(cupRing);
+
+          const cupPad = new THREE.Mesh(new THREE.SphereGeometry(0.132, 26, 20), earGlowMat);
+          cupPad.scale.set(0.38, 1, 1);
+          cupPad.position.x = side * 0.042;
+          earCupGroup.add(cupPad);
+        });
+
+        // --- ARMS WITH ARTICULATED 5-FINGER HANDS ---
+        function buildArm(side) {
+          const armRoot = new THREE.Group();
+          armRoot.position.set(side * 0.31, 0.33, 0.01);
+          bodyGroup.add(armRoot);
+
+          const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.104, 24, 18), suitFabricMat);
+          armRoot.add(shoulder);
+
+          const shoulderJointRing = new THREE.Mesh(new THREE.TorusGeometry(0.092, 0.016, 12, 24), jointMetalMat);
+          shoulderJointRing.rotation.y = Math.PI / 2;
+          shoulderJointRing.position.set(-side * 0.04, 0, 0);
+          armRoot.add(shoulderJointRing);
+
+          const shoulderPatch = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.026, 8, 14), pinkAccentMat);
+          shoulderPatch.position.set(side * 0.095, -0.04, 0.01);
+          shoulderPatch.rotation.z = side * 0.4;
+          armRoot.add(shoulderPatch);
+
+          const upperArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.082, 0.14, 14, 26), suitFabricMat);
+          upperArm.position.set(0, -0.11, 0);
+          armRoot.add(upperArm);
+
+          const elbowPivot = new THREE.Group();
+          elbowPivot.position.set(0, -0.21, 0);
+          armRoot.add(elbowPivot);
+
+          const elbowJoint = new THREE.Mesh(new THREE.SphereGeometry(0.072, 18, 14), jointMetalMat);
+          elbowPivot.add(elbowJoint);
+
+          const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.080, 0.13, 14, 26), suitFabricMat);
+          forearm.position.set(0, -0.10, 0);
+          elbowPivot.add(forearm);
+
+          const wristCuff = new THREE.Mesh(new THREE.TorusGeometry(0.082, 0.026, 16, 30), lavenderTrimMat);
+          wristCuff.rotation.x = Math.PI / 2;
+          wristCuff.position.set(0, -0.18, 0);
+          elbowPivot.add(wristCuff);
+
+          // Sculpted Palm + 4 Articulated Fingers + Thumb
+          const handGroup = new THREE.Group();
+          handGroup.position.set(0, -0.23, 0.01);
+          elbowPivot.add(handGroup);
+
+          const palm = new THREE.Mesh(new THREE.SphereGeometry(0.072, 20, 16), suitFabricMat);
+          palm.scale.set(0.92, 0.95, 0.72);
+          handGroup.add(palm);
+
+          const fingerList = [];
+          for (let f = 0; f < 4; f++) {
+            const fPivot = new THREE.Group();
+            const fOffset = (f - 1.5) * 0.030;
+            fPivot.position.set(fOffset * 0.35, -0.048, fOffset * 0.75);
+            handGroup.add(fPivot);
+
+            const fingerMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.044, 8, 12), suitFabricMat);
+            fingerMesh.position.set(0, -0.026, 0);
+            fPivot.add(fingerMesh);
+            fingerList.push(fPivot);
+          }
+
+          const thumbPivot = new THREE.Group();
+          thumbPivot.position.set(-side * 0.042, -0.012, 0.046);
+          handGroup.add(thumbPivot);
+
+          const thumbMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.038, 8, 12), suitFabricMat);
+          thumbMesh.position.set(0, -0.022, 0.01);
+          thumbMesh.rotation.set(0.45, 0, side * 0.38);
+          thumbPivot.add(thumbMesh);
+
+          return { armRoot, elbowPivot, fingerList, thumbPivot };
+        }
+
+        const leftArm  = buildArm(-1);
+        const rightArm = buildArm(1);
+        leftArmGroup  = leftArm.armRoot;  leftElbowGroup  = leftArm.elbowPivot;
+        rightArmGroup = rightArm.armRoot; rightElbowGroup = rightArm.elbowPivot;
+        leftFingers   = leftArm.fingerList; rightFingers  = rightArm.fingerList;
+        leftThumb     = leftArm.thumbPivot; rightThumb    = rightArm.thumbPivot;
+
+        // --- LEGS & LAYERED SPACE BOOTS ---
+        function buildLeg(side) {
+          const hipRoot = new THREE.Group();
+          hipRoot.position.set(side * 0.155, -0.15, 0.01);
+          bodyGroup.add(hipRoot);
+
+          const hipJoint = new THREE.Mesh(new THREE.SphereGeometry(0.095, 18, 14), jointMetalMat);
+          hipRoot.add(hipJoint);
+
+          const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.106, 0.16, 16, 28), suitFabricMat);
+          thigh.position.set(0, -0.12, 0);
+          hipRoot.add(thigh);
+
+          const kneeBand = new THREE.Mesh(new THREE.TorusGeometry(0.104, 0.022, 14, 30), lavenderTrimMat);
+          kneeBand.rotation.x = Math.PI / 2;
+          kneeBand.position.set(0, -0.21, 0);
+          hipRoot.add(kneeBand);
+
+          const kneePivot = new THREE.Group();
+          kneePivot.position.set(0, -0.23, 0);
+          hipRoot.add(kneePivot);
+
+          const kneeJoint = new THREE.Mesh(new THREE.SphereGeometry(0.088, 18, 14), jointMetalMat);
+          kneePivot.add(kneeJoint);
+
+          const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.102, 0.15, 16, 28), suitFabricMat);
+          shin.position.set(0, -0.11, 0);
+          kneePivot.add(shin);
+
+          const ankleCuff = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.03, 16, 32), lavenderTrimMat);
+          ankleCuff.rotation.x = Math.PI / 2;
+          ankleCuff.position.set(0, -0.20, 0);
+          kneePivot.add(ankleCuff);
+
+          const footPivot = new THREE.Group();
+          footPivot.position.set(0, -0.23, 0);
+          kneePivot.add(footPivot);
+
+          const bootUpper = new THREE.Mesh(new THREE.CapsuleGeometry(0.102, 0.13, 16, 28), helmetWhiteMat);
+          bootUpper.rotation.x = Math.PI / 2;
+          bootUpper.position.set(0, -0.035, 0.065);
+          bootUpper.scale.set(1.06, 1.0, 0.84);
+          footPivot.add(bootUpper);
+
+          const bootToeCap = new THREE.Mesh(new THREE.SphereGeometry(0.086, 20, 16), lavenderTrimMat);
+          bootToeCap.position.set(0, -0.048, 0.135);
+          bootToeCap.scale.set(1.12, 0.65, 0.85);
+          footPivot.add(bootToeCap);
+
+          const bootSole = new THREE.Mesh(new THREE.CapsuleGeometry(0.106, 0.14, 16, 28), deepPurpleMat);
+          bootSole.rotation.x = Math.PI / 2;
+          bootSole.position.set(0, -0.075, 0.068);
+          bootSole.scale.set(1.10, 1.02, 0.48);
+          footPivot.add(bootSole);
+
+          return { hipRoot, kneePivot, footPivot };
+        }
+
+        const leftLeg  = buildLeg(-1);
+        const rightLeg = buildLeg(1);
+        leftLegGroup  = leftLeg.hipRoot;   leftKneeGroup  = leftLeg.kneePivot;  leftFootGroup  = leftLeg.footPivot;
+        rightLegGroup = rightLeg.hipRoot;  rightKneeGroup = rightLeg.kneePivot; rightFootGroup = rightLeg.footPivot;
+
+        // Collect all visible meshes on the robot for raycasting
+        robotRoot.traverse((obj) => {
+          if (obj.isMesh && obj !== visorGlass && obj !== shadowDisc && obj !== panelGlass) {
+            robotHitMeshes.push(obj);
+          }
+        });
+
+        // Angry Spark Particles
+        const sparkGeo = new THREE.SphereGeometry(0.04, 8, 8);
+        for (let i = 0; i < 16; i++) {
+          const mat = new THREE.MeshBasicMaterial({
+            color: 0xff5522,
+            transparent: true,
+            opacity: 0
+          });
+          const m = new THREE.Mesh(sparkGeo, mat);
+          scene.add(m);
+          sparks.push({
+            mesh: m,
+            mat,
+            life: Math.random(),
+            vx: (Math.random() - 0.5) * 0.75,
+            vy: 0.75 + Math.random() * 0.85,
+            vz: (Math.random() - 0.5) * 0.75
+          });
+        }
+      }
+
+      // =========================================================================
+      // 4. FACE & CHEST SCREEN DYNAMIC TEXTURE DRAWING (OLED LOOK)
+      // =========================================================================
+      function updateFaceTexture(time, angryAmt, blinkAmt, lookX, lookY, hoverAlert) {
+        if (!faceCtx) return;
+        const ctx = faceCtx;
+        ctx.clearRect(0, 0, 512, 512);
+
+        const r = Math.round(36  + (255 - 36)  * angryAmt);
+        const g = Math.round(236 + (42  - 236) * angryAmt);
+        const b = Math.round(255 + (31  - 255) * angryAmt);
+        const mainColor = `rgb(${r},${g},${b})`;
+        const coreColor = angryAmt > 0.5
+          ? 'rgba(255, 200, 130, 0.92)'
+          : 'rgba(205, 253, 255, 0.94)';
+
+        ctx.save();
+        ctx.translate(256 + lookX * 26, 252 + lookY * 18);
+
+        const openY = Math.max(0.08, (1.0 - blinkAmt * 0.92) * (1.0 - angryAmt * 0.25 + hoverAlert * 0.14));
+        const eyeW = 36 * (1 + hoverAlert * 0.10);
+        const eyeH = 48 * openY;
+
+        ctx.shadowColor = mainColor;
+        ctx.shadowBlur = 28 + angryAmt * 14;
+
+        [-78, 78].forEach((ex, idx) => {
+          const side = idx === 0 ? -1 : 1;
+          ctx.save();
+          ctx.translate(ex, -12);
+
+          if (angryAmt > 0.08) {
+            ctx.rotate(side * angryAmt * 0.28);
+          }
+
+          ctx.fillStyle = mainColor;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, eyeW, eyeH, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = coreColor;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, eyeW * 0.56, eyeH * 0.56, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (angryAmt > 0.12) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(-eyeW * 1.4, -eyeH * 1.3);
+            ctx.lineTo(eyeW * 1.4, -eyeH * 1.3);
+            ctx.lineTo(eyeW * 1.4, -eyeH * (0.35 - side * 0.35 * angryAmt));
+            ctx.lineTo(-eyeW * 1.4, -eyeH * (0.35 + side * 0.35 * angryAmt));
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+          }
+
+          ctx.restore();
+
+          if (angryAmt > 0.15) {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, angryAmt * 1.2);
+            ctx.strokeStyle = mainColor;
+            ctx.lineWidth = 13;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(ex - side * 42, -74);
+            ctx.lineTo(ex + side * 26, -50);
+            ctx.stroke();
+            ctx.restore();
+          }
+        });
+
+        ctx.strokeStyle = mainColor;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 11;
+
+        if (angryAmt > 0.35) {
+          const shake = Math.sin(time * 26) * 2.5 * angryAmt;
+          ctx.beginPath();
+          ctx.moveTo(-46, 68 + shake);
+          ctx.lineTo(-22, 54);
+          ctx.lineTo(0, 68 - shake);
+          ctx.lineTo(22, 54);
+          ctx.lineTo(46, 68 + shake);
+          ctx.stroke();
+        } else if (hoverAlert > 0.35 && angryAmt < 0.2) {
+          ctx.fillStyle = mainColor;
+          ctx.beginPath();
+          ctx.ellipse(0, 56, 16, 19 * hoverAlert + 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const curve = 24 * (1 - angryAmt * 2.2);
+          ctx.beginPath();
+          ctx.moveTo(-36, 50);
+          ctx.quadraticCurveTo(0, 50 + curve, 36, 50);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+        faceTex.needsUpdate = true;
+      }
+
+      function updateChestTexture(time, angryAmt) {
+        if (!chestCtx) return;
+        const ctx = chestCtx;
+        ctx.fillStyle = angryAmt > 0.5 ? '#26080b' : '#181a44';
+        ctx.fillRect(0, 0, 256, 160);
+
+        const col = angryAmt > 0.5 ? '#ff3c2e' : '#58e2ff';
+        ctx.strokeStyle = col;
+        ctx.fillStyle = col;
+        ctx.lineWidth = 5;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 12;
+
+        for (let i = 0; i < 8; i++) {
+          const speed = angryAmt > 0.5 ? 14 : 5;
+          const h = 24 + Math.abs(Math.sin(time * speed + i * 0.9)) * 74;
+          ctx.fillRect(22 + i * 27, 130 - h, 15, h);
+        }
+        chestTex.needsUpdate = true;
+      }
+
+      // =========================================================================
+      // 5. INTERACTIVE STATE, 5-SEC ANGRY TIMER, BUBBLE & RAYCASTING
+      // =========================================================================
+      let isSun = false;
+      let progress = 0;
+      let targetProgress = 0;
+
+      let orbHover = 0;
+      let targetOrbHover = 0;
+
+      const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+      const pointerNDC = new THREE.Vector2(99, 99);
+      const raycaster = hasThree ? new THREE.Raycaster() : null;
+
+      let isRobotHovered = false;
+      let isRobotAngry = false;
+      let angryTimer = 0;
+      let angryClicks = 0;
+      let angryBlend = 0;
+      let hoverAlert = 0;
+      let hoverCooldown = 0;
+      let angerBurst = 0;
+
+      const angryQuotes = [
+        "Hey! Don't poke me! 😠",
+        "Grrr! Hands off! 💢",
+        "Excuse me?! Rude! 😤",
+        "Stop clicking me!! 🤬"
+      ];
+
+      // Spherical surface navigation state: starts prominently on front-upper orb face
+      const posDir  = new THREE.Vector3(-0.30, 0.58, 0.76).normalize();
+      const moveDir = new THREE.Vector3(0.88, 0.25, 0.18);
+      moveDir.addScaledVector(posDir, -moveDir.dot(posDir)).normalize();
+
+      let pendingTurnAngle = 0;
+      let turnBank = 0;
+      let walkPhase = 0;
+      let blinkTimer = 2.2;
+      let blinkAmt = 0;
+
+      const rotAxis = new THREE.Vector3();
+      const basisRight = new THREE.Vector3();
+      const basisMat = new THREE.Matrix4();
+      const targetQuat = new THREE.Quaternion();
+      const surfaceUp = new THREE.Vector3();
+      const walkForward = new THREE.Vector3();
+      const bubbleAnchor = new THREE.Vector3();
+      const invRobotQuat = new THREE.Quaternion();
+      const camDirLocal = new THREE.Vector3();
+
+      function getWorldScaleInfo() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const aspect = w / h;
+        const visH = 2 * CAM_Z * Math.tan(THREE.MathUtils.degToRad(CAM_FOV * 0.5));
+        const visW = visH * aspect;
+        const minVis = Math.min(visW, visH);
+        return { minVis, visW, visH };
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        skyCanvas.width = Math.floor(w * dpr);
+        skyCanvas.height = Math.floor(h * dpr);
+        gl.viewport(0, 0, skyCanvas.width, skyCanvas.height);
+
+        if (hasThree) {
+          renderer.setPixelRatio(dpr);
+          renderer.setSize(w, h, false);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        }
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      trigger.addEventListener('click', () => {
+        isSun = !isSun;
+        targetProgress = isSun ? 1 : 0;
+        trigger.setAttribute('aria-pressed', String(isSun));
+        trigger.setAttribute(
+          'aria-label',
+          isSun ? 'Click to transform Sun into Moon' : 'Click to transform Moon into Sun'
+        );
+      });
+
+      trigger.addEventListener('mouseenter', () => { targetOrbHover = 1; });
+      trigger.addEventListener('mouseleave', () => { targetOrbHover = 0; });
+
+      function testRobotHit(clientX, clientY) {
+        if (!hasThree || !raycaster || robotHitMeshes.length === 0) return false;
+        pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+        pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointerNDC, camera);
+        const hits = raycaster.intersectObjects([occluderMesh, ...robotHitMeshes], false);
+        return hits.length > 0 && hits[0].object !== occluderMesh;
+      }
+
+      function steerNewDirection() {
+        const sign = Math.random() > 0.5 ? 1 : -1;
+        pendingTurnAngle += sign * (1.85 + Math.random() * 1.0);
+        hoverAlert = 1.0;
+        hoverCooldown = 0.65;
+      }
+
+      window.addEventListener('pointermove', (e) => {
+        mouse.tx = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.ty = -((e.clientY / window.innerHeight) * 2 - 1);
+
+        const hit = testRobotHit(e.clientX, e.clientY);
+        if (hit && !isRobotHovered && hoverCooldown <= 0) {
+          steerNewDirection();
+        }
+        isRobotHovered = hit;
+        trigger.style.pointerEvents = hit ? 'none' : 'auto';
+        document.body.style.cursor = hit ? 'pointer' : '';
+      });
+
+      // Capture click/tap: clicking the visible robot makes it angry for 5 seconds + pops bubble!
+      window.addEventListener('click', (e) => {
+        if (testRobotHit(e.clientX, e.clientY)) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          isRobotAngry = true;
+          angryTimer = 5.0; // Stands angrily for 5 seconds, then walks again automatically!
+          angerBurst = 1.0;
+          angryBubble.textContent = angryQuotes[angryClicks % angryQuotes.length];
+          angryClicks++;
+        }
+      }, true);
+
+      // =========================================================================
+      // 6. UNIFIED RENDER & ANIMATION LOOP
+      // =========================================================================
+      let lastTime = performance.now();
+
+      function render(now) {
+        const dt = Math.min(0.05, (now - lastTime) * 0.001);
+        const timeSec = now * 0.001;
+        lastTime = now;
+
+        progress += (targetProgress - progress) * (1 - Math.exp(-2.6 * dt));
+        orbHover += (targetOrbHover - orbHover) * (1 - Math.exp(-7.0 * dt));
+        mouse.x  += (mouse.tx - mouse.x)        * (1 - Math.exp(-4.5 * dt));
+        mouse.y  += (mouse.ty - mouse.y)        * (1 - Math.exp(-4.5 * dt));
+
+        // 1) Draw Sky + Moon/Sun Shader
+        gl.uniform2f(uRes, skyCanvas.width, skyCanvas.height);
+        gl.uniform1f(uTime, timeSec);
+        gl.uniform1f(uProg, progress);
+        gl.uniform1f(uHover, orbHover);
+        gl.uniform2f(uMouse, mouse.x, mouse.y);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        // 2) Update & Draw 3D Robot Walking ON Moon/Sun
+        if (hasThree) {
+          const tSmooth = progress * progress * (3 - 2 * progress);
+          const breath = 1.0 + 0.035 * tSmooth + 0.012 * orbHover + 0.015 * Math.sin(tSmooth * Math.PI);
+          const { minVis } = getWorldScaleInfo();
+
+          const rProj = 0.21 * breath * minVis;
+          const rSphere = (rProj * CAM_Z) / Math.sqrt(CAM_Z * CAM_Z + rProj * rProj);
+          const orbCenter = new THREE.Vector3(
+            mouse.x * 0.006 * minVis,
+            mouse.y * 0.006 * minVis,
+            0
+          );
+
+          occluderMesh.position.copy(orbCenter);
+          occluderMesh.scale.setScalar(rSphere * 0.996);
+
+          // Dynamic Lighting (Night Moon <-> Day Sun)
+          const nightKey = new THREE.Color(0x9fc4ff);
+          const dayKey   = new THREE.Color(0xffe7b8);
+          orbPointLight.color.copy(nightKey).lerp(dayKey, tSmooth);
+          orbPointLight.intensity = 2.0 + 1.5 * tSmooth;
+          orbPointLight.position.copy(orbCenter);
+
+          hemiLight.color.setHex(0x9fc4ff).lerp(new THREE.Color(0xb6e4ff), tSmooth);
+          hemiLight.groundColor.setHex(0x202c4e).lerp(new THREE.Color(0x634b30), tSmooth);
+          hemiLight.intensity = 0.88 + 0.42 * tSmooth;
+
+          frontFillLight.color.setHex(0xdceaff).lerp(new THREE.Color(0xfff6e0), tSmooth);
+          frontFillLight.intensity = 1.15 + 0.28 * tSmooth;
+
+          // 5-Second Angry Countdown -> Automatically resumes walking!
+          if (isRobotAngry) {
+            angryTimer -= dt;
+            if (angryTimer <= 0) {
+              isRobotAngry = false;
+              angryTimer = 0;
+            }
+          }
+
+          if (hoverCooldown > 0) hoverCooldown = Math.max(0, hoverCooldown - dt);
+          hoverAlert = Math.max(0, hoverAlert - dt * 1.45);
+          angerBurst = Math.max(0, angerBurst - dt * 1.5);
+
+          const targetAngry = isRobotAngry ? 1.0 : 0.0;
+          angryBlend += (targetAngry - angryBlend) * (1 - Math.exp(-8.5 * dt));
+
+          // Re-verify continuous hover as robot walks under cursor
+          if (pointerNDC.x <= 1 && pointerNDC.x >= -1) {
+            raycaster.setFromCamera(pointerNDC, camera);
+            const hits = raycaster.intersectObjects([occluderMesh, ...robotHitMeshes], false);
+            const stillHovered = hits.length > 0 && hits[0].object !== occluderMesh;
+            if (stillHovered && !isRobotHovered && hoverCooldown <= 0) {
+              steerNewDirection();
+            }
+            isRobotHovered = stillHovered;
+            trigger.style.pointerEvents = stillHovered ? 'none' : 'auto';
+            document.body.style.cursor = stillHovered ? 'pointer' : '';
+          }
+
+          // Smoothly execute surface turn around radial normal posDir
+          if (Math.abs(pendingTurnAngle) > 0.001) {
+            const stepTurn = pendingTurnAngle * (1 - Math.exp(-8.5 * dt));
+            pendingTurnAngle -= stepTurn;
+            moveDir.applyAxisAngle(posDir, stepTurn);
+            moveDir.addScaledVector(posDir, -moveDir.dot(posDir)).normalize();
+            turnBank = THREE.MathUtils.clamp(stepTurn * 16, -0.35, 0.35);
+          } else {
+            turnBank *= Math.exp(-6.0 * dt);
+          }
+
+          // Walk forward across the Moon/Sun surface (stops while angry, resumes after 5s)
+          const walkMoveFactor = 1.0 - angryBlend;
+          const surfaceSpeed = (0.35 + hoverAlert * 0.24) * walkMoveFactor;
+          if (surfaceSpeed > 0.001) {
+            rotAxis.crossVectors(posDir, moveDir).normalize();
+            const dAngle = surfaceSpeed * dt;
+            posDir.applyAxisAngle(rotAxis, dAngle).normalize();
+            moveDir.applyAxisAngle(rotAxis, dAngle);
+            moveDir.addScaledVector(posDir, -moveDir.dot(posDir)).normalize();
+          }
+
+          // Larger, clear robot scale directly on Moon/Sun surface
+          const robotScale = 0.72 * (minVis / 7.28);
+          robotRoot.scale.setScalar(robotScale);
+          robotRoot.position.copy(orbCenter).addScaledVector(posDir, rSphere);
+
+          // Align robot UP (+Y) radially outward, FORWARD (+Z) along moveDir
+          surfaceUp.copy(posDir);
+          walkForward.copy(moveDir);
+          basisRight.crossVectors(surfaceUp, walkForward).normalize();
+          basisMat.makeBasis(basisRight, surfaceUp, walkForward);
+          targetQuat.setFromRotationMatrix(basisMat);
+          robotRoot.quaternion.slerp(targetQuat, 1 - Math.exp(-12.0 * dt));
+
+          // Walk Cycle vs. Angry Defiant Standing Stance
+          walkPhase += dt * (4.6 + hoverAlert * 2.2) * walkMoveFactor;
+
+          const strideBounce = Math.abs(Math.sin(walkPhase)) * 0.052 * walkMoveFactor;
+          const angryStandExtra = angryBlend * 0.04;
+          const angryShake = Math.sin(timeSec * 44) * 0.028 * angerBurst;
+
+          bodyGroup.position.set(angryShake, 0.736 + strideBounce + angryStandExtra, 0);
+          bodyGroup.rotation.x = 0.06 * walkMoveFactor - 0.06 * angryBlend;
+          bodyGroup.rotation.z = turnBank + Math.cos(walkPhase) * 0.045 * walkMoveFactor;
+
+          // Legs: Smooth natural surface walking -> Firm wide angry stance
+          const swingL = Math.sin(walkPhase);
+          const swingR = Math.sin(walkPhase + Math.PI);
+
+          const walkHipXL  = swingL * 0.46;
+          const walkHipXR  = swingR * 0.46;
+          const walkKneeXL = Math.max(0, -swingL) * 0.62 + 0.06;
+          const walkKneeXR = Math.max(0, -swingR) * 0.62 + 0.06;
+          const walkFootXL = swingL * -0.18;
+          const walkFootXR = swingR * -0.18;
+
+          leftLegGroup.rotation.x  = THREE.MathUtils.lerp(walkHipXL, -0.05, angryBlend);
+          rightLegGroup.rotation.x = THREE.MathUtils.lerp(walkHipXR, -0.05, angryBlend);
+          leftLegGroup.rotation.z  = THREE.MathUtils.lerp(-0.04, -0.14, angryBlend);
+          rightLegGroup.rotation.z = THREE.MathUtils.lerp(0.04, 0.14, angryBlend);
+
+          leftKneeGroup.rotation.x  = THREE.MathUtils.lerp(walkKneeXL, 0.08, angryBlend);
+          rightKneeGroup.rotation.x = THREE.MathUtils.lerp(walkKneeXR, 0.08, angryBlend);
+
+          leftFootGroup.rotation.x  = THREE.MathUtils.lerp(walkFootXL, 0.0, angryBlend);
+          rightFootGroup.rotation.x = THREE.MathUtils.lerp(walkFootXR, 0.0, angryBlend);
+
+          // Arms & Fingers: Relaxed walk -> Raised clenched angry fists!
+          const walkArmL = swingR * 0.38;
+          const walkArmR = swingL * 0.38;
+          const walkElbow = -0.36;
+
+          const angryArmX = -0.45 - Math.sin(timeSec * 10) * 0.08 * angryBlend;
+          const angryElbowX = -1.35;
+
+          leftArmGroup.rotation.x  = THREE.MathUtils.lerp(walkArmL, angryArmX, angryBlend);
+          rightArmGroup.rotation.x = THREE.MathUtils.lerp(walkArmR, angryArmX, angryBlend);
+          leftArmGroup.rotation.z  = THREE.MathUtils.lerp(-0.14, -0.38 - angerBurst * 0.22, angryBlend);
+          rightArmGroup.rotation.z = THREE.MathUtils.lerp(0.14, 0.38 + angerBurst * 0.22, angryBlend);
+
+          leftElbowGroup.rotation.x  = THREE.MathUtils.lerp(walkElbow, angryElbowX, angryBlend);
+          rightElbowGroup.rotation.x = THREE.MathUtils.lerp(walkElbow, angryElbowX, angryBlend);
+
+          // Curl fingers into tight fists when angry!
+          const fingerCurl = 0.22 + angryBlend * 1.15;
+          for (let i = 0; i < leftFingers.length; i++) {
+            leftFingers[i].rotation.x = -fingerCurl;
+            rightFingers[i].rotation.x = -fingerCurl;
+          }
+          if (leftThumb && rightThumb) {
+            leftThumb.rotation.z = -0.25 - angryBlend * 0.75;
+            rightThumb.rotation.z = 0.25 + angryBlend * 0.75;
+          }
+
+          // Head: Happy headphone bob while walking -> Turns to glare at YOU when angry!
+          invRobotQuat.copy(robotRoot.quaternion).invert();
+          camDirLocal.copy(camera.position).sub(robotRoot.position).normalize().applyQuaternion(invRobotQuat);
+          const camYaw   = THREE.MathUtils.clamp(Math.atan2(camDirLocal.x, camDirLocal.z), -0.95, 0.95);
+          const camPitch = THREE.MathUtils.clamp(-Math.asin(THREE.MathUtils.clamp(camDirLocal.y, -0.8, 0.8)) * 0.45, -0.32, 0.32);
+
+          const musicNod = Math.sin(timeSec * 3.6) * 0.05 * (1 - angryBlend);
+          const angryHeadShake = Math.sin(timeSec * 26) * 0.14 * angerBurst;
+
+          headGroup.rotation.x = THREE.MathUtils.lerp(musicNod - hoverAlert * 0.08, camPitch + 0.08, angryBlend);
+          headGroup.rotation.y = THREE.MathUtils.lerp(Math.sin(timeSec * 1.5) * 0.12, camYaw, angryBlend) + angryHeadShake;
+          headGroup.rotation.z = Math.sin(timeSec * 1.9) * 0.04 * (1 - angryBlend);
+
+          // Contact shadow pulses subtly with step height
+          shadowMat.opacity = 0.75 * (1 - strideBounce * 3.0);
+          shadowDisc.scale.setScalar(1.0 + angryBlend * 0.14);
+
+          // Glowing Emissives
+          const pulse = 0.5 + 0.5 * Math.sin(timeSec * 10);
+          earGlowMat.color.setHex(0xd95ec4).lerp(new THREE.Color(0xff2b22), angryBlend);
+          earGlowMat.emissive.setHex(0x9b2488).lerp(new THREE.Color(0xff1e0e), angryBlend);
+          earGlowMat.emissiveIntensity = 0.42 + angryBlend * (0.9 + 0.45 * pulse);
+
+          thrusterGlowMat.color.setHex(0x4ae8ff).lerp(new THREE.Color(0xff521b), angryBlend);
+          thrusterGlowMat.emissive.setHex(0x28d7ff).lerp(new THREE.Color(0xff2f00), angryBlend);
+          thrusterGlowMat.emissiveIntensity = 1.2 + angryBlend * 1.1;
+
+          angryLight.intensity = angryBlend * (1.4 + 0.6 * pulse);
+
+          // Blinking & Facial Expressions
+          blinkTimer -= dt;
+          if (blinkTimer <= 0) {
+            blinkTimer = 2.6 + Math.random() * 2.8;
+            blinkAmt = 1.0;
+          }
+          if (blinkAmt > 0) {
+            blinkAmt = Math.max(0, blinkAmt - dt * 7.5);
+          }
+
+          const lookX = mouse.x * 0.35 * (1 - angryBlend) + Math.sin(timeSec * 1.3) * 0.14 * (1 - angryBlend);
+          const lookY = mouse.y * -0.25 * (1 - angryBlend);
+          updateFaceTexture(timeSec, angryBlend, blinkAmt, lookX, lookY, hoverAlert);
+          updateChestTexture(timeSec, angryBlend);
+
+          // Update 3D-Tracked Angry Speech Bubble
+          robotRoot.updateMatrixWorld(true);
+          if (angryBlend > 0.02) {
+            bubbleAnchor.set(0, 1.92, 0.05).applyMatrix4(robotRoot.matrixWorld);
+            bubbleAnchor.project(camera);
+
+            const bx = THREE.MathUtils.clamp((bubbleAnchor.x * 0.5 + 0.5) * window.innerWidth, 105, window.innerWidth - 105);
+            const by = THREE.MathUtils.clamp((-bubbleAnchor.y * 0.5 + 0.5) * window.innerHeight, 62, window.innerHeight - 60);
+
+            const popScale = 0.72 + 0.28 * angryBlend + Math.sin(angerBurst * Math.PI) * 0.14;
+            angryBubble.style.opacity = String(Math.min(1, angryBlend * 1.15));
+            angryBubble.style.transform = `translate3d(${bx.toFixed(1)}px, ${by.toFixed(1)}px, 0) translate(-50%, -100%) scale(${popScale.toFixed(3)})`;
+          } else {
+            angryBubble.style.opacity = '0';
+          }
+
+          // Angry Spark Particles rising radially from Helmet
+          for (let i = 0; i < sparks.length; i++) {
+            const s = sparks[i];
+            if (angryBlend > 0.15) {
+              s.life += dt * (1.25 + i * 0.04);
+              if (s.life > 1) {
+                s.life = 0;
+                const worldHead = new THREE.Vector3(0, 1.60, 0).applyMatrix4(robotRoot.matrixWorld);
+                s.mesh.position.set(
+                  worldHead.x + (Math.random() - 0.5) * 0.55 * robotScale,
+                  worldHead.y + (Math.random() - 0.5) * 0.55 * robotScale,
+                  worldHead.z + (Math.random() - 0.5) * 0.55 * robotScale
+                );
+              } else {
+                s.mesh.position.addScaledVector(posDir, s.vy * dt * robotScale);
+                s.mesh.position.x += s.vx * dt * robotScale;
+                s.mesh.position.z += s.vz * dt * robotScale;
+              }
+              s.mesh.scale.setScalar(robotScale * (1 - s.life) * 0.95);
+              s.mat.opacity = Math.sin(s.life * Math.PI) * angryBlend * 0.9;
+            } else {
+              s.mat.opacity = Math.max(0, s.mat.opacity - dt * 3);
+            }
+          }
+
+          renderer.render(scene, camera);
+        }
+
+        requestAnimationFrame(render);
+      }
+
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>

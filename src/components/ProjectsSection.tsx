@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useSkyTheme } from '../context/ThemeContext';
 import { FEATURED_CAROUSEL_PROJECTS, type ProjectDetail } from '../data/allProjectsData';
 
 const PROJECTS: ProjectDetail[] = FEATURED_CAROUSEL_PROJECTS;
@@ -9,129 +10,129 @@ function getCardArtworkSVG(type: string): string {
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-erp" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#052e16"/>
-            <stop offset="55%" stop-color="#071923"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="55%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
           <linearGradient id="wave-erp" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#22c55e"/>
-            <stop offset="100%" stop-color="#22d3ee"/>
+            <stop offset="0%" stop-color="#FF073A"/>
+            <stop offset="100%" stop-color="#39FF14"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-erp)"/>
-        <circle cx="250" cy="85" r="70" fill="#22c55e" opacity="0.16"/>
-        <circle cx="65" cy="190" r="85" fill="#22d3ee" opacity="0.12"/>
-        <rect x="34" y="74" width="252" height="170" rx="16" fill="#0b1324" stroke="rgba(34,197,94,0.45)" stroke-width="1.5"/>
-        <circle cx="54" cy="94" r="4" fill="#fb7185"/><circle cx="68" cy="94" r="4" fill="#facc15"/><circle cx="82" cy="94" r="4" fill="#22c55e"/>
+        <circle cx="250" cy="85" r="70" fill="#39FF14" opacity="0.14"/>
+        <circle cx="65" cy="190" r="85" fill="#FF073A" opacity="0.1"/>
+        <rect x="34" y="74" width="252" height="170" rx="16" fill="#1A1A1A" stroke="rgba(57,255,20,0.45)" stroke-width="1.5"/>
+        <circle cx="54" cy="94" r="4" fill="#FF073A"/><circle cx="68" cy="94" r="4" fill="#a1a1aa"/><circle cx="82" cy="94" r="4" fill="#39FF14"/>
         <rect x="52" y="114" width="110" height="12" rx="6" fill="rgba(255,255,255,0.14)"/>
-        <rect x="52" y="136" width="76" height="8" rx="4" fill="rgba(34,211,238,0.45)"/>
+        <rect x="52" y="136" width="76" height="8" rx="4" fill="rgba(57,255,20,0.45)"/>
         <path d="M46 216 Q 96 180, 140 192 T 215 148 T 272 126" fill="none" stroke="url(#wave-erp)" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="272" cy="126" r="6" fill="#22c55e"/>
-        <rect x="52" y="264" width="66" height="32" rx="8" fill="rgba(34,197,94,0.16)" stroke="rgba(34,197,94,0.4)"/>
-        <rect x="127" y="264" width="66" height="32" rx="8" fill="rgba(34,211,238,0.14)" stroke="rgba(34,211,238,0.35)"/>
-        <rect x="202" y="264" width="66" height="32" rx="8" fill="rgba(168,85,247,0.14)" stroke="rgba(168,85,247,0.35)"/>
+        <circle cx="272" cy="126" r="6" fill="#39FF14"/>
+        <rect x="52" y="264" width="66" height="32" rx="8" fill="rgba(57,255,20,0.14)" stroke="rgba(57,255,20,0.45)"/>
+        <rect x="127" y="264" width="66" height="32" rx="8" fill="rgba(255,7,58,0.14)" stroke="rgba(255,7,58,0.4)"/>
+        <rect x="202" y="264" width="66" height="32" rx="8" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)"/>
       </svg>`,
     paint: `
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-paint" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#083344"/>
-            <stop offset="60%" stop-color="#0f172a"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="60%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-paint)"/>
-        <circle cx="160" cy="145" r="95" fill="#22d3ee" opacity="0.14"/>
-        <rect x="55" y="95" width="90" height="145" rx="14" transform="rotate(-12 100 165)" fill="#0e7490" stroke="rgba(255,255,255,0.2)"/>
-        <rect x="115" y="82" width="90" height="145" rx="14" fill="#22d3ee" stroke="rgba(255,255,255,0.35)"/>
-        <rect x="175" y="95" width="90" height="145" rx="14" transform="rotate(12 220 165)" fill="#6366f1" stroke="rgba(255,255,255,0.2)"/>
-        <rect x="128" y="185" width="64" height="24" rx="6" fill="rgba(5,7,14,0.65)"/>
-        <circle cx="62" cy="272" r="14" fill="rgba(34,211,238,0.2)" stroke="#22d3ee" stroke-width="1.5"/>
-        <line x1="76" y1="272" x2="245" y2="272" stroke="rgba(34,211,238,0.4)" stroke-dasharray="5 5" stroke-width="2"/>
-        <circle cx="258" cy="272" r="14" fill="rgba(168,85,247,0.25)" stroke="#a855f7" stroke-width="1.5"/>
+        <circle cx="160" cy="145" r="95" fill="#39FF14" opacity="0.12"/>
+        <rect x="55" y="95" width="90" height="145" rx="14" transform="rotate(-12 100 165)" fill="#1A1A1A" stroke="rgba(255,255,255,0.2)"/>
+        <rect x="115" y="82" width="90" height="145" rx="14" fill="#39FF14" stroke="rgba(255,255,255,0.35)"/>
+        <rect x="175" y="95" width="90" height="145" rx="14" transform="rotate(12 220 165)" fill="#FF073A" stroke="rgba(255,255,255,0.2)"/>
+        <rect x="128" y="185" width="64" height="24" rx="6" fill="rgba(0,0,0,0.75)"/>
+        <circle cx="62" cy="272" r="14" fill="rgba(57,255,20,0.2)" stroke="#39FF14" stroke-width="1.5"/>
+        <line x1="76" y1="272" x2="245" y2="272" stroke="rgba(57,255,20,0.4)" stroke-dasharray="5 5" stroke-width="2"/>
+        <circle cx="258" cy="272" r="14" fill="rgba(255,7,58,0.25)" stroke="#FF073A" stroke-width="1.5"/>
       </svg>`,
     workflow: `
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-wf" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#3b0764"/>
-            <stop offset="55%" stop-color="#111029"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="55%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-wf)"/>
-        <circle cx="160" cy="160" r="105" fill="#a855f7" opacity="0.18"/>
-        <path d="M85 110 C 160 110, 110 185, 160 185 S 220 250, 235 250" fill="none" stroke="#c084fc" stroke-width="3" stroke-dasharray="6 4"/>
-        <path d="M235 115 C 180 115, 195 185, 160 185 S 110 250, 85 250" fill="none" stroke="#22d3ee" stroke-width="2.5"/>
-        <rect x="44" y="88" width="84" height="44" rx="12" fill="#171230" stroke="#c084fc" stroke-width="1.8"/>
-        <rect x="192" y="92" width="84" height="44" rx="12" fill="#171230" stroke="#22d3ee" stroke-width="1.8"/>
-        <circle cx="160" cy="185" r="28" fill="#581c87" stroke="#f0abfc" stroke-width="2.2"/>
+        <circle cx="160" cy="160" r="105" fill="#FF073A" opacity="0.14"/>
+        <path d="M85 110 C 160 110, 110 185, 160 185 S 220 250, 235 250" fill="none" stroke="#FF073A" stroke-width="3" stroke-dasharray="6 4"/>
+        <path d="M235 115 C 180 115, 195 185, 160 185 S 110 250, 85 250" fill="none" stroke="#39FF14" stroke-width="2.5"/>
+        <rect x="44" y="88" width="84" height="44" rx="12" fill="#1A1A1A" stroke="#FF073A" stroke-width="1.8"/>
+        <rect x="192" y="92" width="84" height="44" rx="12" fill="#1A1A1A" stroke="#39FF14" stroke-width="1.8"/>
+        <circle cx="160" cy="185" r="28" fill="#1A1A1A" stroke="#39FF14" stroke-width="2.2"/>
         <path d="M153 185 L160 174 L160 183 L168 183 L159 196 L159 186 Z" fill="#ffffff"/>
-        <rect x="44" y="228" width="84" height="44" rx="12" fill="#171230" stroke="#22d3ee" stroke-width="1.8"/>
-        <rect x="192" y="228" width="84" height="44" rx="12" fill="#171230" stroke="#22c55e" stroke-width="1.8"/>
+        <rect x="44" y="228" width="84" height="44" rx="12" fill="#1A1A1A" stroke="#39FF14" stroke-width="1.8"/>
+        <rect x="192" y="228" width="84" height="44" rx="12" fill="#1A1A1A" stroke="#FF073A" stroke-width="1.8"/>
       </svg>`,
     telemetry: `
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-tel" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#4c0519"/>
-            <stop offset="55%" stop-color="#180d1e"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="55%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-tel)"/>
-        <circle cx="160" cy="155" r="95" fill="#fb7185" opacity="0.16"/>
-        <circle cx="160" cy="155" r="82" fill="none" stroke="rgba(251,113,133,0.28)" stroke-width="1.2"/>
-        <circle cx="160" cy="155" r="54" fill="none" stroke="rgba(251,113,133,0.45)" stroke-width="1.4" stroke-dasharray="4 4"/>
-        <circle cx="160" cy="155" r="24" fill="rgba(251,113,133,0.25)" stroke="#fb7185" stroke-width="2"/>
-        <path d="M35 235 L95 235 L118 195 L142 268 L168 175 L192 250 L215 225 L285 225" fill="none" stroke="#fb7185" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="215" cy="105" r="5" fill="#22d3ee"/>
-        <circle cx="105" cy="122" r="4" fill="#facc15"/>
+        <circle cx="160" cy="155" r="95" fill="#FF073A" opacity="0.16"/>
+        <circle cx="160" cy="155" r="82" fill="none" stroke="rgba(255,7,58,0.28)" stroke-width="1.2"/>
+        <circle cx="160" cy="155" r="54" fill="none" stroke="rgba(255,7,58,0.45)" stroke-width="1.4" stroke-dasharray="4 4"/>
+        <circle cx="160" cy="155" r="24" fill="rgba(255,7,58,0.25)" stroke="#FF073A" stroke-width="2"/>
+        <path d="M35 235 L95 235 L118 195 L142 268 L168 175 L192 250 L215 225 L285 225" fill="none" stroke="#FF073A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="215" cy="105" r="5" fill="#39FF14"/>
+        <circle cx="105" cy="122" r="4" fill="#ffffff"/>
       </svg>`,
     ledger: `
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-led" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0c4a6e"/>
-            <stop offset="55%" stop-color="#111827"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="55%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-led)"/>
-        <circle cx="210" cy="120" r="85" fill="#38bdf8" opacity="0.15"/>
-        <rect x="52" y="76" width="216" height="190" rx="16" fill="#0f172a" stroke="rgba(56,189,248,0.45)" stroke-width="1.6"/>
-        <rect x="74" y="100" width="90" height="12" rx="6" fill="#38bdf8"/>
+        <circle cx="210" cy="120" r="85" fill="#39FF14" opacity="0.12"/>
+        <rect x="52" y="76" width="216" height="190" rx="16" fill="#1A1A1A" stroke="rgba(57,255,20,0.45)" stroke-width="1.6"/>
+        <rect x="74" y="100" width="90" height="12" rx="6" fill="#39FF14"/>
         <rect x="74" y="124" width="172" height="1" fill="rgba(255,255,255,0.12)"/>
         <rect x="74" y="142" width="120" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
-        <rect x="210" y="142" width="36" height="10" rx="5" fill="#22c55e"/>
+        <rect x="210" y="142" width="36" height="10" rx="5" fill="#39FF14"/>
         <rect x="74" y="168" width="105" height="10" rx="5" fill="rgba(255,255,255,0.14)"/>
-        <rect x="210" y="168" width="36" height="10" rx="5" fill="#22c55e"/>
+        <rect x="210" y="168" width="36" height="10" rx="5" fill="#FF073A"/>
         <rect x="74" y="194" width="130" height="10" rx="5" fill="rgba(255,255,255,0.14)"/>
-        <rect x="210" y="194" width="36" height="10" rx="5" fill="#38bdf8"/>
-        <rect x="74" y="226" width="172" height="22" rx="8" fill="rgba(34,197,94,0.18)" stroke="#22c55e"/>
+        <rect x="210" y="194" width="36" height="10" rx="5" fill="#39FF14"/>
+        <rect x="74" y="226" width="172" height="22" rx="8" fill="rgba(57,255,20,0.16)" stroke="#39FF14"/>
       </svg>`,
     arcade: `
       <svg viewBox="0 0 320 440" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bg-arc" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#2e1065"/>
-            <stop offset="55%" stop-color="#0b1120"/>
-            <stop offset="100%" stop-color="#05070e"/>
+            <stop offset="0%" stop-color="#1A1A1A"/>
+            <stop offset="55%" stop-color="#0d0d0d"/>
+            <stop offset="100%" stop-color="#000000"/>
           </linearGradient>
         </defs>
         <rect width="320" height="440" fill="url(#bg-arc)"/>
-        <circle cx="160" cy="180" r="100" fill="#a855f7" opacity="0.16"/>
-        <rect x="42" y="76" width="72" height="28" rx="9" fill="#0f172a" stroke="#22d3ee" stroke-width="1.8"/>
-        <rect x="124" y="76" width="72" height="28" rx="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.8"/>
-        <rect x="206" y="76" width="72" height="28" rx="9" fill="#0f172a" stroke="#22c55e" stroke-width="1.8"/>
-        <rect x="42" y="114" width="72" height="28" rx="9" fill="#0f172a" stroke="#facc15" stroke-width="1.8"/>
-        <rect x="124" y="114" width="72" height="28" rx="9" fill="#0f172a" stroke="#a855f7" stroke-width="1.8"/>
-        <rect x="206" y="114" width="72" height="28" rx="9" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
-        <circle cx="160" cy="172" r="3" fill="#22d3ee" opacity="0.4"/>
-        <circle cx="160" cy="192" r="3.5" fill="#22d3ee" opacity="0.6"/>
-        <circle cx="160" cy="212" r="4" fill="#22d3ee" opacity="0.8"/>
-        <circle cx="160" cy="236" r="10" fill="#ffffff" stroke="#22d3ee" stroke-width="4"/>
-        <rect x="108" y="256" width="104" height="18" rx="9" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+        <circle cx="160" cy="180" r="100" fill="#39FF14" opacity="0.12"/>
+        <rect x="42" y="76" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#39FF14" stroke-width="1.8"/>
+        <rect x="124" y="76" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#e2e8f0" stroke-width="1.8"/>
+        <rect x="206" y="76" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#FF073A" stroke-width="1.8"/>
+        <rect x="42" y="114" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#FF073A" stroke-width="1.8"/>
+        <rect x="124" y="114" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#39FF14" stroke-width="1.8"/>
+        <rect x="206" y="114" width="72" height="28" rx="9" fill="#1A1A1A" stroke="#e2e8f0" stroke-width="1.8"/>
+        <circle cx="160" cy="172" r="3" fill="#39FF14" opacity="0.45"/>
+        <circle cx="160" cy="192" r="3.5" fill="#39FF14" opacity="0.65"/>
+        <circle cx="160" cy="212" r="4" fill="#39FF14" opacity="0.85"/>
+        <circle cx="160" cy="236" r="10" fill="#ffffff" stroke="#39FF14" stroke-width="4"/>
+        <rect x="108" y="256" width="104" height="18" rx="9" fill="#1A1A1A" stroke="#39FF14" stroke-width="2"/>
       </svg>`,
   };
   return artworks[type] || artworks.erp;
@@ -142,6 +143,10 @@ export interface ProjectsSectionProps {
 }
 
 export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProjects }) => {
+  const { isDay } = useSkyTheme();
+  const isDayRef = useRef<boolean>(isDay);
+  isDayRef.current = isDay;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
@@ -185,7 +190,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
       btn.appendChild(ripple);
       setTimeout(() => ripple.remove(), 700);
 
-      const colors = [project.accent, '#a855f7', '#22d3ee', '#ffffff', '#fb7185'];
+      const colors = isDayRef.current
+        ? [project.accent, '#16A34A', '#E11D48', '#0F172A']
+        : [project.accent, '#39FF14', '#FF073A', '#ffffff'];
       const wrap = btn.parentElement;
       if (wrap) {
         for (let i = 0; i < 12; i++) {
@@ -474,14 +481,15 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
         resizeCanvas();
 
         const count = Math.min(65, Math.floor((canvas.width || 800) / 22));
-        const palette = ['#ffffff', '#a855f7', '#22d3ee', '#22c55e', '#fb7185'];
+        const nightPalette = ['#ffffff', '#39FF14', '#FF073A', '#71717a'];
+        const dayPalette = ['#334155', '#16A34A', '#E11D48', '#64748B'];
         const stars = Array.from({ length: count }, () => ({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           r: Math.random() * 1.6 + 0.5,
           vy: -(Math.random() * 0.22 + 0.06),
           alpha: Math.random() * 0.6 + 0.2,
-          color: palette[Math.floor(Math.random() * palette.length)],
+          colorIdx: Math.floor(Math.random() * nightPalette.length),
         }));
 
         let isCanvasVisible = true;
@@ -490,6 +498,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
             animFrameId = 0;
             return;
           }
+          const activePalette = isDayRef.current ? dayPalette : nightPalette;
+          const alphaFactor = isDayRef.current ? 0.52 : 1;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           for (const s of stars) {
             s.y += s.vy;
@@ -499,8 +509,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
             }
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-            ctx.fillStyle = s.color;
-            ctx.globalAlpha = s.alpha;
+            ctx.fillStyle = activePalette[s.colorIdx];
+            ctx.globalAlpha = s.alpha * alphaFactor;
             ctx.fill();
           }
           ctx.globalAlpha = 1;
@@ -550,25 +560,26 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
     <div
       ref={containerRef}
       id="projects-section-container"
-      className="relative w-full overflow-hidden"
+      data-theme={isDay ? 'day' : 'night'}
+      className="relative w-full overflow-hidden transition-colors duration-700"
       style={{
-        backgroundColor: '#05070e',
-        color: '#f8fafc',
+        backgroundColor: isDay ? '#F4F8FD' : '#000000',
+        color: isDay ? '#0F172A' : '#f8fafc',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
       <style>{`
         #projects-section-container {
-          --bg-deep: #05070e;
-          --bg-card: #0b0f1d;
+          --bg-deep: #000000;
+          --bg-card: #1A1A1A;
           --text-main: #f8fafc;
           --text-muted: #94a3b8;
-          --purple: #a855f7;
-          --purple-glow: rgba(168, 85, 247, 0.45);
-          --cyan: #22d3ee;
-          --cyan-glow: rgba(34, 211, 238, 0.4);
-          --green: #22c55e;
-          --coral: #fb7185;
+          --purple: #FF073A;
+          --purple-glow: rgba(255, 7, 58, 0.45);
+          --cyan: #39FF14;
+          --cyan-glow: rgba(57, 255, 20, 0.4);
+          --green: #39FF14;
+          --coral: #FF073A;
         }
 
         #projects-section-container .cosmic-bg {
@@ -577,9 +588,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           z-index: 0;
           pointer-events: none;
           background:
-            radial-gradient(circle at 22% 25%, rgba(168, 85, 247, 0.11), transparent 44%),
-            radial-gradient(circle at 78% 72%, rgba(34, 211, 238, 0.09), transparent 46%),
-            radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5), #05070e 82%);
+            radial-gradient(circle at 22% 25%, rgba(255, 7, 58, 0.1), transparent 44%),
+            radial-gradient(circle at 78% 72%, rgba(57, 255, 20, 0.09), transparent 46%),
+            radial-gradient(circle at 50% 50%, rgba(26, 26, 26, 0.45), #000000 82%);
         }
 
         #projects-section-container .grid-overlay {
@@ -635,24 +646,24 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           gap: 8px;
           padding: 5px 13px;
           border-radius: 999px;
-          background: rgba(168, 85, 247, 0.1);
-          border: 1px solid rgba(168, 85, 247, 0.35);
+          background: rgba(57, 255, 20, 0.08);
+          border: 1px solid rgba(57, 255, 20, 0.35);
           font-family: 'JetBrains Mono', monospace;
           font-size: 0.7rem;
           font-weight: 600;
           letter-spacing: 0.12em;
-          color: #d8b4fe;
+          color: #39FF14;
           text-transform: uppercase;
           margin-bottom: 8px;
-          box-shadow: 0 0 18px rgba(168, 85, 247, 0.15);
+          box-shadow: 0 0 18px rgba(57, 255, 20, 0.15);
         }
 
         #projects-section-container .pill-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #22d3ee;
-          box-shadow: 0 0 8px #22d3ee;
+          background: #39FF14;
+          box-shadow: 0 0 8px #39FF14;
           animation: pulseDotProj 2s infinite;
         }
 
@@ -673,8 +684,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           font-family: 'Caveat', cursive;
           font-size: 1.25em;
           font-weight: 700;
-          color: #a855f7;
-          text-shadow: 0 0 24px rgba(168, 85, 247, 0.55);
+          color: #39FF14;
+          text-shadow: 0 0 24px rgba(57, 255, 20, 0.5);
           position: relative;
           display: inline-block;
           margin-left: 4px;
@@ -742,7 +753,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
         }
 
         #projects-section-container .active-project-subtitle span {
-          color: #22d3ee;
+          color: #39FF14;
         }
 
         #projects-section-container .carousel-stage {
@@ -761,7 +772,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           width: 286px;
           height: 428px;
           border-radius: 26px;
-          background: #0b0f1d;
+          background: #1A1A1A;
           border: 1px solid rgba(255, 255, 255, 0.12);
           overflow: hidden;
           cursor: pointer;
@@ -783,7 +794,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           content: "";
           position: absolute;
           inset: 0;
-          background: rgba(5, 7, 14, 0.24);
+          background: rgba(0, 0, 0, 0.32);
           pointer-events: none;
           transition: opacity 0.45s ease;
           z-index: 2;
@@ -795,10 +806,10 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
 
         #projects-section-container .project-card[data-pos="0"] {
           cursor: default;
-          border-color: rgba(255, 255, 255, 0.22);
+          border-color: rgba(255, 255, 255, 0.24);
           box-shadow:
             0 30px 65px -15px rgba(0, 0, 0, 0.92),
-            0 0 42px -8px var(--card-accent-glow, rgba(168, 85, 247, 0.45));
+            0 0 42px -8px var(--card-accent-glow, rgba(57, 255, 20, 0.45));
         }
 
         #projects-section-container .project-card:not([data-pos="0"]):hover {
@@ -848,7 +859,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           font-weight: 600;
           padding: 5px 10px;
           border-radius: 999px;
-          background: rgba(5, 7, 14, 0.68);
+          background: rgba(0, 0, 0, 0.72);
           backdrop-filter: blur(8px);
           border: 1px solid rgba(255, 255, 255, 0.14);
           color: #e2e8f0;
@@ -860,10 +871,10 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           font-weight: 600;
           padding: 5px 10px;
           border-radius: 999px;
-          background: rgba(5, 7, 14, 0.68);
+          background: rgba(0, 0, 0, 0.72);
           backdrop-filter: blur(8px);
-          border: 1px solid var(--card-accent, #22d3ee);
-          color: var(--card-accent, #22d3ee);
+          border: 1px solid var(--card-accent, #39FF14);
+          color: var(--card-accent, #39FF14);
         }
 
         #projects-section-container .card-content {
@@ -872,9 +883,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           padding: 22px 18px 18px;
           background: linear-gradient(
             to top,
-            rgba(5, 7, 14, 0.97) 0%,
-            rgba(5, 7, 14, 0.88) 65%,
-            rgba(5, 7, 14, 0) 100%
+            rgba(0, 0, 0, 0.97) 0%,
+            rgba(0, 0, 0, 0.88) 65%,
+            rgba(0, 0, 0, 0) 100%
           );
           transition: opacity 0.4s ease;
         }
@@ -925,9 +936,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           position: relative;
           width: 100%;
           height: 44px;
-          border: 1.5px solid var(--card-accent, #a855f7);
+          border: 1.5px solid var(--card-accent, #39FF14);
           border-radius: 13px;
-          background: rgba(11, 15, 29, 0.88);
+          background: rgba(26, 26, 26, 0.92);
           color: #ffffff;
           font-family: 'Plus Jakarta Sans', sans-serif;
           font-size: 0.86rem;
@@ -943,8 +954,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
             transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
             box-shadow 0.35s ease,
             background 0.35s ease,
-            border-color 0.35s ease;
-          box-shadow: 0 0 18px -4px var(--card-accent-glow, rgba(168, 85, 247, 0.35));
+            border-color 0.35s ease,
+            color 0.25s ease;
+          box-shadow: 0 0 18px -4px var(--card-accent-glow, rgba(57, 255, 20, 0.35));
         }
 
         #projects-section-container .redirect-btn::before {
@@ -971,9 +983,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
 
         #projects-section-container .redirect-btn:hover {
           transform: translateY(-2px);
-          background: linear-gradient(135deg, rgba(168, 85, 247, 0.24), rgba(34, 211, 238, 0.22));
+          background: linear-gradient(135deg, rgba(57, 255, 20, 0.22), rgba(255, 7, 58, 0.18));
           box-shadow:
-            0 10px 28px -6px var(--card-accent-glow, rgba(168, 85, 247, 0.65)),
+            0 10px 28px -6px var(--card-accent-glow, rgba(57, 255, 20, 0.55)),
             inset 0 0 14px rgba(255, 255, 255, 0.12);
         }
 
@@ -1019,16 +1031,17 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           position: absolute;
           inset: 0;
           width: 0%;
-          background: linear-gradient(90deg, #a855f7, #22d3ee, #22c55e);
+          background: #39FF14;
           z-index: 0;
-          opacity: 0.92;
+          opacity: 0.96;
           transition: width 0.62s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         #projects-section-container .redirect-btn.is-launching {
           pointer-events: none;
-          border-color: #ffffff;
-          box-shadow: 0 0 36px rgba(34, 211, 238, 0.4);
+          color: #000000;
+          border-color: #39FF14;
+          box-shadow: 0 0 36px rgba(57, 255, 20, 0.5);
           transform: scale(0.97);
         }
 
@@ -1106,8 +1119,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
 
         #projects-section-container .dot-btn.active {
           width: 24px;
-          background: #22d3ee;
-          box-shadow: 0 0 12px #22d3ee;
+          background: #39FF14;
+          box-shadow: 0 0 12px #39FF14;
         }
 
         #projects-section-container .carousel-controls {
@@ -1123,7 +1136,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           width: 46px;
           height: 46px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(26, 26, 26, 0.85);
           border: 1px solid rgba(255, 255, 255, 0.18);
           color: #cbd5e1;
           display: flex;
@@ -1134,11 +1147,11 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
         }
 
         #projects-section-container .ctrl-prev:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: #22d3ee;
+          background: rgba(57, 255, 20, 0.14);
+          border-color: #39FF14;
           color: #ffffff;
           transform: translateX(-3px);
-          box-shadow: 0 0 20px rgba(34, 211, 238, 0.25);
+          box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
         }
 
         #projects-section-container .ctrl-prev:active {
@@ -1150,20 +1163,20 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           height: 46px;
           border-radius: 999px;
           border: none;
-          background: linear-gradient(135deg, #a855f7 0%, #fb7185 100%);
+          background: linear-gradient(135deg, #FF073A 0%, #c80028 100%);
           color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          box-shadow: 0 8px 26px -4px rgba(251, 113, 133, 0.55);
+          box-shadow: 0 8px 26px -4px rgba(255, 7, 58, 0.55);
           transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         #projects-section-container .ctrl-next:hover {
           width: 90px;
           transform: translateX(3px);
-          box-shadow: 0 12px 32px -4px rgba(168, 85, 247, 0.75);
+          box-shadow: 0 12px 32px -4px rgba(255, 7, 58, 0.75);
         }
 
         #projects-section-container .ctrl-next:active {
@@ -1185,8 +1198,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           gap: 12px;
           padding: 13px 30px;
           border-radius: 999px;
-          background: rgba(13, 19, 38, 0.92);
-          border: 1px solid rgba(168, 85, 247, 0.45);
+          background: rgba(26, 26, 26, 0.92);
+          border: 1px solid rgba(57, 255, 20, 0.45);
           color: #f1f5f9;
           font-family: 'JetBrains Mono', monospace;
           font-size: 0.78rem;
@@ -1195,24 +1208,24 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           text-transform: uppercase;
           cursor: pointer;
           backdrop-filter: blur(14px);
-          box-shadow: 0 0 24px rgba(168, 85, 247, 0.22);
+          box-shadow: 0 0 24px rgba(57, 255, 20, 0.2);
           transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         #projects-section-container .view-more-btn:hover {
-          background: rgba(168, 85, 247, 0.22);
-          border-color: #22d3ee;
+          background: rgba(57, 255, 20, 0.16);
+          border-color: #39FF14;
           color: #ffffff;
           transform: translateY(-2px);
-          box-shadow: 0 10px 32px rgba(34, 211, 238, 0.38);
+          box-shadow: 0 10px 32px rgba(57, 255, 20, 0.35);
         }
 
         #projects-section-container .view-more-dot {
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          background: #22d3ee;
-          box-shadow: 0 0 10px #22d3ee;
+          background: #39FF14;
+          box-shadow: 0 0 10px #39FF14;
           animation: pulseDotProj 2s infinite;
         }
 
@@ -1223,10 +1236,10 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           z-index: 100;
           padding: 13px 18px;
           border-radius: 14px;
-          background: rgba(11, 15, 29, 0.92);
+          background: rgba(26, 26, 26, 0.94);
           backdrop-filter: blur(14px);
-          border: 1px solid rgba(34, 211, 238, 0.45);
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(34, 211, 238, 0.2);
+          border: 1px solid rgba(57, 255, 20, 0.45);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(57, 255, 20, 0.2);
           display: flex;
           align-items: center;
           gap: 12px;
@@ -1247,8 +1260,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
           width: 9px;
           height: 9px;
           border-radius: 50%;
-          background: #22c55e;
-          box-shadow: 0 0 10px #22c55e;
+          background: #39FF14;
+          box-shadow: 0 0 10px #39FF14;
         }
 
         /* ───── MOBILE: Stacked peekaboo layout ───── */
@@ -1309,6 +1322,161 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
             display: none;
           }
         }
+
+        /* ───── DAY MODE THEME OVERRIDES ───── */
+        #projects-section-container[data-theme="day"] .cosmic-bg {
+          background:
+            radial-gradient(circle at 22% 25%, rgba(225, 29, 72, 0.06), transparent 44%),
+            radial-gradient(circle at 78% 72%, rgba(22, 163, 74, 0.07), transparent 46%),
+            radial-gradient(circle at 50% 50%, rgba(226, 236, 248, 0.55), #F4F8FD 82%);
+        }
+
+        #projects-section-container[data-theme="day"] .grid-overlay {
+          background-image:
+            linear-gradient(rgba(15, 23, 42, 0.038) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 42, 0.038) 1px, transparent 1px);
+        }
+
+        #projects-section-container[data-theme="day"] .section-title {
+          color: #0F172A;
+        }
+
+        #projects-section-container[data-theme="day"] .section-title .script-accent {
+          color: #16A34A;
+          text-shadow: none;
+        }
+
+        #projects-section-container[data-theme="day"] .active-project-title {
+          color: #0F172A;
+        }
+
+        #projects-section-container[data-theme="day"] .active-project-subtitle {
+          color: #475569;
+        }
+
+        #projects-section-container[data-theme="day"] .active-project-subtitle span {
+          color: #16A34A;
+        }
+
+        #projects-section-container[data-theme="day"] .project-card {
+          background: #FFFFFF;
+          border-color: rgba(15, 23, 42, 0.1);
+          box-shadow: 0 22px 46px -14px rgba(15, 23, 42, 0.14);
+        }
+
+        #projects-section-container[data-theme="day"] .project-card::after {
+          background: rgba(244, 248, 253, 0.42);
+        }
+
+        #projects-section-container[data-theme="day"] .project-card[data-pos="0"] {
+          border-color: rgba(15, 23, 42, 0.16);
+          box-shadow:
+            0 28px 56px -14px rgba(15, 23, 42, 0.2),
+            0 0 28px -10px rgba(22, 163, 74, 0.28);
+        }
+
+        #projects-section-container[data-theme="day"] .project-card:not([data-pos="0"]):hover {
+          filter: brightness(0.98);
+          border-color: rgba(22, 163, 74, 0.4);
+        }
+
+        #projects-section-container[data-theme="day"] .card-content {
+          background: linear-gradient(
+            to top,
+            rgba(255, 255, 255, 0.98) 0%,
+            rgba(255, 255, 255, 0.92) 72%,
+            rgba(255, 255, 255, 0) 100%
+          );
+        }
+
+        #projects-section-container[data-theme="day"] .redirect-btn {
+          background: #FFFFFF;
+          border-color: #16A34A;
+          color: #0F172A;
+          box-shadow: 0 6px 18px -4px rgba(22, 163, 74, 0.24);
+        }
+
+        #projects-section-container[data-theme="day"] .redirect-btn:hover {
+          background: linear-gradient(135deg, #16A34A, #15803D);
+          color: #FFFFFF;
+          box-shadow: 0 10px 24px -4px rgba(22, 163, 74, 0.42);
+        }
+
+        #projects-section-container[data-theme="day"] .btn-launch-fill {
+          background: #16A34A;
+        }
+
+        #projects-section-container[data-theme="day"] .redirect-btn.is-launching {
+          color: #FFFFFF;
+          border-color: #16A34A;
+        }
+
+        #projects-section-container[data-theme="day"] .dot-btn {
+          background: rgba(15, 23, 42, 0.18);
+        }
+
+        #projects-section-container[data-theme="day"] .dot-btn:hover {
+          background: rgba(15, 23, 42, 0.36);
+        }
+
+        #projects-section-container[data-theme="day"] .dot-btn.active {
+          background: #16A34A;
+          box-shadow: 0 0 10px rgba(22, 163, 74, 0.45);
+        }
+
+        #projects-section-container[data-theme="day"] .ctrl-prev {
+          background: #FFFFFF;
+          border-color: rgba(15, 23, 42, 0.14);
+          color: #334155;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        #projects-section-container[data-theme="day"] .ctrl-prev:hover {
+          background: rgba(22, 163, 74, 0.1);
+          border-color: #16A34A;
+          color: #0F172A;
+          box-shadow: 0 6px 18px rgba(22, 163, 74, 0.22);
+        }
+
+        #projects-section-container[data-theme="day"] .ctrl-next {
+          background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
+          box-shadow: 0 8px 22px -4px rgba(225, 29, 72, 0.42);
+        }
+
+        #projects-section-container[data-theme="day"] .view-more-btn {
+          background: #FFFFFF;
+          border-color: rgba(22, 163, 74, 0.45);
+          color: #0F172A;
+          box-shadow: 0 10px 26px rgba(15, 23, 42, 0.09);
+        }
+
+        #projects-section-container[data-theme="day"] .view-more-btn:hover {
+          background: #16A34A;
+          border-color: #16A34A;
+          color: #FFFFFF;
+          box-shadow: 0 12px 28px rgba(22, 163, 74, 0.32);
+        }
+
+        #projects-section-container[data-theme="day"] .view-more-dot {
+          background: #16A34A;
+          box-shadow: 0 0 8px rgba(22, 163, 74, 0.55);
+        }
+
+        #projects-section-container[data-theme="day"] .view-more-btn:hover .view-more-dot {
+          background: #FFFFFF;
+        }
+
+        #projects-section-container[data-theme="day"] .toast {
+          background: rgba(255, 255, 255, 0.96);
+          border-color: rgba(22, 163, 74, 0.45);
+          color: #0F172A;
+          box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
+        }
+
+        #projects-section-container[data-theme="day"] .toast-dot {
+          background: #16A34A;
+          box-shadow: 0 0 8px rgba(22, 163, 74, 0.55);
+        }
       `}</style>
 
       <div className="cosmic-bg" />
@@ -1320,13 +1488,13 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
         <header className="section-header">
           <div className="flex flex-wrap items-center gap-3.5 mb-3">
             <span
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/5 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-900/12 bg-white/90 text-xl text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.08)] dark:border-white/22 dark:bg-[#1A1A1A]/75 dark:text-white dark:shadow-[0_0_20px_rgba(57,255,20,0.14)] transition-colors duration-700"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
-              <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(22,163,74,0.55)] dark:bg-[#39FF14] dark:shadow-[0_0_10px_#39FF14] animate-pulse" />
               My Projects
             </span>
-            <span className="font-mono text-xs tracking-[0.14em] uppercase text-[#a855f7]">
+            <span className="font-mono text-xs tracking-[0.14em] uppercase text-rose-600 dark:text-[#FF073A] transition-colors duration-700">
               04. Featured Projects
             </span>
           </div>
@@ -1335,8 +1503,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onOpenAllProje
             <span className="script-accent">
               Projects
               <svg className="script-underline" viewBox="0 0 180 14" fill="none">
-                <path d="M3 9 C45 3, 120 2, 177 8" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
-                <path d="M16 12 C62 8, 115 8, 162 11" stroke="#22d3ee" strokeWidth="1.6" strokeLinecap="round" opacity="0.75" />
+                <path d="M3 9 C45 3, 120 2, 177 8" stroke={isDay ? '#16A34A' : '#39FF14'} strokeWidth="3" strokeLinecap="round" />
+                <path d="M16 12 C62 8, 115 8, 162 11" stroke={isDay ? '#E11D48' : '#FF073A'} strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
               </svg>
             </span>
           </h2>

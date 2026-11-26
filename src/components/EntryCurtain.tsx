@@ -118,8 +118,8 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
             onTransitionEnd={(e) => handleTransitionEnd(i, e)}
             style={{
               height: '100%',
-              backgroundColor: '#a3e635',
-              borderRight: i < 3 ? '2px solid rgba(0,0,0,0.20)' : 'none',
+              backgroundColor: '#000000',
+              borderRight: i < 3 ? '1px solid #1A1A1A' : 'none',
               transform: 'translateY(0%)',   // explicit start — browser paints this first
               willChange: 'transform',
               position: 'relative',
@@ -133,7 +133,8 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
                 left: 0,
                 right: 0,
                 height: 3,
-                backgroundColor: 'rgba(0,0,0,0.18)',
+                backgroundColor: '#39FF14',
+                boxShadow: '0 0 12px rgba(57, 255, 20, 0.55)',
               }}
             />
           </div>
@@ -241,13 +242,13 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
           willChange: 'transform, opacity',
         }}>
           <svg width="88" height="46" viewBox="0 0 88 46" fill="none" aria-hidden="true">
-            <polygon points="4,42 26,6 39,6 17,42" fill="#070A11" />
+            <polygon points="4,42 26,6 39,6 17,42" fill="#1A1A1A" stroke="#39FF14" strokeWidth="1.2" strokeOpacity="0.45" />
             <polygon points="26,42 48,6 61,6 39,42" fill="#ffffff" />
-            <polygon points="50,42 70,8 84,8 84,42" fill="#070A11" />
+            <polygon points="50,42 70,8 84,8 84,42" fill="#1A1A1A" stroke="#FF073A" strokeWidth="1.2" strokeOpacity="0.55" />
             <text
               x="67" y="33"
               textAnchor="middle"
-              fill="#a3e635"
+              fill="#39FF14"
               fontSize="13"
               fontWeight="900"
               fontFamily="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
@@ -260,7 +261,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
         {/* Name + Tagline */}
         <div style={{ marginTop: 14, textAlign: 'center' }}>
           <div style={{
-            color: '#070A11',
+            color: '#FFFFFF',
             fontSize: 'clamp(20px, 3vw, 34px)',
             letterSpacing: '0.24em',
             fontWeight: 900,
@@ -270,11 +271,11 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
             animation: 'curtainNameBounce 0.75s cubic-bezier(0.25, 1, 0.5, 1) 0.12s both',
             willChange: 'transform, opacity',
           }}>
-            ALI TOUHEED
+            ALI <span style={{ color: '#39FF14' }}>TOUHEED</span>
           </div>
           <div style={{
             marginTop: 8,
-            color: 'rgba(7,10,17,0.85)',
+            color: '#CBD5E1',
             fontSize: 11,
             letterSpacing: '0.36em',
             fontWeight: 700,

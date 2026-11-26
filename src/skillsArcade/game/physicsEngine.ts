@@ -512,7 +512,7 @@ export class SkillBreakerEngine {
       x: capsule.x,
       y: PADDLE_Y + 0.55,
       text: isDocker ? `DOCKER POWER! +${bonus}` : `+${bonus}`,
-      colorHex: isDocker ? '#38bdf8' : def.accentHex,
+      colorHex: isDocker ? '#39FF14' : def.accentHex,
       age: 0,
       maxAge: 1.1,
     });

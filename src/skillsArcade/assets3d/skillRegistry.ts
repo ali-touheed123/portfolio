@@ -341,8 +341,8 @@ export const WAVE_1_SLOTS: WaveSlotSpec[] = [
   { row: 1, col: 3, skillId: 'aws' },
   { row: 1, col: 4, skillId: 'express' },
 
-  { row: 2, col: 0, skillId: 'python', overrideRimHex: '#a855f7' },
-  { row: 2, col: 1, skillId: 'nextjs', overrideRimHex: '#22d3ee' },
+  { row: 2, col: 0, skillId: 'python', overrideRimHex: '#FF073A' },
+  { row: 2, col: 1, skillId: 'nextjs', overrideRimHex: '#39FF14' },
   { row: 2, col: 3, skillId: 'docker' },
   { row: 2, col: 4, skillId: 'nodejs' },
 ];

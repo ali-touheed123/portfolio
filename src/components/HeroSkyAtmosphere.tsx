@@ -91,12 +91,12 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
       const coreGrad = ctx.createRadialGradient(cx, cy, auraR * 0.04, cx, cy, auraR);
       if (day) {
         coreGrad.addColorStop(0, 'rgba(186, 226, 255, 0.36)');
-        coreGrad.addColorStop(0.45, 'rgba(139, 92, 246, 0.08)');
+        coreGrad.addColorStop(0.45, 'rgba(22, 163, 74, 0.08)');
         coreGrad.addColorStop(1, 'rgba(238, 245, 252, 0)');
       } else {
-        coreGrad.addColorStop(0, 'rgba(139, 92, 246, 0.22)');
-        coreGrad.addColorStop(0.42, 'rgba(34, 211, 238, 0.08)');
-        coreGrad.addColorStop(1, 'rgba(7, 10, 17, 0)');
+        coreGrad.addColorStop(0, 'rgba(57, 255, 20, 0.14)');
+        coreGrad.addColorStop(0.45, 'rgba(255, 7, 58, 0.08)');
+        coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       }
       ctx.fillStyle = coreGrad;
       ctx.fillRect(0, 0, width, height);
@@ -105,7 +105,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
       ctx.save();
       ctx.translate(cx, cy + height * 0.04);
       ctx.rotate(Math.sin(time * 0.00025) * 0.04);
-      ctx.strokeStyle = day ? 'rgba(15, 23, 42, 0.045)' : 'rgba(192, 132, 252, 0.075)';
+      ctx.strokeStyle = day ? 'rgba(15, 23, 42, 0.045)' : 'rgba(57, 255, 20, 0.08)';
       ctx.lineWidth = 1;
       const ringW = Math.min(width * 0.42, 360);
       const ringH = ringW * 0.34;
@@ -113,7 +113,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
       ctx.ellipse(0, 0, ringW, ringH, -0.14, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.strokeStyle = day ? 'rgba(14, 165, 233, 0.055)' : 'rgba(34, 211, 238, 0.065)';
+      ctx.strokeStyle = day ? 'rgba(22, 163, 74, 0.06)' : 'rgba(255, 7, 58, 0.075)';
       ctx.beginPath();
       ctx.ellipse(0, 0, ringW * 1.24, ringH * 1.18, 0.12, 0, Math.PI * 2);
       ctx.stroke();
@@ -141,17 +141,17 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
         if (day) {
           fill =
             p.hue === 'amber'
-              ? `rgba(245, 158, 11, ${pulse * 0.25})`
+              ? `rgba(225, 29, 72, ${pulse * 0.22})`
               : p.hue === 'violet'
-                ? `rgba(124, 58, 237, ${pulse * 0.2})`
-                : `rgba(14, 165, 233, ${pulse * 0.22})`;
+                ? `rgba(22, 163, 74, ${pulse * 0.24})`
+                : `rgba(15, 23, 42, ${pulse * 0.18})`;
         } else {
           fill =
             p.hue === 'cyan'
-              ? `rgba(34, 211, 238, ${pulse * 0.55})`
+              ? `rgba(57, 255, 20, ${pulse * 0.55})`
               : p.hue === 'amber'
-                ? `rgba(251, 191, 36, ${pulse * 0.42})`
-                : `rgba(168, 85, 247, ${pulse * 0.55})`;
+                ? `rgba(255, 7, 58, ${pulse * 0.45})`
+                : `rgba(226, 232, 240, ${pulse * 0.42})`;
         }
 
         ctx.beginPath();
@@ -186,7 +186,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
         }`}
         style={{
           background:
-            'radial-gradient(circle at 50% 42%, rgba(76, 29, 149, 0.22) 0%, rgba(15, 23, 42, 0.42) 48%, #070A11 100%)',
+            'radial-gradient(circle at 50% 42%, rgba(57, 255, 20, 0.09) 0%, rgba(26, 26, 26, 0.48) 48%, #000000 100%)',
         }}
       />
 
@@ -209,7 +209,7 @@ export const HeroSkyAtmosphere: React.FC<HeroSkyAtmosphereProps> = ({ parallaxRe
           isNight ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          background: 'linear-gradient(to bottom, rgba(7,10,17,0) 0%, #05070e 100%)',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 100%)',
         }}
       />
     </div>

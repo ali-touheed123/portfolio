@@ -59,12 +59,12 @@ export const Tilt3DStage: React.FC<Tilt3DStageProps> = ({
         {showFigmaHandles && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -inset-1.5 rounded-[22px] border border-violet-500/0 group-hover/tilt:border-violet-500/45 dark:group-hover/tilt:border-purple-400/45 transition-colors duration-200 z-20"
+            className="pointer-events-none absolute -inset-1.5 rounded-[22px] border border-[#16a34a]/0 group-hover/tilt:border-[#16a34a]/45 dark:group-hover/tilt:border-[#39FF14]/45 transition-colors duration-200 z-20"
           >
-            <span className="absolute -top-1 -left-1 w-2 h-2 bg-white dark:bg-slate-900 border border-violet-500 dark:border-purple-400 opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-white dark:bg-slate-900 border border-violet-500 dark:border-purple-400 opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
-            <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-white dark:bg-slate-900 border border-violet-500 dark:border-purple-400 opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
-            <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-white dark:bg-slate-900 border border-violet-500 dark:border-purple-400 opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
+            <span className="absolute -top-1 -left-1 w-2 h-2 bg-white dark:bg-[#1A1A1A] border border-[#16a34a] dark:border-[#39FF14] opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-white dark:bg-[#1A1A1A] border border-[#16a34a] dark:border-[#39FF14] opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
+            <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-white dark:bg-[#1A1A1A] border border-[#16a34a] dark:border-[#39FF14] opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
+            <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-white dark:bg-[#1A1A1A] border border-[#16a34a] dark:border-[#39FF14] opacity-0 group-hover/tilt:opacity-100 transition-opacity" />
           </div>
         )}
 

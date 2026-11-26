@@ -314,7 +314,7 @@ export const CelestialOrb: React.FC<CelestialOrbProps> = ({ size = 128, classNam
       aria-pressed={isDay}
       aria-label={isDay ? 'Switch from Sun (Day mode) to Moon (Night mode)' : 'Switch from Moon (Night mode) to Sun (Day mode)'}
       title={isDay ? 'Switch to Night Sky' : 'Switch to Daylight Sky'}
-      className={`group relative inline-flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 transition-transform duration-300 hover:scale-105 active:scale-95 ${className}`}
+      className={`group relative inline-flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#39FF14]/70 transition-transform duration-300 hover:scale-105 active:scale-95 ${className}`}
       style={{ width: size, height: size }}
     >
       <canvas

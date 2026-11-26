@@ -122,8 +122,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
 
   const inkStroke = isDay ? '#0f172a' : '#f8fafc';
   const subtleInkStroke = isDay ? '#475569' : '#cbd5e1';
-  const accentPurple = isDay ? '#7c3aed' : '#a855f7';
-  const accentGreen = isDay ? '#059669' : '#22c55e';
+  const accentPrimary = isDay ? '#16a34a' : '#39FF14';
+  const accentSecondary = isDay ? '#e11d48' : '#FF073A';
 
   // Action Buttons Renderer (Shared between Desktop and Mobile with tailored sizing)
   const renderActionButtons = (isMobile = false) => (
@@ -163,7 +163,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           aria-hidden="true"
           className={`absolute inset-1 rounded-full transition-all duration-300 ${
             hoveredBtn === 'cv'
-              ? 'opacity-100 bg-linear-to-r from-cyan-500/25 via-emerald-400/25 to-violet-500/25 shadow-[0_0_26px_rgba(34,211,238,0.5)]'
+              ? 'opacity-100 bg-linear-to-r from-[#39FF14]/22 via-[#39FF14]/15 to-[#FF073A]/15 shadow-[0_0_26px_rgba(57,255,20,0.48)]'
               : 'opacity-0'
           }`}
         />
@@ -176,38 +176,38 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         >
           <path
             d="M 28 7 C 74 3, 134 4, 162 8 C 179 12, 182 34, 166 42 C 138 48, 66 48, 22 44 C 5 40, 4 15, 28 7 Z"
-            stroke={hoveredBtn === 'cv' ? '#22d3ee' : inkStroke}
+            stroke={hoveredBtn === 'cv' ? accentPrimary : inkStroke}
             strokeWidth="2.4"
             strokeLinecap="round"
             className="transition-colors duration-300"
             style={{
-              filter: hoveredBtn === 'cv' ? 'drop-shadow(0 0 11px rgba(34,211,238,0.85))' : 'none',
+              filter: hoveredBtn === 'cv' ? 'drop-shadow(0 0 11px rgba(57,255,20,0.85))' : 'none',
             }}
           />
           <path
             d="M 18 46 C 72 49, 132 47, 168 41"
-            stroke={hoveredBtn === 'cv' ? '#34d399' : accentPurple}
+            stroke={hoveredBtn === 'cv' ? accentSecondary : accentPrimary}
             strokeWidth="1.5"
             strokeLinecap="round"
-            opacity={hoveredBtn === 'cv' ? 0.95 : 0.68}
+            opacity={hoveredBtn === 'cv' ? 0.95 : 0.72}
             className="transition-all duration-300"
           />
         </svg>
 
         <span className="relative z-10 flex items-center gap-2">
           {cvDownloaded ? (
-            <Check className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} text-emerald-400`} strokeWidth={2.5} />
+            <Check className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} text-[#16a34a] dark:text-[#39FF14]`} strokeWidth={2.5} />
           ) : (
             <Download
               className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-colors duration-300 ${
-                hoveredBtn === 'cv' ? 'text-cyan-500 dark:text-cyan-300' : 'text-slate-900 dark:text-white'
+                hoveredBtn === 'cv' ? 'text-[#15803d] dark:text-[#39FF14]' : 'text-slate-900 dark:text-white'
               }`}
               strokeWidth={2.3}
             />
           )}
           <span
             className={`${isMobile ? 'text-base xs:text-lg' : 'text-xl sm:text-2xl'} font-bold leading-none transition-colors duration-300 ${
-              hoveredBtn === 'cv' ? 'text-cyan-700 dark:text-cyan-200' : 'text-slate-950 dark:text-white'
+              hoveredBtn === 'cv' ? 'text-[#15803d] dark:text-[#39FF14]' : 'text-slate-950 dark:text-white'
             }`}
             style={{ fontFamily: "'Caveat', cursive" }}
           >
@@ -241,8 +241,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           aria-hidden="true"
           className={`absolute inset-1 rounded-full transition-all duration-300 ${
             hoveredBtn === 'connect'
-              ? 'opacity-100 bg-linear-to-r from-cyan-500/25 via-violet-500/30 to-fuchsia-500/30 shadow-[0_0_28px_rgba(217,70,239,0.6)]'
-              : 'opacity-100 bg-linear-to-r from-red-500/20 via-rose-500/18 to-red-600/20 shadow-[0_0_22px_rgba(255,42,85,0.45)]'
+              ? 'opacity-100 bg-linear-to-r from-[#39FF14]/25 via-[#39FF14]/20 to-[#FF073A]/20 shadow-[0_0_28px_rgba(57,255,20,0.55)]'
+              : 'opacity-100 bg-linear-to-r from-[#FF073A]/22 via-[#FF073A]/18 to-[#FF073A]/22 shadow-[0_0_22px_rgba(255,7,58,0.45)]'
           }`}
         />
         <svg
@@ -254,20 +254,20 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         >
           <path
             d="M 24 8 C 70 3, 132 5, 163 9 C 179 13, 181 35, 164 42 C 134 48, 62 47, 20 43 C 4 38, 5 14, 24 8 Z"
-            stroke={hoveredBtn === 'connect' ? '#22d3ee' : '#ff2a55'}
+            stroke={hoveredBtn === 'connect' ? accentPrimary : accentSecondary}
             strokeWidth="2.5"
             strokeLinecap="round"
             className="transition-colors duration-300"
             style={{
               filter:
                 hoveredBtn === 'connect'
-                  ? 'drop-shadow(0 0 12px rgba(34,211,238,0.9))'
-                  : 'drop-shadow(0 0 10px rgba(255,42,85,0.85))',
+                  ? 'drop-shadow(0 0 12px rgba(57,255,20,0.88))'
+                  : 'drop-shadow(0 0 10px rgba(255,7,58,0.85))',
             }}
           />
           <path
             d="M 16 14 C 12 24, 15 39, 32 45 M 156 8 C 174 12, 182 26, 171 39"
-            stroke={hoveredBtn === 'connect' ? '#d946ef' : '#ff5c7c'}
+            stroke={hoveredBtn === 'connect' ? accentSecondary : '#ff4d72'}
             strokeWidth="1.6"
             strokeLinecap="round"
             opacity={hoveredBtn === 'connect' ? 1 : 0.88}
@@ -279,8 +279,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           <span
             className={`${isMobile ? 'text-base xs:text-lg' : 'text-xl sm:text-2xl'} font-bold leading-none transition-colors duration-300 ${
               hoveredBtn === 'connect'
-                ? 'text-cyan-700 dark:text-cyan-200'
-                : 'text-red-700 dark:text-rose-200 drop-shadow-[0_0_8px_rgba(255,42,85,0.45)]'
+                ? 'text-[#15803d] dark:text-[#39FF14]'
+                : 'text-[#e11d48] dark:text-[#FFD6DE] drop-shadow-[0_0_8px_rgba(255,7,58,0.45)]'
             }`}
             style={{ fontFamily: "'Caveat', cursive" }}
           >
@@ -289,8 +289,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           <Send
             className={`${isMobile ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-all duration-300 ${
               hoveredBtn === 'connect'
-                ? 'text-cyan-500 dark:text-cyan-300 translate-x-0.5 -translate-y-0.5'
-                : 'text-red-600 dark:text-rose-400'
+                ? 'text-[#16a34a] dark:text-[#39FF14] translate-x-0.5 -translate-y-0.5'
+                : 'text-[#e11d48] dark:text-[#FF073A]'
             }`}
             strokeWidth={2.3}
           />
@@ -338,12 +338,12 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
         </div>
       </div>
 
-      {/* Emerald Double Brush Underline + Cute Smiley :) */}
+      {/* Neon Lime & Neon Red Double Brush Underline + Cute Smiley :) */}
       <div className={`flex items-start gap-1.5 w-full mt-0.5 ${isMobile ? 'justify-center pl-2' : 'pl-7'}`}>
         <svg className={`${isMobile ? 'w-36 xs:w-40' : 'w-44 sm:w-48'} h-4 sm:h-5`} viewBox="0 0 200 22" fill="none" aria-hidden="true">
           <motion.path
             d="M 4 15 C 62 7, 134 4, 194 7"
-            stroke={accentGreen}
+            stroke={accentPrimary}
             strokeWidth="3.2"
             strokeLinecap="round"
             initial={{ pathLength: 0 }}
@@ -352,7 +352,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           />
           <motion.path
             d="M 28 19 C 80 13, 136 10, 174 12"
-            stroke="#4ade80"
+            stroke={accentSecondary}
             strokeWidth="1.9"
             strokeLinecap="round"
             opacity="0.85"
@@ -432,7 +432,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               <span className="text-slate-950 dark:text-white transition-colors duration-500 drop-shadow-[0_2px_14px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_2px_18px_rgba(255,255,255,0.2)]">
                 <TypewriterText text="ALI" delay={30} speed={30} active={introActive} />
               </span>
-              <span className="text-violet-600 dark:text-[#a855f7] transition-colors duration-500 dark:drop-shadow-[0_0_26px_rgba(168,85,247,0.75)]">
+              <span className="text-[#16a34a] dark:text-[#39FF14] transition-colors duration-500 dark:drop-shadow-[0_0_24px_rgba(57,255,20,0.68)]">
                 <TypewriterText
                   text="TOUHEED"
                   delay={100}
@@ -451,8 +451,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               aria-hidden="true"
               data-svg-draw
             >
-              <path d="M18 16 C130 8, 300 6, 444 13" stroke={accentPurple} strokeWidth="6.2" strokeLinecap="round" />
-              <path d="M58 23 C175 16, 325 14, 412 19" stroke="#c084fc" strokeWidth="2.4" strokeLinecap="round" opacity="0.82" />
+              <path d="M18 16 C130 8, 300 6, 444 13" stroke={accentPrimary} strokeWidth="6.2" strokeLinecap="round" />
+              <path d="M58 23 C175 16, 325 14, 412 19" stroke={accentSecondary} strokeWidth="2.4" strokeLinecap="round" opacity="0.88" />
             </svg>
           </div>
 
@@ -476,7 +476,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               <span>
                 <TypewriterText text="Web & App" delay={20} speed={22} active={introActive} />
               </span>
-              <span className="text-violet-600 dark:text-[#a855f7] dark:drop-shadow-[0_0_16px_rgba(168,85,247,0.55)]">
+              <span className="text-[#16a34a] dark:text-[#39FF14] dark:drop-shadow-[0_0_16px_rgba(57,255,20,0.52)]">
                 <TypewriterText text="Developer" delay={100} speed={22} active={introActive} />
               </span>
             </div>
@@ -494,8 +494,8 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
                 />
               </p>
               <svg className="block w-56 h-5 mt-1 ml-1" viewBox="0 0 240 20" fill="none" aria-hidden="true" data-svg-draw>
-                <path d="M4 12 C68 6, 162 4, 234 9" stroke={accentPurple} strokeWidth="3.2" strokeLinecap="round" />
-                <path d="M26 16 C86 12, 154 11, 200 14" stroke="#c084fc" strokeWidth="1.9" strokeLinecap="round" opacity="0.85" />
+                <path d="M4 12 C68 6, 162 4, 234 9" stroke={accentPrimary} strokeWidth="3.2" strokeLinecap="round" />
+                <path d="M26 16 C86 12, 154 11, 200 14" stroke={accentSecondary} strokeWidth="1.9" strokeLinecap="round" opacity="0.88" />
               </svg>
             </div>
           </div>
@@ -530,7 +530,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               <span className="text-slate-950 dark:text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:drop-shadow-[0_2px_14px_rgba(255,255,255,0.2)]">
                 <TypewriterText text="ALI" delay={30} speed={30} active={introActive} />
               </span>
-              <span className="text-violet-600 dark:text-[#a855f7] dark:drop-shadow-[0_0_20px_rgba(168,85,247,0.7)]">
+              <span className="text-[#16a34a] dark:text-[#39FF14] dark:drop-shadow-[0_0_20px_rgba(57,255,20,0.68)]">
                 <TypewriterText
                   text="TOUHEED"
                   delay={100}
@@ -548,7 +548,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
               aria-hidden="true"
               data-svg-draw
             >
-              <path d="M18 16 C130 8, 300 6, 444 13" stroke={accentPurple} strokeWidth="6.2" strokeLinecap="round" />
+              <path d="M18 16 C130 8, 300 6, 444 13" stroke={accentPrimary} strokeWidth="6.2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -560,7 +560,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             <span>
               <TypewriterText text="Web & App" delay={20} speed={22} active={introActive} />
             </span>
-            <span className="text-violet-600 dark:text-[#a855f7] underline decoration-violet-500/50">
+            <span className="text-[#16a34a] dark:text-[#39FF14] underline decoration-[#39FF14]/50">
               <TypewriterText text="Developer" delay={100} speed={22} active={introActive} />
             </span>
           </div>
@@ -595,13 +595,13 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
             </svg>
           </div>
 
-          {/* Sleek Mouse Capsule with Glowing Purple Scroll Dot */}
-          <div className="relative flex flex-col items-center justify-start w-5 h-8 sm:w-5.5 sm:h-9 border-[1.75px] border-slate-800/85 dark:border-white/90 rounded-full bg-white/60 dark:bg-slate-950/50 pt-1 transition-colors duration-500">
+          {/* Sleek Mouse Capsule with Glowing Neon Lime Scroll Dot */}
+          <div className="relative flex flex-col items-center justify-start w-5 h-8 sm:w-5.5 sm:h-9 border-[1.75px] border-slate-800/85 dark:border-white/90 rounded-full bg-white/60 dark:bg-[#1A1A1A]/75 pt-1 transition-colors duration-500">
             <div className="w-0.5 h-2 bg-slate-800/40 dark:bg-white/45 rounded-full" />
             <motion.div
               animate={{ y: [0, 5, 0], opacity: [0.95, 0.35, 0.95] }}
               transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-1.5 h-1.5 rounded-full bg-violet-600 dark:bg-purple-400 mt-0.5 shadow-[0_0_8px_rgba(168,85,247,0.9)]"
+              className="w-1.5 h-1.5 rounded-full bg-[#16a34a] dark:bg-[#39FF14] mt-0.5 shadow-[0_0_8px_rgba(57,255,20,0.9)]"
             />
           </div>
 
@@ -624,7 +624,7 @@ export const HandwrittenHero: React.FC<HandwrittenHeroProps> = ({
           aria-hidden="true"
         >
           <path d="M 6 6 L 12 12 L 18 6" stroke={inkStroke} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-          <path d="M 6 13 L 12 19 L 18 13" stroke={accentPurple} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 6 13 L 12 19 L 18 13" stroke={accentPrimary} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
         </motion.svg>
       </div>
     </div>

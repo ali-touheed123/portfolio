@@ -108,12 +108,12 @@ export const CrossedRibbonBridge: React.FC = () => {
       aria-hidden="true"
       className="relative z-30 w-full h-32.5 sm:h-40 -mt-10 sm:-mt-14 -mb-4 sm:-mb-6 overflow-hidden pointer-events-none select-none"
     >
-      {/* Seamless vertical transition veil fusing Hero bottom into #05070e Origin Story */}
+      {/* Seamless vertical transition veil fusing Hero bottom into Day sky-white or Night Jet Black */}
       <div
-        className={`absolute inset-0 ${
+        className={`absolute inset-0 transition-colors duration-700 ${
           isDay
-            ? 'bg-linear-to-b from-transparent via-[#05070e]/75 to-[#05070e]'
-            : 'bg-linear-to-b from-transparent via-[#05070e]/85 to-[#05070e]'
+            ? 'bg-linear-to-b from-transparent via-[#F4F8FD]/82 to-[#F4F8FD]'
+            : 'bg-linear-to-b from-transparent via-[#000000]/85 to-[#000000]'
         }`}
       />
 
@@ -125,31 +125,37 @@ export const CrossedRibbonBridge: React.FC = () => {
       >
         <defs>
           <linearGradient id="crossBackFill" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#081322" />
-            <stop offset="50%" stopColor="#0f2336" />
-            <stop offset="100%" stopColor="#091526" />
+            <stop offset="0%" stopColor={isDay ? '#F8FBFF' : '#0D0D0D'} />
+            <stop offset="50%" stopColor={isDay ? '#FFFFFF' : '#1A1A1A'} />
+            <stop offset="100%" stopColor={isDay ? '#F8FBFF' : '#0D0D0D'} />
           </linearGradient>
 
           <linearGradient id="crossBackBorder" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.45" />
-            <stop offset="50%" stopColor="#4ade80" stopOpacity="0.85" />
-            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.45" />
+            <stop offset="0%" stopColor={isDay ? '#16A34A' : '#39FF14'} stopOpacity={isDay ? 0.55 : 0.48} />
+            <stop offset="50%" stopColor={isDay ? '#16A34A' : '#39FF14'} stopOpacity={isDay ? 0.88 : 0.92} />
+            <stop offset="100%" stopColor={isDay ? '#16A34A' : '#39FF14'} stopOpacity={isDay ? 0.55 : 0.48} />
           </linearGradient>
 
           <linearGradient id="crossFrontFill" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#140c24" />
-            <stop offset="50%" stopColor="#231242" />
-            <stop offset="100%" stopColor="#140c24" />
+            <stop offset="0%" stopColor={isDay ? '#FFFFFF' : '#1A1A1A'} />
+            <stop offset="50%" stopColor={isDay ? '#F1F6FC' : '#0A0A0A'} />
+            <stop offset="100%" stopColor={isDay ? '#FFFFFF' : '#1A1A1A'} />
           </linearGradient>
 
           <linearGradient id="crossFrontBorder" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.55" />
-            <stop offset="50%" stopColor="#e879f9" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.65" />
+            <stop offset="0%" stopColor={isDay ? '#E11D48' : '#FF073A'} stopOpacity={isDay ? 0.72 : 0.65} />
+            <stop offset="50%" stopColor={isDay ? '#E11D48' : '#FF073A'} stopOpacity={isDay ? 0.9 : 0.95} />
+            <stop offset="100%" stopColor={isDay ? '#16A34A' : '#39FF14'} stopOpacity={isDay ? 0.78 : 0.72} />
           </linearGradient>
 
           <filter id="ribbonShadow" x="-10%" y="-40%" width="120%" height="180%">
-            <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#000000" floodOpacity="0.72" />
+            <feDropShadow
+              dx="0"
+              dy="6"
+              stdDeviation="8"
+              floodColor={isDay ? '#0F172A' : '#000000'}
+              floodOpacity={isDay ? 0.16 : 0.72}
+            />
           </filter>
 
           <path ref={backPathRef} id="cross-ribbon-back" d={RIBBON_BACK_PATH} />
@@ -175,13 +181,15 @@ export const CrossedRibbonBridge: React.FC = () => {
           <use
             href="#cross-ribbon-back"
             fill="none"
-            stroke="rgba(34,211,238,0.18)"
+            stroke={isDay ? 'rgba(22,163,74,0.22)' : 'rgba(57,255,20,0.22)'}
             strokeWidth="1.2"
             strokeDasharray="6 14"
           />
           <text
             dy="4"
-            className="font-mono text-[10.8px] font-semibold tracking-[0.16em] uppercase fill-[#cffafe]"
+            className={`font-mono text-[10.8px] font-semibold tracking-[0.16em] uppercase ${
+              isDay ? 'fill-[#0F172A]' : 'fill-[#e6ffe0]'
+            }`}
           >
             <textPath ref={backTextRef} href="#cross-ribbon-back" startOffset="-40%">
               {LANGUAGES_UNIT.repeat(4)}
@@ -208,13 +216,15 @@ export const CrossedRibbonBridge: React.FC = () => {
           <use
             href="#cross-ribbon-front"
             fill="none"
-            stroke="rgba(232,121,249,0.16)"
+            stroke={isDay ? 'rgba(225,29,72,0.12)' : 'rgba(255,7,58,0.18)'}
             strokeWidth="22"
             strokeDasharray="2 18"
           />
           <text
             dy="4"
-            className="font-mono text-[11px] font-bold tracking-[0.17em] uppercase fill-white"
+            className={`font-mono text-[11px] font-bold tracking-[0.17em] uppercase ${
+              isDay ? 'fill-[#0F172A]' : 'fill-white'
+            }`}
           >
             <textPath ref={frontTextRef} href="#cross-ribbon-front" startOffset="-15%">
               {TOOLS_UNIT.repeat(4)}

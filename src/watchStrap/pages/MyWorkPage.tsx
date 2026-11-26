@@ -19,19 +19,20 @@ function wrapIndex(index: number, length: number): number {
 
 /**
  * Solves absolute pixel-based 3D watch-strap geometry using trigonometric
- * arc functions (`Math.asin`, `Math.sin`, `Math.cos`) so all five cards form
- * a uniform, non-overlapping curvature with subtle, balanced tilt on large screens.
+ * arc functions (`Math.asin`, `Math.sin`, `Math.cos`).
+ * Uses a compact 3-card arc on devices smaller than laptop (< 1024px) or short stages,
+ * and a 5-card arc on full laptop/desktop viewports.
  */
 export function buildWatchStrapPixelGeometry(
   stage: StageSize,
-  isMobile = false
+  isCompactViewport = false
 ): PixelStrapGeometry {
-  if (isMobile) {
+  if (isCompactViewport || stage.heightPx < 520) {
     const perspectivePx = 1050;
     const gapPx = 8;
     const maxWidthByStage = Math.floor(stage.widthPx * 0.9);
-    const baseCardWidth = Math.max(250, Math.min(390, maxWidthByStage));
-    const baseCardHeight = baseCardWidth / (16 / 7.5);
+    const baseCardWidth = Math.max(240, Math.min(410, maxWidthByStage));
+    const baseCardHeight = baseCardWidth / (16 / 7.2);
 
     const wristCylinderRadius = 380;
     const stepChord = baseCardHeight * 0.92 + gapPx;
@@ -63,9 +64,8 @@ export function buildWatchStrapPixelGeometry(
     const unscaledY2 = unscaledY1 + sHalf1 + gapPx + sHalf2;
     const unscaledY3 = unscaledY2 + sHalf2 + gapPx * 1.5 + sHalf3;
 
-    // Fit 3-card vertical watch-strap cleanly inside middle mobile stage
     const totalBaseHeight = (unscaledY1 + sHalf1) * 2;
-    const fitScale = Math.min(1, Math.max(0.55, (stage.heightPx - 14) / totalBaseHeight));
+    const fitScale = Math.min(1, Math.max(0.55, (stage.heightPx - 12) / totalBaseHeight));
 
     const cardWidthPx = Math.round(baseCardWidth * fitScale);
     const cardHeightPx = Math.round(baseCardHeight * fitScale);
@@ -96,7 +96,6 @@ export function buildWatchStrapPixelGeometry(
   const isCompact = stage.widthPx < 480;
   const isLargeDesktop = stage.widthPx >= 640;
 
-  // Base card width constrained cleanly to stage width in absolute pixels
   const maxWidthByStage = Math.floor(stage.widthPx * (isCompact ? 0.86 : 0.78));
   const targetWidth = isCompact ? 290 : Math.min(465, maxWidthByStage);
   const baseCardWidth = Math.max(240, targetWidth);
@@ -108,11 +107,9 @@ export function buildWatchStrapPixelGeometry(
 
   const centerZ = 32;
   const radiusZ = 360;
-  // Lower horizontal tilt on laptop & large displays for clean, balanced framing
   const yawDeg = isCompact ? -5 : isLargeDesktop ? -4.5 : -5.5;
   const yawMargin = 1.03;
 
-  // Compute trigonometric screen-space heights at |d| = 0, 1, 2, 3
   const halfH = baseCardHeight * 0.5;
   const z0 = centerZ;
   const z1 = radiusZ * (Math.cos(stepAngleRad) - 1);
@@ -133,14 +130,12 @@ export function buildWatchStrapPixelGeometry(
   const unscaledY2 = unscaledY1 + sHalf1 + CARD_GAP_PX + sHalf2;
   const unscaledY3 = unscaledY2 + sHalf2 + CARD_GAP_PX * 1.5 + sHalf3;
 
-  // Fit total 5-card arc inside measured pixel stage height without clipping
   const totalBaseHeight = (unscaledY2 + sHalf2) * 2;
   const fitScale = Math.min(1, Math.max(0.55, (stage.heightPx - 24) / totalBaseHeight));
 
   const cardWidthPx = Math.round(baseCardWidth * fitScale);
   const cardHeightPx = Math.round(baseCardHeight * fitScale);
 
-  // Absolute pixel anchor centering the card inside the stage box
   const anchorTopPx = Math.round((stage.heightPx - cardHeightPx) / 2);
   const anchorLeftPx = Math.round((stage.widthPx - cardWidthPx) / 2);
 
@@ -170,18 +165,14 @@ export function buildWatchStrapPixelGeometry(
 export interface MyWorkPageProps {
   /** Optional custom project array so this standalone page can be reused directly */
   projects?: Project[];
+  onBack?: () => void;
 }
 
-/**
- * Standalone "My Work" 3D Watch-Strap Project Showcase Page.
- * Uses absolute pixel-based card positioning with CSS `perspective-origin` and
- * trigonometric arc calculations for uniform, non-overlapping curvature.
- */
-export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) => {
+export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS, onBack }) => {
   const reducedMotion = useReducedMotion();
 
-  const [isMobile, setIsMobile] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  const [isCompactViewport, setIsCompactViewport] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
   );
   const [targetStep, setTargetStep] = useState<number>(0);
   const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -193,8 +184,8 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobile(mq.matches);
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const sync = () => setIsCompactViewport(mq.matches);
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
@@ -218,14 +209,22 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
   }, [commitStep]);
 
   const buildPixelGeometry = useCallback(
-    (stage: StageSize) => buildWatchStrapPixelGeometry(stage, isMobile),
-    [isMobile]
+    (stage: StageSize) => buildWatchStrapPixelGeometry(stage, isCompactViewport),
+    [isCompactViewport]
   );
 
-  // Continuous scroll-driven watch-strap transition with magnetic detent snap
+  // On laptop/desktop (>= 1024px), wheel drives the 3D watch-strap unless inside a scrollable modal/panel.
+  // On mobile & tablet (< 1024px), keep native vertical page scrolling unblocked.
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (caseStudyProject) return;
+      if (caseStudyProject || isCompactViewport) return;
+      const targetEl = e.target as HTMLElement | null;
+      if (targetEl?.closest('.custom-scrollbar')) {
+        const scrollBox = targetEl.closest('.custom-scrollbar') as HTMLElement;
+        if (scrollBox.scrollHeight > scrollBox.clientHeight + 2) {
+          return;
+        }
+      }
 
       e.preventDefault();
 
@@ -268,7 +267,7 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
         window.clearTimeout(snapTimeoutRef.current);
       }
     };
-  }, [caseStudyProject, commitStep, reducedMotion]);
+  }, [caseStudyProject, commitStep, isCompactViewport, reducedMotion]);
 
   // Keyboard navigation (Up/Down/Left/Right)
   useEffect(() => {
@@ -297,25 +296,26 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
   const activeProject = projects[wrapIndex(activeIndex, projects.length)];
 
   return (
-    <main className="relative h-dvh md:h-screen w-full overflow-hidden bg-[#050507] text-zinc-100">
-      {/* Ambient Purple Lighting & Minimal Curved Background Lines */}
+    <main className="relative min-h-dvh lg:h-dvh w-full overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-[#F4F8FD] text-slate-900 dark:bg-[#000000] dark:text-zinc-100 transition-colors duration-700">
+      {/* Ambient Emerald/Crimson or Neon Lime/Red Lighting & Minimal Curved Background Lines */}
       <AmbientBackdrop />
 
-      {/* Main Responsive Showcase Container (Single-screen stack on mobile, 2-column grid on desktop) */}
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-360 flex-col md:grid md:grid-cols-12 md:items-center gap-2 md:gap-6 px-4 pt-3.5 pb-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-        {/* MOBILE TOP BAR: Label, Counter, Progress & Stepper */}
+      {/* Responsive Showcase Container: naturally scrollable vertical stack on mobile/tablet (< lg), locked 2-column stage on laptop/desktop (lg+) */}
+      <div className="relative z-10 mx-auto flex min-h-dvh lg:h-full w-full max-w-360 flex-col lg:grid lg:grid-cols-12 lg:items-center gap-4 lg:gap-8 px-4 pt-0 pb-8 sm:px-8 lg:py-4 lg:px-12 xl:px-20">
+        {/* MOBILE & TABLET UNIFIED STICKY TOP BAR (Zero overlap with Back button, zero empty top gap) */}
         <MobileWorkTopBar
           activeIndex={activeIndex}
           totalProjects={projects.length}
           onPrev={handlePrev}
           onNext={handleNext}
+          onBack={onBack}
           reducedMotion={reducedMotion}
         />
 
-        {/* LEFT COLUMN (Desktop) / BOTTOM DOCK (Mobile): Active Project Details */}
+        {/* LEFT COLUMN (Laptop/Desktop) / PROJECT DETAILS CARD (Mobile/Tablet) */}
         <section
           aria-label="Active project details"
-          className="order-2 md:order-1 shrink-0 md:col-span-6 lg:col-span-5 flex items-center"
+          className="order-2 lg:order-1 shrink-0 lg:col-span-5 flex items-center"
         >
           <ProjectInfoPanel
             project={activeProject}
@@ -323,15 +323,16 @@ export const MyWorkPage: React.FC<MyWorkPageProps> = ({ projects = PROJECTS }) =
             totalProjects={projects.length}
             onPrev={handlePrev}
             onNext={handleNext}
+            onBack={onBack}
             onOpenCaseStudy={() => setCaseStudyProject(activeProject)}
             reducedMotion={reducedMotion}
           />
         </section>
 
-        {/* RIGHT COLUMN (Desktop) / MIDDLE STAGE (Mobile): Watch-Strap Showcase */}
+        {/* RIGHT COLUMN (Laptop/Desktop) / TOP 3D CARD ARC (Mobile/Tablet) */}
         <section
           aria-label="Interactive 3D project cards"
-          className="order-1 md:order-2 flex-1 min-h-0 md:flex-none md:col-span-6 lg:col-span-7 relative md:h-[88vh] md:max-h-210 w-full flex items-center justify-center"
+          className="order-1 lg:order-2 h-[290px] sm:h-[350px] md:h-[410px] shrink-0 lg:shrink lg:h-[88dvh] lg:max-h-210 w-full lg:col-span-7 relative flex items-center justify-center"
         >
           <WatchStrapShowcase
             projects={projects}

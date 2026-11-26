@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSkyTheme } from '../context/ThemeContext';
 import { useIsInViewport } from '../hooks/useIsInViewport';
 
 interface FrictionChip {
@@ -84,6 +85,10 @@ const WINDING_PATH_D = `M -40 130
   C 1295 1685, 1395 1590, 1490 1500`;
 
 export const AboutOriginSection: React.FC = () => {
+  const { isDay } = useSkyTheme();
+  const isDayRef = useRef<boolean>(isDay);
+  isDayRef.current = isDay;
+
   const starCanvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const mobileTimelineRef = useRef<HTMLDivElement>(null);
@@ -145,13 +150,24 @@ export const AboutOriginSection: React.FC = () => {
 
     const drawStars = (t: number) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const s of stars) {
+      const dayMode = isDayRef.current;
+      stars.forEach((s, idx) => {
         const a = s.alpha + Math.sin(t * s.speed + s.phase) * 0.2;
-        ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0.05, a)})`;
+        if (dayMode) {
+          const dayTone =
+            idx % 5 === 0
+              ? `rgba(22, 163, 74, ${Math.max(0.08, a * 0.45)})`
+              : idx % 5 === 1
+                ? `rgba(225, 29, 72, ${Math.max(0.06, a * 0.35)})`
+                : `rgba(15, 23, 42, ${Math.max(0.05, a * 0.22)})`;
+          ctx.fillStyle = dayTone;
+        } else {
+          ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0.05, a)})`;
+        }
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, dayMode ? s.r * 1.15 : s.r, 0, Math.PI * 2);
         ctx.fill();
-      }
+      });
       rafId = window.requestAnimationFrame(drawStars);
     };
 
@@ -307,31 +323,47 @@ export const AboutOriginSection: React.FC = () => {
     <section
       id="story"
       aria-label="About Me and Origin Story"
-      className="relative w-full pt-12 pb-18 lg:pt-16 lg:pb-22.5 bg-[#05070e] text-[#f8fafc] overflow-hidden"
+      className="relative w-full pt-12 pb-4 lg:pt-16 lg:pb-6 bg-[#F4F8FD] text-slate-900 dark:bg-[#000000] dark:text-[#f8fafc] overflow-hidden transition-colors duration-700"
     >
-      {/* Subtle Hero-matched Grid & Starry Space Backdrop — masked cleanly at top for seamless Hero blend */}
+      {/* Subtle Hero-matched Grid & Atmospheric Backdrop — masked cleanly at top and bottom */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-size-[160px_160px] mask-[linear-gradient(to_bottom,transparent_0%,black_18%,black_100%)]"
+        className={`pointer-events-none absolute inset-0 z-0 bg-size-[160px_160px] mask-[linear-gradient(to_bottom,transparent_0%,black_18%,black_84%,transparent_100%)] ${
+          isDay
+            ? 'bg-[linear-gradient(to_right,rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.04)_1px,transparent_1px)]'
+            : 'bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)]'
+        }`}
       />
       <canvas
         ref={starCanvasRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 w-full h-full opacity-72 mask-[linear-gradient(to_bottom,transparent_0%,black_16%,black_100%)]"
+        className="pointer-events-none absolute inset-0 z-0 w-full h-full opacity-72 mask-[linear-gradient(to_bottom,transparent_0%,black_16%,black_86%,transparent_100%)]"
       />
 
-      {/* Soft Cosmic Nebulae */}
+      {/* Soft Cosmic Nebulae / Sky Blooms */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-140 h-140 top-[4%] -left-35 bg-[radial-gradient(circle,#a855f7,transparent_70%)]"
+        className={`pointer-events-none absolute z-0 rounded-full blur-[130px] w-140 h-140 top-[4%] -left-35 ${
+          isDay
+            ? 'opacity-14 bg-[radial-gradient(circle,#E11D48,transparent_70%)]'
+            : 'opacity-20 bg-[radial-gradient(circle,#FF073A,transparent_70%)]'
+        }`}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-25 w-130 h-130 top-[44%] -right-30 bg-[radial-gradient(circle,#22d3ee,transparent_70%)]"
+        className={`pointer-events-none absolute z-0 rounded-full blur-[130px] w-130 h-130 top-[44%] -right-30 ${
+          isDay
+            ? 'opacity-14 bg-[radial-gradient(circle,#16A34A,transparent_70%)]'
+            : 'opacity-20 bg-[radial-gradient(circle,#39FF14,transparent_70%)]'
+        }`}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-0 rounded-full blur-[130px] opacity-18 w-120 h-120 bottom-[6%] left-[18%] bg-[radial-gradient(circle,#3b82f6,transparent_70%)]"
+        className={`pointer-events-none absolute z-0 rounded-full blur-[130px] w-120 h-120 bottom-[6%] left-[18%] ${
+          isDay
+            ? 'opacity-30 bg-[radial-gradient(circle,#DBEAFE,transparent_70%)]'
+            : 'opacity-25 bg-[radial-gradient(circle,#1A1A1A,transparent_70%)]'
+        }`}
       />
 
       {/* Header stays neatly centered in .container */}
@@ -340,35 +372,35 @@ export const AboutOriginSection: React.FC = () => {
           <div>
             <div className="flex flex-wrap items-center gap-3.5 mb-5">
               <span
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/3 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-900/12 bg-white/90 text-xl text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.08)] dark:border-white/22 dark:bg-[#1A1A1A]/70 dark:text-white dark:shadow-[0_0_20px_rgba(57,255,20,0.14)] transition-colors duration-700"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
-                <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-[pulseDot_2s_ease-in-out_infinite]" />
+                <span className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(22,163,74,0.55)] dark:bg-[#39FF14] dark:shadow-[0_0_10px_#39FF14] animate-[pulseDot_2s_ease-in-out_infinite]" />
                 About Me
               </span>
-              <span className="font-mono text-xs tracking-[0.14em] uppercase text-[#a855f7]">
+              <span className="font-mono text-xs tracking-[0.14em] uppercase text-rose-600 dark:text-[#FF073A] transition-colors duration-700">
                 Origin Story &bull; Karachi, Pakistan
               </span>
             </div>
 
-            <h2 className="text-[clamp(2.35rem,4.4vw,3.85rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-white">
+            <h2 className="text-[clamp(2.35rem,4.4vw,3.85rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-slate-900 dark:text-white transition-colors duration-700">
               From Karachi Streets to
               <br />
               Industrial{' '}
               <span
-                className="relative inline-block font-bold text-[1.18em] text-[#a855f7] [text-shadow:0_0_28px_rgba(168,85,247,0.45)]"
+                className="relative inline-block font-bold text-[1.18em] text-emerald-600 dark:text-[#39FF14] dark:[text-shadow:0_0_28px_rgba(57,255,20,0.45)]"
                 style={{ fontFamily: "'Caveat', cursive" }}
               >
                 Cloud ERP
                 <span
                   aria-hidden="true"
-                  className="absolute left-0 right-0 bottom-0.5 h-1 rounded-full bg-linear-to-r from-[#a855f7] to-[#22d3ee] rotate-[-1.2deg]"
+                  className="absolute left-0 right-0 bottom-0.5 h-1 rounded-full bg-linear-to-r from-[#E11D48] to-[#16A34A] dark:from-[#FF073A] dark:to-[#39FF14] rotate-[-1.2deg]"
                 />
               </span>
             </h2>
 
             <div
-              className="hidden lg:inline-flex items-center gap-2 mt-5.5 p-1.5 rounded-full bg-white/3 border border-white/8"
+              className="hidden lg:inline-flex items-center gap-2 mt-5.5 p-1.5 rounded-full bg-white/90 border border-slate-900/10 shadow-[0_6px_18px_rgba(15,23,42,0.06)] dark:bg-[#1A1A1A]/80 dark:border-white/10 dark:shadow-none transition-colors duration-700"
               aria-label="Journey Milestones"
             >
               {CHAPTER_LABELS.map((label, idx) => (
@@ -378,8 +410,8 @@ export const AboutOriginSection: React.FC = () => {
                   onClick={() => scrollToStep(idx)}
                   className={`font-mono text-[0.74rem] px-3.5 py-1.5 rounded-full cursor-pointer transition-all duration-250 border ${
                     activeChapterIdx === idx
-                      ? 'text-white bg-linear-to-br from-purple-500/35 to-cyan-400/25 border-cyan-400/40 shadow-[0_0_16px_rgba(168,85,247,0.25)]'
-                      : 'text-[#94a3b8] border-transparent hover:text-white hover:bg-white/6'
+                      ? 'text-slate-900 bg-linear-to-br from-rose-500/15 to-emerald-500/20 border-emerald-600/45 shadow-sm dark:text-white dark:from-[#FF073A]/30 dark:to-[#39FF14]/25 dark:border-[#39FF14]/50 dark:shadow-[0_0_16px_rgba(57,255,20,0.22)]'
+                      : 'text-slate-500 border-transparent hover:text-slate-900 hover:bg-slate-100 dark:text-[#94a3b8] dark:hover:text-white dark:hover:bg-white/6'
                   }`}
                 >
                   {label}
@@ -389,14 +421,14 @@ export const AboutOriginSection: React.FC = () => {
           </div>
 
           <div className="pb-1.5">
-            <p className="text-[1.03rem] leading-[1.68] text-[#94a3b8] mb-4">
+            <p className="text-[1.03rem] leading-[1.68] text-slate-600 dark:text-[#94a3b8] mb-4 transition-colors duration-700">
               I’m a passionate full stack developer turning ideas into reality.{' '}
-              <strong className="text-[#e2e8f0] font-semibold">
+              <strong className="text-slate-900 dark:text-[#e2e8f0] font-semibold">
                 Most developers start by cloning tutorials on YouTube
               </strong>
               —my journey started by walking directly into a neighborhood shop in Karachi.
             </p>
-            <p className="text-[0.92rem] leading-[1.6] italic text-[#cbd5e1] pl-3.5 border-l-2 border-[#a855f7]">
+            <p className="text-[0.92rem] leading-[1.6] italic text-slate-700 dark:text-[#cbd5e1] pl-3.5 border-l-2 border-rose-600 dark:border-[#FF073A] transition-colors duration-700">
               “It wasn’t my finest code yet, but it was my first real client. That grit taught me
               how real businesses buy, operate, and scale.”
             </p>
@@ -415,9 +447,9 @@ export const AboutOriginSection: React.FC = () => {
         >
           <defs>
             <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#14182b" />
-              <stop offset="50%" stopColor="#261942" />
-              <stop offset="100%" stopColor="#0f2332" />
+              <stop offset="0%" stopColor={isDay ? '#F8FBFF' : '#0d0d0d'} />
+              <stop offset="50%" stopColor={isDay ? '#FFFFFF' : '#1A1A1A'} />
+              <stop offset="100%" stopColor={isDay ? '#F8FBFF' : '#0d0d0d'} />
             </linearGradient>
             <path
               id="ribbon-right-path"
@@ -430,11 +462,11 @@ export const AboutOriginSection: React.FC = () => {
           </defs>
 
           {/* Right Ribbon */}
-          <g opacity="0.9">
+          <g opacity={isDay ? 0.96 : 0.9}>
             <use
               href="#ribbon-right-path"
               fill="none"
-              stroke="rgba(168,85,247,0.38)"
+              stroke={isDay ? 'rgba(225,29,72,0.38)' : 'rgba(255,7,58,0.42)'}
               strokeWidth="34"
               strokeLinecap="round"
             />
@@ -447,7 +479,9 @@ export const AboutOriginSection: React.FC = () => {
             />
             <text
               dy="4"
-              className="font-mono text-[12px] font-semibold tracking-[0.2em] uppercase fill-[#cbd5e1]"
+              className={`font-mono text-[12px] font-semibold tracking-[0.2em] uppercase ${
+                isDay ? 'fill-[#0F172A]' : 'fill-[#cbd5e1]'
+              }`}
             >
               <textPath ref={ribbonText1Ref} href="#ribbon-right-path" startOffset="4%">
                 FULL STACK DEV &bull; NEXT.JS &bull; NODE &bull; AUTOMATION &bull; KARACHI TO CLOUD &bull;
@@ -456,11 +490,11 @@ export const AboutOriginSection: React.FC = () => {
           </g>
 
           {/* Left Ribbon */}
-          <g opacity="0.9">
+          <g opacity={isDay ? 0.96 : 0.9}>
             <use
               href="#ribbon-left-path"
               fill="none"
-              stroke="rgba(34,211,238,0.32)"
+              stroke={isDay ? 'rgba(22,163,74,0.36)' : 'rgba(57,255,20,0.36)'}
               strokeWidth="34"
               strokeLinecap="round"
             />
@@ -473,7 +507,9 @@ export const AboutOriginSection: React.FC = () => {
             />
             <text
               dy="4"
-              className="font-mono text-[12px] font-semibold tracking-[0.2em] uppercase fill-[#cbd5e1]"
+              className={`font-mono text-[12px] font-semibold tracking-[0.2em] uppercase ${
+                isDay ? 'fill-[#0F172A]' : 'fill-[#cbd5e1]'
+              }`}
             >
               <textPath ref={ribbonText2Ref} href="#ribbon-left-path" startOffset="6%">
                 PYNTFLOW ERP &bull; TAWAKKAL PAINT &bull; REAL BUSINESS SYSTEMS &bull;
@@ -491,12 +527,12 @@ export const AboutOriginSection: React.FC = () => {
         >
           <defs>
             <linearGradient id="activeStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a855f7" />
-              <stop offset="50%" stopColor="#22d3ee" />
-              <stop offset="100%" stopColor="#4ade80" />
+              <stop offset="0%" stopColor={isDay ? '#E11D48' : '#FF073A'} />
+              <stop offset="50%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
+              <stop offset="100%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
             </linearGradient>
             <filter id="neonGlow" x="-25%" y="-25%" width="150%" height="150%">
-              <feGaussianBlur stdDeviation="8" result="blur" />
+              <feGaussianBlur stdDeviation={isDay ? '5' : '8'} result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -504,8 +540,8 @@ export const AboutOriginSection: React.FC = () => {
             </filter>
             <radialGradient id="orbGrad">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="40%" stopColor="#22d3ee" />
-              <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+              <stop offset="40%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
+              <stop offset="100%" stopColor={isDay ? 'rgba(22,163,74,0)' : 'rgba(57,255,20,0)'} />
             </radialGradient>
           </defs>
 
@@ -513,7 +549,7 @@ export const AboutOriginSection: React.FC = () => {
           <path
             d={WINDING_PATH_D}
             fill="none"
-            stroke="#161c30"
+            stroke={isDay ? '#DDE7F4' : '#1A1A1A'}
             strokeWidth="24"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -523,12 +559,12 @@ export const AboutOriginSection: React.FC = () => {
           <path
             d={WINDING_PATH_D}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke={isDay ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.06)'}
             strokeWidth="2"
             strokeDasharray="8 10"
           />
 
-          {/* Active Scroll-Drawn Neon Stroke */}
+          {/* Active Scroll-Drawn Stroke */}
           <path
             ref={activePathRef}
             d={WINDING_PATH_D}
@@ -545,7 +581,7 @@ export const AboutOriginSection: React.FC = () => {
           <circle ref={orbCoreRef} cx="-40" cy="130" r="8" fill="#ffffff" opacity="0" />
         </svg>
 
-        {/* NODE 01: (420, 220 => 29.17%, 12.22%) */}
+        {/* NODE 01 */}
         <button
           ref={(el) => {
             nodeRefs.current[0] = el;
@@ -555,15 +591,15 @@ export const AboutOriginSection: React.FC = () => {
           aria-label="Step 1"
           className={`absolute left-[29.17%] top-[12.22%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[0]
-              ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
-              : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
+              ? 'bg-white text-slate-900 border-emerald-600 scale-114 shadow-[0_8px_24px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_24px_rgba(57,255,20,0.55),0_0_46px_rgba(255,7,58,0.28)]'
+              : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15 dark:hover:border-[#39FF14] dark:hover:text-white hover:scale-110'
           }`}
         >
           01
           {reachedSteps[0] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
@@ -576,24 +612,24 @@ export const AboutOriginSection: React.FC = () => {
           }`}
         >
           <div className="flex items-center flex-wrap gap-3 mb-3">
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.75 py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-rose-700 bg-rose-500/12 border border-rose-500/30 dark:text-[#ffb3c1] dark:bg-[#FF073A]/15 dark:border-[#FF073A]/35 px-2.75 py-1 rounded-full">
               First Commercial Client
             </span>
-            <span className="font-mono text-[0.72rem] text-[#64748b]">
+            <span className="font-mono text-[0.72rem] text-slate-500 dark:text-[#64748b]">
               Karachi &bull; Brick &amp; Mortar
             </span>
           </div>
-          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-white mb-2.5">
+          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-slate-900 dark:text-white mb-2.5">
             Pitching{' '}
             <span
-              className="font-bold text-[1.22em] text-[#4ade80] mx-1 [text-shadow:0_0_18px_rgba(74,222,128,0.3)]"
+              className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mx-1 dark:[text-shadow:0_0_18px_rgba(57,255,20,0.35)]"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
               Karachi
             </span>{' '}
             Brick &amp; Mortar
           </h3>
-          <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8] mb-4">
+          <p className="text-[0.96rem] leading-[1.66] text-slate-600 dark:text-[#94a3b8] mb-4">
             I stepped into Tawakkal Paint House, introduced myself to the owner face-to-face, and
             landed my very first commercial web client without a single YouTube tutorial clone.
           </p>
@@ -601,9 +637,9 @@ export const AboutOriginSection: React.FC = () => {
             type="button"
             onClick={() => setPitchToggled((prev) => !prev)}
             title="Click to toggle insight"
-            className="w-full text-left px-3.5 py-3 rounded-xl bg-purple-500/8 border border-dashed border-purple-500/38 text-[0.87rem] text-[#e9d5ff] cursor-pointer transition-all duration-250 hover:bg-purple-500/15 hover:translate-x-0.75"
+            className="w-full text-left px-3.5 py-3 rounded-xl bg-white/95 border border-dashed border-rose-500/45 text-[0.87rem] text-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:bg-rose-50 dark:bg-[#1A1A1A]/90 dark:border-[#FF073A]/45 dark:text-[#ffe4ea] dark:shadow-none cursor-pointer transition-all duration-250 dark:hover:bg-[#FF073A]/15 hover:translate-x-0.75"
           >
-            <span className="block font-mono text-[0.68rem] uppercase tracking-[0.08em] text-[#a855f7] mb-1">
+            <span className="block font-mono text-[0.68rem] uppercase tracking-[0.08em] text-rose-600 dark:text-[#FF073A] mb-1">
               The Face-to-Face Pitch (Click)
             </span>
             <span>
@@ -614,7 +650,7 @@ export const AboutOriginSection: React.FC = () => {
           </button>
         </article>
 
-        {/* NODE 02: (940, 560 => 65.28%, 31.11%) */}
+        {/* NODE 02 */}
         <button
           ref={(el) => {
             nodeRefs.current[1] = el;
@@ -624,15 +660,15 @@ export const AboutOriginSection: React.FC = () => {
           aria-label="Step 2"
           className={`absolute left-[65.28%] top-[31.11%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[1]
-              ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
-              : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
+              ? 'bg-white text-slate-900 border-emerald-600 scale-114 shadow-[0_8px_24px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_24px_rgba(57,255,20,0.55),0_0_46px_rgba(255,7,58,0.28)]'
+              : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15 dark:hover:border-[#39FF14] dark:hover:text-white hover:scale-110'
           }`}
         >
           02
           {reachedSteps[1] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
@@ -645,15 +681,15 @@ export const AboutOriginSection: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-end flex-wrap gap-3 mb-3">
-            <span className="font-mono text-[0.72rem] text-[#64748b]">Paper &rarr; Digital</span>
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-2.75 py-1 rounded-full">
+            <span className="font-mono text-[0.72rem] text-slate-500 dark:text-[#64748b]">Paper &rarr; Digital</span>
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-emerald-700 bg-emerald-500/12 border border-emerald-600/30 dark:text-[#39FF14] dark:bg-[#39FF14]/10 dark:border-[#39FF14]/30 px-2.75 py-1 rounded-full">
               Real Retail Friction Discovered
             </span>
           </div>
-          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-white mb-2.5">
+          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-slate-900 dark:text-white mb-2.5">
             Tawakkal Paint House
           </h3>
-          <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8] mb-4">
+          <p className="text-[0.96rem] leading-[1.66] text-slate-600 dark:text-[#94a3b8] mb-4">
             Turning paper catalogs into searchable contractor ordering uncovered deeper daily
             bottlenecks across the shop floor. Click a bottleneck to inspect:
           </p>
@@ -665,20 +701,20 @@ export const AboutOriginSection: React.FC = () => {
                 onClick={() => setActiveChipIdx(idx)}
                 className={`font-mono text-[0.72rem] px-2.75 py-1.5 rounded-lg border cursor-pointer transition-all duration-220 ${
                   activeChipIdx === idx
-                    ? 'bg-cyan-400/14 border-[#22d3ee] text-white shadow-[0_0_14px_rgba(34,211,238,0.22)]'
-                    : 'bg-white/4 border-white/12 text-[#cbd5e1] hover:bg-cyan-400/14 hover:border-[#22d3ee] hover:text-white'
+                    ? 'bg-emerald-600/12 border-emerald-600 text-emerald-800 shadow-xs dark:bg-[#39FF14]/15 dark:border-[#39FF14] dark:text-white dark:shadow-[0_0_14px_rgba(57,255,20,0.22)]'
+                    : 'bg-white border-slate-900/12 text-slate-600 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:border-white/12 dark:text-[#cbd5e1] dark:hover:bg-[#39FF14]/14 dark:hover:border-[#39FF14] dark:hover:text-white'
                 }`}
               >
                 {chip.label}
               </button>
             ))}
           </div>
-          <p className="text-[0.84rem] text-[#22d3ee] min-h-5">
+          <p className="text-[0.84rem] text-emerald-700 dark:text-[#39FF14] min-h-5">
             &rarr; {FRICTION_CHIPS[activeChipIdx].info}
           </p>
         </article>
 
-        {/* NODE 03: (520, 1020 => 36.11%, 56.67%) */}
+        {/* NODE 03 */}
         <button
           ref={(el) => {
             nodeRefs.current[2] = el;
@@ -688,15 +724,15 @@ export const AboutOriginSection: React.FC = () => {
           aria-label="Step 3"
           className={`absolute left-[36.11%] top-[56.67%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[2]
-              ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
-              : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
+              ? 'bg-white text-slate-900 border-emerald-600 scale-114 shadow-[0_8px_24px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_24px_rgba(57,255,20,0.55),0_0_46px_rgba(255,7,58,0.28)]'
+              : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15 dark:hover:border-[#39FF14] dark:hover:text-white hover:scale-110'
           }`}
         >
           03
           {reachedSteps[2] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
@@ -709,21 +745,21 @@ export const AboutOriginSection: React.FC = () => {
           }`}
         >
           <div className="flex items-center flex-wrap gap-3 mb-3">
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-2.75 py-1 rounded-full">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-emerald-700 bg-emerald-500/12 border border-emerald-600/30 dark:text-[#39FF14] dark:bg-[#39FF14]/10 dark:border-[#39FF14]/30 px-2.75 py-1 rounded-full">
               60% Faster Counter Checkout
             </span>
-            <span className="font-mono text-[0.72rem] text-[#64748b]">Cloud ERP &amp; POS</span>
+            <span className="font-mono text-[0.72rem] text-slate-500 dark:text-[#64748b]">Cloud ERP &amp; POS</span>
           </div>
-          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-white mb-2.5">
+          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-slate-900 dark:text-white mb-2.5">
             <span
-              className="font-bold text-[1.22em] text-[#4ade80] mr-1 [text-shadow:0_0_18px_rgba(74,222,128,0.3)]"
+              className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mr-1 dark:[text-shadow:0_0_18px_rgba(57,255,20,0.35)]"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
               Pyntflow
             </span>{' '}
             Cloud ERP &amp; POS
           </h3>
-          <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8] mb-4">
+          <p className="text-[0.96rem] leading-[1.66] text-slate-600 dark:text-[#94a3b8] mb-4">
             That real-world insight sparked Pyntflow: an end-to-end cloud platform built
             specifically for paint wholesalers and multi-branch retailers.
           </p>
@@ -735,28 +771,28 @@ export const AboutOriginSection: React.FC = () => {
                 onClick={() => setActiveErpIdx(idx)}
                 className={`font-mono text-[0.72rem] px-3 py-1.5 rounded-lg border cursor-pointer transition-all duration-220 ${
                   activeErpIdx === idx
-                    ? 'bg-green-400/14 border-[#4ade80] text-white'
-                    : 'bg-white/4 border-white/12 text-[#94a3b8] hover:bg-green-400/14 hover:border-[#4ade80] hover:text-white'
+                    ? 'bg-emerald-600/12 border-emerald-600 text-emerald-800 shadow-xs dark:bg-[#39FF14]/15 dark:border-[#39FF14] dark:text-white dark:shadow-[0_0_12px_rgba(57,255,20,0.25)]'
+                    : 'bg-white border-slate-900/12 text-slate-600 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:border-white/12 dark:text-[#94a3b8] dark:hover:bg-[#39FF14]/14 dark:hover:border-[#39FF14] dark:hover:text-white'
                 }`}
               >
                 {mod.tab}
               </button>
             ))}
           </div>
-          <div className="px-3.5 py-3 rounded-xl bg-white/3 border border-white/8">
-            <div className="flex justify-between font-mono text-[0.76rem] text-[#e2e8f0] mb-2">
+          <div className="px-3.5 py-3 rounded-xl bg-white border border-slate-900/10 shadow-[0_8px_22px_rgba(15,23,42,0.06)] dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none">
+            <div className="flex justify-between font-mono text-[0.76rem] text-slate-800 dark:text-[#e2e8f0] mb-2">
               <span>{activeErp.label}</span>
-              <span className="text-[#4ade80]">{activeErp.val}</span>
+              <span className="text-emerald-700 font-semibold dark:text-[#39FF14]">{activeErp.val}</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/8 overflow-hidden">
               <div
-                className={`h-full rounded-full bg-linear-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
+                className={`h-full rounded-full bg-linear-to-r from-[#E11D48] to-[#16A34A] dark:from-[#FF073A] dark:to-[#39FF14] transition-all duration-450 ${activeErp.widthClass}`}
               />
             </div>
           </div>
         </article>
 
-        {/* NODE 04: (860, 1440 => 59.72%, 80.00%) */}
+        {/* NODE 04 */}
         <button
           ref={(el) => {
             nodeRefs.current[3] = el;
@@ -766,15 +802,15 @@ export const AboutOriginSection: React.FC = () => {
           aria-label="Step 4"
           className={`absolute left-[59.72%] top-[80%] -translate-x-1/2 -translate-y-1/2 w-14.5 h-14.5 rounded-full flex items-center justify-center font-mono text-[1.02rem] font-bold border-2 cursor-pointer z-6 transition-all duration-450 ${
             reachedSteps[3]
-              ? 'bg-[#090c17] text-white border-[#22d3ee] scale-114 shadow-[0_0_24px_rgba(168,85,247,0.6),0_0_46px_rgba(34,211,238,0.35)]'
-              : 'bg-[#0c1020] text-[#64748b] border-[#26304d] hover:border-[#a855f7] hover:text-white hover:scale-110'
+              ? 'bg-white text-slate-900 border-emerald-600 scale-114 shadow-[0_8px_24px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_24px_rgba(57,255,20,0.55),0_0_46px_rgba(255,7,58,0.28)]'
+              : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-600 hover:text-slate-900 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15 dark:hover:border-[#39FF14] dark:hover:text-white hover:scale-110'
           }`}
         >
           04
           {reachedSteps[3] && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+              className="pointer-events-none absolute -inset-2 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
             />
           )}
         </button>
@@ -787,40 +823,40 @@ export const AboutOriginSection: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-end flex-wrap gap-3 mb-3">
-            <span className="font-mono text-[0.72rem] text-[#64748b]">Today &amp; Beyond</span>
-            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.75 py-1 rounded-full">
+            <span className="font-mono text-[0.72rem] text-slate-500 dark:text-[#64748b]">Today &amp; Beyond</span>
+            <span className="inline-flex items-center gap-2 font-mono text-[0.72rem] tracking-[0.08em] uppercase text-rose-700 bg-rose-500/12 border border-rose-500/30 dark:text-[#ffb3c1] dark:bg-[#FF073A]/15 dark:border-[#FF073A]/35 px-2.75 py-1 rounded-full">
               Full Stack &amp; Automation
             </span>
           </div>
-          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-white mb-2.5">
+          <h3 className="text-[clamp(1.45rem,2.25vw,2.05rem)] font-extrabold leading-[1.18] tracking-[-0.02em] text-slate-900 dark:text-white mb-2.5">
             Turning Ideas Into{' '}
             <span
-              className="font-bold text-[1.22em] text-[#4ade80] mx-1 [text-shadow:0_0_18px_rgba(74,222,128,0.3)]"
+              className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mx-1 dark:[text-shadow:0_0_18px_rgba(57,255,20,0.35)]"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
               Reality
             </span>
           </h3>
-          <p className="text-[0.96rem] leading-[1.66] text-[#94a3b8] mb-4">
+          <p className="text-[0.96rem] leading-[1.66] text-slate-600 dark:text-[#94a3b8] mb-4">
             I build modern web experiences, automate workflows, and ship scalable production
             software designed for real users and real business growth.
           </p>
           <div className="grid grid-cols-3 gap-2.5 mb-3">
-            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
-              <strong className="block text-[1.15rem] font-extrabold text-white">2+</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
+            <div className="px-3 py-2.5 rounded-xl bg-white border border-slate-900/10 shadow-[0_8px_20px_rgba(15,23,42,0.05)] text-center transition-all duration-250 hover:border-emerald-600/50 dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none dark:hover:border-[#39FF14]/50 hover:-translate-y-0.5">
+              <strong className="block text-[1.15rem] font-extrabold text-slate-900 dark:text-white">2+</strong>
+              <span className="font-mono text-[0.64rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">
                 Years Learning
               </span>
             </div>
-            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
-              <strong className="block text-[1.15rem] font-extrabold text-white">10+</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
+            <div className="px-3 py-2.5 rounded-xl bg-white border border-slate-900/10 shadow-[0_8px_20px_rgba(15,23,42,0.05)] text-center transition-all duration-250 hover:border-emerald-600/50 dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none dark:hover:border-[#39FF14]/50 hover:-translate-y-0.5">
+              <strong className="block text-[1.15rem] font-extrabold text-slate-900 dark:text-white">10+</strong>
+              <span className="font-mono text-[0.64rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">
                 Projects Built
               </span>
             </div>
-            <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/9 text-center transition-all duration-250 hover:border-purple-500/45 hover:-translate-y-0.5">
-              <strong className="block text-[1.15rem] font-extrabold text-white">100%</strong>
-              <span className="font-mono text-[0.64rem] uppercase text-[#94a3b8] tracking-wider">
+            <div className="px-3 py-2.5 rounded-xl bg-white border border-slate-900/10 shadow-[0_8px_20px_rgba(15,23,42,0.05)] text-center transition-all duration-250 hover:border-emerald-600/50 dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none dark:hover:border-[#39FF14]/50 hover:-translate-y-0.5">
+              <strong className="block text-[1.15rem] font-extrabold text-slate-900 dark:text-white">100%</strong>
+              <span className="font-mono text-[0.64rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">
                 Dedication
               </span>
             </div>
@@ -829,7 +865,7 @@ export const AboutOriginSection: React.FC = () => {
             {['Next.js', 'React', 'Node.js', 'Supabase', 'Workflow Automation'].map((pill) => (
               <span
                 key={pill}
-                className="font-mono text-[0.7rem] px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/28 text-[#e9d5ff]"
+                className="font-mono text-[0.7rem] px-2.5 py-1 rounded-full bg-white border border-emerald-600/35 text-emerald-800 shadow-2xs dark:bg-[#1A1A1A] dark:border-[#39FF14]/35 dark:text-[#e2ffe0] dark:shadow-none"
               >
                 {pill}
               </span>
@@ -841,20 +877,15 @@ export const AboutOriginSection: React.FC = () => {
       {/* Mobile Animated Winding Timeline (< lg) */}
       <div ref={mobileTimelineRef} className="relative z-2 max-w-310 mx-auto px-4 sm:px-8 lg:hidden">
         <div className="relative pl-10 sm:pl-12 py-2">
-          {/* Shared unified track container: ensures line tip & orb are 100% physically locked together */}
+          {/* Shared unified track container */}
           <div className="absolute left-3.5 sm:left-4 top-4 bottom-4 w-1 pointer-events-none">
-            {/* Background idle guide track */}
-            <div className="w-full h-full bg-[#161c30] rounded-full" />
-
-            {/* Active scroll-drawn glowing neon beam */}
+            <div className="w-full h-full bg-slate-200 dark:bg-[#1A1A1A] rounded-full transition-colors duration-700" />
             <div
-              className="absolute top-0 left-0 w-full rounded-full bg-linear-to-b from-[#a855f7] via-[#22d3ee] to-[#4ade80] shadow-[0_0_14px_rgba(34,211,238,0.85)]"
+              className="absolute top-0 left-0 w-full rounded-full bg-linear-to-b from-[#E11D48] to-[#16A34A] dark:from-[#FF073A] dark:to-[#39FF14] shadow-[0_0_12px_rgba(22,163,74,0.45)] dark:shadow-[0_0_14px_rgba(57,255,20,0.85)]"
               style={{ height: `${Math.min(100, Math.max(0, mobileProgress * 100))}%` }}
             />
-
-            {/* Glowing comet head orb — locked exactly at the leading tip of the beam */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_12px_#ffffff,0_0_20px_#22d3ee,0_0_32px_#a855f7]"
+              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-[0_0_10px_rgba(22,163,74,0.7),0_0_16px_rgba(225,29,72,0.45)] dark:shadow-[0_0_12px_#ffffff,0_0_20px_#39FF14,0_0_32px_#FF073A]"
               style={{
                 top: `${Math.min(100, Math.max(0, mobileProgress * 100))}%`,
                 opacity: mobileProgress > 0.01 && mobileProgress < 0.99 ? 1 : 0,
@@ -865,46 +896,44 @@ export const AboutOriginSection: React.FC = () => {
           <div className="flex flex-col gap-10">
             {/* ── STEP 01 ── */}
             <div className="relative">
-              {/* Animated Node Circle */}
               <button
                 type="button"
                 onClick={() => scrollToStep(0)}
                 aria-label="Step 1"
                 className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[0]
-                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
-                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                    ? 'bg-white text-slate-900 border-emerald-600 scale-110 shadow-[0_6px_18px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_20px_rgba(57,255,20,0.55),0_0_36px_rgba(255,7,58,0.3)]'
+                    : 'bg-white text-slate-500 border-slate-300 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15'
                 }`}
               >
                 01
                 {reachedSteps[0] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
 
-              {/* Step Card Content */}
               <article
                 className={`transition-all duration-500 ${
                   reachedSteps[0] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
                 }`}
               >
-                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.5 py-0.5 rounded-full mb-2">
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-rose-700 bg-rose-500/12 border border-rose-500/30 dark:text-[#ffb3c1] dark:bg-[#FF073A]/15 dark:border-[#FF073A]/35 px-2.5 py-0.5 rounded-full mb-2">
                   First Commercial Client
                 </span>
-                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-slate-900 dark:text-white mb-2">
                   Pitching{' '}
                   <span
-                    className="font-bold text-[1.22em] text-[#4ade80] mx-1"
+                    className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mx-1"
                     style={{ fontFamily: "'Caveat', cursive" }}
                   >
                     Karachi
                   </span>{' '}
                   Brick &amp; Mortar
                 </h3>
-                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-[#94a3b8] mb-3">
                   Stepped into Tawakkal Paint House face-to-face and landed my first commercial web
                   client by solving a real local shop&apos;s digital needs.
                 </p>
@@ -912,9 +941,9 @@ export const AboutOriginSection: React.FC = () => {
                   type="button"
                   onClick={() => setPitchToggled((prev) => !prev)}
                   title="Click to toggle insight"
-                  className="w-full text-left px-3.5 py-2.5 rounded-xl bg-purple-500/8 border border-dashed border-purple-500/38 text-xs text-[#e9d5ff] cursor-pointer transition-all duration-250 hover:bg-purple-500/15"
+                  className="w-full text-left px-3.5 py-2.5 rounded-xl bg-white/95 border border-dashed border-rose-500/45 text-xs text-slate-800 shadow-sm hover:bg-rose-50 dark:bg-[#1A1A1A]/90 dark:border-[#FF073A]/45 dark:text-[#ffe4ea] dark:shadow-none cursor-pointer transition-all duration-250 dark:hover:bg-[#FF073A]/15"
                 >
-                  <span className="block font-mono text-[0.68rem] uppercase tracking-wider text-[#a855f7] mb-1">
+                  <span className="block font-mono text-[0.68rem] uppercase tracking-wider text-rose-600 dark:text-[#FF073A] mb-1">
                     The Face-to-Face Pitch (Tap)
                   </span>
                   <span>
@@ -928,22 +957,21 @@ export const AboutOriginSection: React.FC = () => {
 
             {/* ── STEP 02 ── */}
             <div className="relative">
-              {/* Animated Node Circle */}
               <button
                 type="button"
                 onClick={() => scrollToStep(1)}
                 aria-label="Step 2"
                 className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[1]
-                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
-                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                    ? 'bg-white text-slate-900 border-emerald-600 scale-110 shadow-[0_6px_18px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_20px_rgba(57,255,20,0.55),0_0_36px_rgba(255,7,58,0.3)]'
+                    : 'bg-white text-slate-500 border-slate-300 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15'
                 }`}
               >
                 02
                 {reachedSteps[1] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -953,13 +981,13 @@ export const AboutOriginSection: React.FC = () => {
                   reachedSteps[1] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
                 }`}
               >
-                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#22d3ee] bg-cyan-400/9 border border-cyan-400/25 px-2.5 py-0.5 rounded-full mb-2">
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-emerald-700 bg-emerald-500/12 border border-emerald-600/30 dark:text-[#39FF14] dark:bg-[#39FF14]/10 dark:border-[#39FF14]/30 px-2.5 py-0.5 rounded-full mb-2">
                   Real Retail Friction Discovered
                 </span>
-                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-slate-900 dark:text-white mb-2">
                   Tawakkal Paint House
                 </h3>
-                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-[#94a3b8] mb-3">
                   Turned paper catalogs into searchable contractor ordering while uncovering daily retail
                   bottlenecks. Tap a bottleneck to inspect:
                 </p>
@@ -971,15 +999,15 @@ export const AboutOriginSection: React.FC = () => {
                       onClick={() => setActiveChipIdx(idx)}
                       className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
                         activeChipIdx === idx
-                          ? 'bg-cyan-400/14 border-[#22d3ee] text-white shadow-[0_0_12px_rgba(34,211,238,0.25)]'
-                          : 'bg-white/4 border-white/12 text-[#cbd5e1]'
+                          ? 'bg-emerald-600/12 border-emerald-600 text-emerald-800 dark:bg-[#39FF14]/15 dark:border-[#39FF14] dark:text-white dark:shadow-[0_0_12px_rgba(57,255,20,0.25)]'
+                          : 'bg-white border-slate-900/12 text-slate-600 dark:bg-[#1A1A1A] dark:border-white/12 dark:text-[#cbd5e1]'
                       }`}
                     >
                       {chip.label}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-[#22d3ee] min-h-4">
+                <p className="text-xs text-emerald-700 dark:text-[#39FF14] min-h-4">
                   &rarr; {FRICTION_CHIPS[activeChipIdx].info}
                 </p>
               </article>
@@ -987,22 +1015,21 @@ export const AboutOriginSection: React.FC = () => {
 
             {/* ── STEP 03 ── */}
             <div className="relative">
-              {/* Animated Node Circle */}
               <button
                 type="button"
                 onClick={() => scrollToStep(2)}
                 aria-label="Step 3"
                 className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[2]
-                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.4)]'
-                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                    ? 'bg-white text-slate-900 border-emerald-600 scale-110 shadow-[0_6px_18px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_20px_rgba(57,255,20,0.55),0_0_36px_rgba(255,7,58,0.3)]'
+                    : 'bg-white text-slate-500 border-slate-300 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15'
                 }`}
               >
                 03
                 {reachedSteps[2] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -1012,19 +1039,19 @@ export const AboutOriginSection: React.FC = () => {
                   reachedSteps[2] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
                 }`}
               >
-                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#86efac] bg-green-400/10 border border-green-400/28 px-2.5 py-0.5 rounded-full mb-2">
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-emerald-700 bg-emerald-500/12 border border-emerald-600/30 dark:text-[#39FF14] dark:bg-[#39FF14]/10 dark:border-[#39FF14]/30 px-2.5 py-0.5 rounded-full mb-2">
                   60% Faster Counter Checkout
                 </span>
-                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-slate-900 dark:text-white mb-2">
                   <span
-                    className="font-bold text-[1.22em] text-[#4ade80] mr-1"
+                    className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mr-1"
                     style={{ fontFamily: "'Caveat', cursive" }}
                   >
                     Pyntflow
                   </span>{' '}
                   Cloud ERP &amp; POS
                 </h3>
-                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-[#94a3b8] mb-3">
                   Sparked Pyntflow: an end-to-end cloud ERP, tint recipe calculator, and high-speed POS
                   built for multi-branch paint retailers and wholesalers.
                 </p>
@@ -1036,22 +1063,22 @@ export const AboutOriginSection: React.FC = () => {
                       onClick={() => setActiveErpIdx(idx)}
                       className={`font-mono text-[0.7rem] px-2.5 py-1 rounded-lg border cursor-pointer transition-all duration-200 ${
                         activeErpIdx === idx
-                          ? 'bg-green-400/14 border-[#4ade80] text-white shadow-[0_0_12px_rgba(74,222,128,0.25)]'
-                          : 'bg-white/4 border-white/12 text-[#94a3b8]'
+                          ? 'bg-emerald-600/12 border-emerald-600 text-emerald-800 dark:bg-[#39FF14]/15 dark:border-[#39FF14] dark:text-white dark:shadow-[0_0_12px_rgba(57,255,20,0.25)]'
+                          : 'bg-white border-slate-900/12 text-slate-600 dark:bg-[#1A1A1A] dark:border-white/12 dark:text-[#94a3b8]'
                       }`}
                     >
                       {mod.tab}
                     </button>
                   ))}
                 </div>
-                <div className="px-3 py-2.5 rounded-xl bg-white/3 border border-white/8">
-                  <div className="flex justify-between font-mono text-xs text-[#e2e8f0] mb-1.5">
+                <div className="px-3 py-2.5 rounded-xl bg-white border border-slate-900/10 shadow-sm dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none">
+                  <div className="flex justify-between font-mono text-xs text-slate-800 dark:text-[#e2e8f0] mb-1.5">
                     <span>{activeErp.label}</span>
-                    <span className="text-[#4ade80]">{activeErp.val}</span>
+                    <span className="text-emerald-700 font-semibold dark:text-[#39FF14]">{activeErp.val}</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-white/8 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/8 overflow-hidden">
                     <div
-                      className={`h-full rounded-full bg-linear-to-r from-[#a855f7] via-[#22d3ee] to-[#4ade80] transition-all duration-450 ${activeErp.widthClass}`}
+                      className={`h-full rounded-full bg-linear-to-r from-[#E11D48] to-[#16A34A] dark:from-[#FF073A] dark:to-[#39FF14] transition-all duration-450 ${activeErp.widthClass}`}
                     />
                   </div>
                 </div>
@@ -1060,22 +1087,21 @@ export const AboutOriginSection: React.FC = () => {
 
             {/* ── STEP 04 ── */}
             <div className="relative">
-              {/* Animated Node Circle */}
               <button
                 type="button"
                 onClick={() => scrollToStep(3)}
                 aria-label="Step 4"
                 className={`absolute -left-10.75 sm:-left-11.75 top-0 w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold border-2 cursor-pointer transition-all duration-400 ${
                   reachedSteps[3]
-                    ? 'bg-[#090c17] text-white border-[#22d3ee] scale-110 shadow-[0_0_20px_rgba(168,85,247,0.6),0_0_36px_rgba(34,211,238,0.35)]'
-                    : 'bg-[#0c1020] text-[#64748b] border-[#26304d]'
+                    ? 'bg-white text-slate-900 border-emerald-600 scale-110 shadow-[0_6px_18px_rgba(22,163,74,0.28)] dark:bg-[#000000] dark:text-white dark:border-[#39FF14] dark:shadow-[0_0_20px_rgba(57,255,20,0.55),0_0_36px_rgba(255,7,58,0.3)]'
+                    : 'bg-white text-slate-500 border-slate-300 dark:bg-[#1A1A1A] dark:text-[#64748b] dark:border-white/15'
                 }`}
               >
                 04
                 {reachedSteps[3] && (
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-cyan-400/50 animate-[spinSlow_14s_linear_infinite]"
+                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-dashed border-emerald-600/50 dark:border-[#39FF14]/50 animate-[spinSlow_14s_linear_infinite]"
                   />
                 )}
               </button>
@@ -1085,41 +1111,41 @@ export const AboutOriginSection: React.FC = () => {
                   reachedSteps[3] ? 'opacity-100 translate-y-0 blur-none' : 'opacity-40 translate-y-2 blur-[1px]'
                 }`}
               >
-                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[#d8b4fe] bg-purple-500/13 border border-purple-500/32 px-2.5 py-0.5 rounded-full mb-2">
+                <span className="inline-flex items-center font-mono text-[0.72rem] tracking-[0.08em] uppercase text-rose-700 bg-rose-500/12 border border-rose-500/30 dark:text-[#ffb3c1] dark:bg-[#FF073A]/15 dark:border-[#FF073A]/35 px-2.5 py-0.5 rounded-full mb-2">
                   Full Stack &amp; Automation
                 </span>
-                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-white mb-2">
+                <h3 className="text-xl xs:text-2xl font-extrabold leading-tight text-slate-900 dark:text-white mb-2">
                   Turning Ideas Into{' '}
                   <span
-                    className="font-bold text-[1.22em] text-[#4ade80] mx-1"
+                    className="font-bold text-[1.22em] text-emerald-600 dark:text-[#39FF14] mx-1"
                     style={{ fontFamily: "'Caveat', cursive" }}
                   >
                     Reality
                   </span>
                 </h3>
-                <p className="text-sm leading-relaxed text-[#94a3b8] mb-3">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-[#94a3b8] mb-3">
                   2+ years learning, 10+ projects, and 100% dedication—building modern web experiences,
                   automating workflows, and turning ideas into real products.
                 </p>
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
-                    <strong className="block text-base font-extrabold text-white">2+</strong>
-                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Years</span>
+                  <div className="px-2.5 py-2 rounded-xl bg-white border border-slate-900/10 shadow-2xs text-center dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none">
+                    <strong className="block text-base font-extrabold text-slate-900 dark:text-white">2+</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">Years</span>
                   </div>
-                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
-                    <strong className="block text-base font-extrabold text-white">10+</strong>
-                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Projects</span>
+                  <div className="px-2.5 py-2 rounded-xl bg-white border border-slate-900/10 shadow-2xs text-center dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none">
+                    <strong className="block text-base font-extrabold text-slate-900 dark:text-white">10+</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">Projects</span>
                   </div>
-                  <div className="px-2.5 py-2 rounded-xl bg-white/3 border border-white/9 text-center">
-                    <strong className="block text-base font-extrabold text-white">100%</strong>
-                    <span className="font-mono text-[0.62rem] uppercase text-[#94a3b8] tracking-wider">Grit</span>
+                  <div className="px-2.5 py-2 rounded-xl bg-white border border-slate-900/10 shadow-2xs text-center dark:bg-[#1A1A1A] dark:border-white/10 dark:shadow-none">
+                    <strong className="block text-base font-extrabold text-slate-900 dark:text-white">100%</strong>
+                    <span className="font-mono text-[0.62rem] uppercase text-slate-500 dark:text-[#94a3b8] tracking-wider">Grit</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {['Next.js', 'React', 'Node.js', 'Supabase', 'Automation'].map((pill) => (
                     <span
                       key={pill}
-                      className="font-mono text-[0.68rem] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/28 text-[#e9d5ff]"
+                      className="font-mono text-[0.68rem] px-2 py-0.5 rounded-full bg-white border border-emerald-600/35 text-emerald-800 dark:bg-[#1A1A1A] dark:border-[#39FF14]/35 dark:text-[#e2ffe0]"
                     >
                       {pill}
                     </span>

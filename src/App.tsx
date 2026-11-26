@@ -18,6 +18,7 @@ import { AboutOriginSection } from './components/AboutOriginSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { PortfolioFooter } from './components/PortfolioFooter';
 import { AllProjectsPage } from './pages/AllProjectsPage';
+import { HeroCelestialOrbRobo } from './components/HeroCelestialOrbRobo';
 
 const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
@@ -82,15 +83,15 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
     setCurtainDone(true);
   }, []);
 
-  // Lock body scroll while curtain is showing, unlock when it's gone
+  // Lock body scroll while curtain is showing on home route, unlock when gone or on projects route
   useEffect(() => {
-    if (!curtainDone) {
+    if (isVisible && !curtainDone) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [curtainDone]);
+  }, [isVisible, curtainDone]);
 
   const showOrbitalOverlay = isHeroComplete || currentFrame >= 28;
 
@@ -221,6 +222,7 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
             revealActive={heroRevealed}
             onConnectClick={() => handleNavigate('contact')}
           />
+          <HeroCelestialOrbRobo className="absolute top-14 right-2 sm:top-2.5 sm:right-5 lg:top-3 lg:right-8 z-30" />
         </div>
       </section>
 

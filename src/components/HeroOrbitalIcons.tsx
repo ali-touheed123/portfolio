@@ -21,35 +21,35 @@ const ORBIT_ITEMS: OrbitItemSpec[] = [
     id: 'react',
     label: 'React.js',
     src: '/assets/tech-icons/reactjs.webp',
-    glow: 'rgba(34, 211, 238, 0.48)',
+    glow: 'rgba(57, 255, 20, 0.45)',
     sizeClass: 'w-11 h-11 sm:w-14 sm:h-14 lg:w-[70px] lg:h-[70px]',
   },
   {
     id: 'nextjs',
     label: 'Next.js',
     src: '/assets/tech-icons/nextjs-square.webp',
-    glow: 'rgba(148, 163, 184, 0.46)',
+    glow: 'rgba(226, 232, 240, 0.36)',
     sizeClass: 'w-11 h-11 sm:w-14 sm:h-14 lg:w-[70px] lg:h-[70px]',
   },
   {
     id: 'nodejs',
     label: 'Node.js',
     src: '/assets/tech-icons/js.webp',
-    glow: 'rgba(74, 222, 128, 0.48)',
+    glow: 'rgba(57, 255, 20, 0.48)',
     sizeClass: 'w-11 h-11 sm:w-14 sm:h-14 lg:w-[70px] lg:h-[70px]',
   },
   {
     id: 'supabase',
     label: 'Supabase',
     src: '/assets/tech-icons/supabase.webp',
-    glow: 'rgba(16, 185, 129, 0.48)',
+    glow: 'rgba(57, 255, 20, 0.45)',
     sizeClass: 'w-11 h-11 sm:w-14 sm:h-14 lg:w-[70px] lg:h-[70px]',
   },
   {
     id: 'github',
     label: 'GitHub',
     src: '/assets/tech-icons/github.webp',
-    glow: 'rgba(168, 85, 247, 0.52)',
+    glow: 'rgba(255, 7, 58, 0.48)',
     sizeClass: 'w-11 h-11 sm:w-14 sm:h-14 lg:w-[70px] lg:h-[70px]',
   },
 ];
@@ -189,14 +189,14 @@ export const HeroOrbitalIcons: React.FC<HeroOrbitalIconsProps> = ({ visible, par
         <svg viewBox="0 0 820 340" fill="none" className="w-[min(92vw,700px)] h-auto overflow-visible">
           <defs>
             <linearGradient id="orbitBackA" x1="0%" y1="40%" x2="100%" y2="60%">
-              <stop offset="0%" stopColor={isDay ? '#0284c7' : '#22d3ee'} stopOpacity="0.9" />
-              <stop offset="50%" stopColor={isDay ? '#7c3aed' : '#a855f7'} stopOpacity="0.85" />
-              <stop offset="100%" stopColor={isDay ? '#059669' : '#34d399'} stopOpacity="0.9" />
+              <stop offset="0%" stopColor={isDay ? '#16a34a' : '#39FF14'} stopOpacity="0.92" />
+              <stop offset="50%" stopColor={isDay ? '#0f172a' : '#ffffff'} stopOpacity="0.82" />
+              <stop offset="100%" stopColor={isDay ? '#e11d48' : '#FF073A'} stopOpacity="0.92" />
             </linearGradient>
             <linearGradient id="orbitBackB" x1="100%" y1="30%" x2="0%" y2="70%">
-              <stop offset="0%" stopColor={isDay ? '#2563eb' : '#60a5fa'} stopOpacity="0.7" />
-              <stop offset="50%" stopColor={isDay ? '#9333ea' : '#e879f9'} stopOpacity="0.8" />
-              <stop offset="100%" stopColor={isDay ? '#0d9488' : '#2dd4bf'} stopOpacity="0.7" />
+              <stop offset="0%" stopColor={isDay ? '#e11d48' : '#FF073A'} stopOpacity="0.75" />
+              <stop offset="50%" stopColor={isDay ? '#475569' : '#a1a1aa'} stopOpacity="0.75" />
+              <stop offset="100%" stopColor={isDay ? '#16a34a' : '#39FF14'} stopOpacity="0.75" />
             </linearGradient>
             <filter id="ringSoftGlow" x="-25%" y="-25%" width="150%" height="150%">
               <feGaussianBlur stdDeviation="5" result="blur" />

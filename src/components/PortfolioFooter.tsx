@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSkyTheme } from '../context/ThemeContext';
 import { useIsInViewport } from '../hooks/useIsInViewport';
+import { FooterCompanionBot } from './FooterCompanionBot';
 
 export const PortfolioFooter: React.FC = () => {
+  const { isDay } = useSkyTheme();
+  const isDayRef = useRef<boolean>(isDay);
+  isDayRef.current = isDay;
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const planeRef = useRef<HTMLDivElement | null>(null);
@@ -68,6 +74,7 @@ export const PortfolioFooter: React.FC = () => {
       const dpr = window.devicePixelRatio || 1;
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
+      const dayMode = isDayRef.current;
       ctx.clearRect(0, 0, w, h);
 
       for (const s of stars) {
@@ -75,7 +82,7 @@ export const PortfolioFooter: React.FC = () => {
         const a = s.alpha * twinkle;
 
         if (s.isSparkle) {
-          ctx.fillStyle = `rgba(145, 245, 230, ${a})`;
+          ctx.fillStyle = dayMode ? `rgba(22, 163, 74, ${a * 0.6})` : `rgba(57, 255, 20, ${a})`;
           ctx.beginPath();
           const len = s.r * 3.8;
           ctx.moveTo(s.x, s.y - len);
@@ -89,7 +96,9 @@ export const PortfolioFooter: React.FC = () => {
           ctx.closePath();
           ctx.fill();
         } else {
-          ctx.fillStyle = `rgba(235, 240, 255, ${a})`;
+          ctx.fillStyle = dayMode
+            ? `rgba(15, 23, 42, ${a * 0.16})`
+            : `rgba(235, 240, 255, ${a})`;
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
           ctx.fill();
@@ -232,7 +241,7 @@ export const PortfolioFooter: React.FC = () => {
   };
 
   return (
-    <footer className="portfolio-footer" id="portfolioFooter">
+    <footer className="portfolio-footer" id="portfolioFooter" data-theme={isDay ? 'day' : 'night'}>
       <style>{`
         /* =========================================
            FOOTER BASE & EXACT PROPORTIONS
@@ -241,13 +250,14 @@ export const PortfolioFooter: React.FC = () => {
           position: relative;
           width: 100%;
           height: 385px;
-          background: radial-gradient(circle at 65% 45%, #121029 0%, #070711 52%, #030307 100%);
+          background: radial-gradient(circle at 65% 45%, #1A1A1A 0%, #090909 48%, #000000 100%);
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
           color: #ffffff;
           user-select: none;
+          transition: background 0.7s ease, color 0.7s ease;
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
@@ -256,9 +266,9 @@ export const PortfolioFooter: React.FC = () => {
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(ellipse 30% 50% at 10% 85%, rgba(255, 85, 0, 0.16), transparent 70%),
-            radial-gradient(ellipse 30% 50% at 75% 45%, rgba(110, 50, 255, 0.18), transparent 70%),
-            radial-gradient(ellipse 25% 40% at 62% 95%, rgba(30, 240, 190, 0.14), transparent 70%);
+            radial-gradient(ellipse 30% 50% at 10% 85%, rgba(255, 7, 58, 0.14), transparent 70%),
+            radial-gradient(ellipse 30% 50% at 75% 45%, rgba(57, 255, 20, 0.11), transparent 70%),
+            radial-gradient(ellipse 25% 40% at 62% 95%, rgba(26, 26, 26, 0.35), transparent 70%);
           pointer-events: none;
           z-index: 1;
         }
@@ -294,6 +304,15 @@ export const PortfolioFooter: React.FC = () => {
           gap: clamp(28px, 4vw, 68px);
         }
 
+        .footer-bot-stage {
+          position: absolute;
+          left: clamp(6px, 2vw, 36px);
+          top: 6px;
+          bottom: 6px;
+          width: clamp(200px, 24.5vw, 370px);
+          z-index: 6;
+        }
+
         /* =========================================
            LEFT CTA COLUMN
         ========================================= */
@@ -325,7 +344,7 @@ export const PortfolioFooter: React.FC = () => {
         .get-in-touch-pill svg {
           width: 13px;
           height: 13px;
-          filter: drop-shadow(0 0 6px rgba(155, 110, 255, 0.8));
+          filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.8));
           animation: sparklePulse 3s ease-in-out infinite;
         }
 
@@ -352,7 +371,7 @@ export const PortfolioFooter: React.FC = () => {
           line-height: 1.18;
           padding-bottom: 0.14em;
           margin-bottom: -0.14em;
-          background: linear-gradient(90deg, #f3e059 0%, #f18c4a 45%, #8d4bf6 100%);
+          background: linear-gradient(90deg, #39FF14 0%, #FF073A 100%);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
@@ -378,15 +397,15 @@ export const PortfolioFooter: React.FC = () => {
           padding: 12px 24px;
           border: none;
           border-radius: 999px;
-          background: linear-gradient(95deg, #e7f64d 0%, #3ef1b4 100%);
-          color: #080d10;
+          background: #39FF14;
+          color: #000000;
           font-family: inherit;
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
           overflow: hidden;
           box-shadow:
-            0 8px 25px -4px rgba(72, 242, 165, 0.42),
+            0 8px 25px -4px rgba(57, 255, 20, 0.45),
             0 0 0 1px rgba(255, 255, 255, 0.25) inset;
           transition:
             transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
@@ -415,8 +434,8 @@ export const PortfolioFooter: React.FC = () => {
         .contact-btn:hover {
           transform: translateY(-3px) scale(1.035);
           box-shadow:
-            0 14px 34px -4px rgba(72, 242, 165, 0.65),
-            0 0 22px rgba(231, 246, 77, 0.45),
+            0 14px 34px -4px rgba(57, 255, 20, 0.65),
+            0 0 22px rgba(57, 255, 20, 0.45),
             0 0 0 1px rgba(255, 255, 255, 0.45) inset;
           filter: brightness(1.04);
         }
@@ -428,7 +447,7 @@ export const PortfolioFooter: React.FC = () => {
         .contact-btn:active {
           transform: translateY(1px) scale(0.955);
           box-shadow:
-            0 4px 12px rgba(72, 242, 165, 0.45),
+            0 4px 12px rgba(57, 255, 20, 0.45),
             0 0 0 2px rgba(255, 255, 255, 0.5) inset;
           transition: transform 0.1s ease;
         }
@@ -479,16 +498,16 @@ export const PortfolioFooter: React.FC = () => {
           border-radius: 24px;
           background: linear-gradient(
             135deg,
-            rgba(22, 25, 48, 0.58) 0%,
-            rgba(12, 14, 30, 0.72) 55%,
-            rgba(86, 36, 175, 0.34) 100%
+            rgba(26, 26, 26, 0.85) 0%,
+            rgba(12, 12, 12, 0.92) 60%,
+            rgba(255, 7, 58, 0.16) 100%
           );
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           transform: rotate(-5.5deg);
           box-shadow:
-            0 24px 55px rgba(0, 0, 0, 0.62),
-            inset 0 0 32px rgba(120, 75, 255, 0.14);
+            0 24px 55px rgba(0, 0, 0, 0.72),
+            inset 0 0 32px rgba(57, 255, 20, 0.08);
           transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
           z-index: 4;
         }
@@ -496,8 +515,8 @@ export const PortfolioFooter: React.FC = () => {
         .contact-card:hover {
           transform: rotate(-3.5deg) translateY(-4px);
           box-shadow:
-            0 30px 65px rgba(0, 0, 0, 0.7),
-            inset 0 0 38px rgba(120, 75, 255, 0.22);
+            0 30px 65px rgba(0, 0, 0, 0.82),
+            inset 0 0 38px rgba(57, 255, 20, 0.14);
         }
 
         .contact-card::before {
@@ -508,11 +527,11 @@ export const PortfolioFooter: React.FC = () => {
           padding: 1.5px;
           background: linear-gradient(
             135deg,
-            rgba(215, 255, 250, 0.72) 0%,
-            rgba(130, 240, 225, 0.22) 22%,
+            rgba(57, 255, 20, 0.72) 0%,
+            rgba(57, 255, 20, 0.2) 22%,
             rgba(255, 255, 255, 0.06) 50%,
-            rgba(130, 240, 225, 0.42) 78%,
-            rgba(170, 120, 255, 0.35) 100%
+            rgba(255, 7, 58, 0.45) 78%,
+            rgba(255, 7, 58, 0.6) 100%
           );
           -webkit-mask:
             linear-gradient(#fff 0 0) content-box,
@@ -623,7 +642,7 @@ export const PortfolioFooter: React.FC = () => {
 
         @keyframes iconLaunchPop {
           0% { transform: scale(0.9); }
-          45% { transform: scale(1.22); box-shadow: 0 0 24px rgba(255, 215, 90, 0.85); }
+          45% { transform: scale(1.22); box-shadow: 0 0 24px rgba(57, 255, 20, 0.85); }
           100% { transform: scale(1); }
         }
 
@@ -651,8 +670,8 @@ export const PortfolioFooter: React.FC = () => {
         }
 
         .dashed-trail.active-trail {
-          stroke: rgba(255, 224, 102, 0.88);
-          filter: drop-shadow(0 0 6px rgba(255, 200, 70, 0.75));
+          stroke: rgba(57, 255, 20, 0.92);
+          filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.75));
           animation: dashFlow 0.55s linear infinite;
         }
 
@@ -725,7 +744,7 @@ export const PortfolioFooter: React.FC = () => {
         .plane-svg {
           width: 100%;
           height: 100%;
-          filter: drop-shadow(0 10px 20px rgba(255, 165, 45, 0.45));
+          filter: drop-shadow(0 10px 20px rgba(57, 255, 20, 0.4));
         }
 
         .flight-spark {
@@ -733,8 +752,8 @@ export const PortfolioFooter: React.FC = () => {
           width: 5px;
           height: 5px;
           border-radius: 50%;
-          background: #ffe766;
-          box-shadow: 0 0 10px #ffaa2b;
+          background: #39FF14;
+          box-shadow: 0 0 10px #39FF14;
           pointer-events: none;
           z-index: 9;
           animation: sparkFade 0.7s ease-out forwards;
@@ -753,15 +772,15 @@ export const PortfolioFooter: React.FC = () => {
           bottom: 24px;
           left: 50%;
           transform: translateX(-50%) translateY(20px);
-          background: rgba(18, 22, 42, 0.92);
-          border: 1px solid rgba(72, 242, 165, 0.45);
+          background: rgba(26, 26, 26, 0.94);
+          border: 1px solid rgba(57, 255, 20, 0.45);
           color: #e9fff5;
           padding: 10px 18px;
           border-radius: 999px;
           font-size: 13.5px;
           font-weight: 600;
           backdrop-filter: blur(12px);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
           opacity: 0;
           pointer-events: none;
           transition: opacity 0.25s ease, transform 0.25s ease;
@@ -776,7 +795,7 @@ export const PortfolioFooter: React.FC = () => {
         .contact-modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(3, 4, 12, 0.75);
+          background: rgba(0, 0, 0, 0.8);
           backdrop-filter: blur(8px);
           display: grid;
           place-items: center;
@@ -795,12 +814,12 @@ export const PortfolioFooter: React.FC = () => {
         .contact-modal {
           width: 100%;
           max-width: 420px;
-          background: linear-gradient(145deg, rgba(22, 25, 48, 0.92), rgba(11, 13, 28, 0.96));
-          border: 1px solid rgba(255, 255, 255, 0.16);
+          background: linear-gradient(145deg, rgba(26, 26, 26, 0.96), rgba(10, 10, 10, 0.98));
+          border: 1px solid rgba(57, 255, 20, 0.25);
           border-radius: 24px;
           padding: 28px;
           color: #fff;
-          box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75);
+          box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85);
           transform: scale(0.92) translateY(12px);
           transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
@@ -819,7 +838,7 @@ export const PortfolioFooter: React.FC = () => {
         .modal-header h3 {
           font-size: 20px;
           font-weight: 700;
-          background: linear-gradient(90deg, #f3e059, #3ef1b4);
+          background: linear-gradient(90deg, #39FF14, #FF073A);
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
@@ -864,7 +883,7 @@ export const PortfolioFooter: React.FC = () => {
 
         .modal-form input:focus,
         .modal-form textarea:focus {
-          border-color: #3ef1b4;
+          border-color: #39FF14;
         }
 
         .modal-submit {
@@ -872,8 +891,8 @@ export const PortfolioFooter: React.FC = () => {
           padding: 12px;
           border-radius: 999px;
           border: none;
-          background: linear-gradient(95deg, #e7f64d, #3ef1b4);
-          color: #080d10;
+          background: #39FF14;
+          color: #000000;
           font-family: inherit;
           font-weight: 700;
           font-size: 14.5px;
@@ -883,7 +902,7 @@ export const PortfolioFooter: React.FC = () => {
 
         .modal-submit:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(62, 241, 180, 0.4);
+          box-shadow: 0 8px 20px rgba(57, 255, 20, 0.45);
         }
 
         /* =========================================
@@ -892,6 +911,10 @@ export const PortfolioFooter: React.FC = () => {
         @media (max-width: 1080px) {
           .footer-inner {
             padding: 0 95px 0 215px;
+          }
+          .footer-bot-stage {
+            left: 8px;
+            width: 202px;
           }
           .contact-card {
             width: 285px;
@@ -913,13 +936,22 @@ export const PortfolioFooter: React.FC = () => {
           .portfolio-footer {
             height: auto;
             min-height: 385px;
-            padding: 54px 0 68px;
+            padding: 40px 0 68px;
           }
           .footer-inner {
             padding: 0 28px;
             flex-direction: column;
             text-align: center;
-            gap: 42px;
+            gap: 36px;
+          }
+          .footer-bot-stage {
+            position: relative;
+            left: auto;
+            top: auto;
+            bottom: auto;
+            width: 248px;
+            height: 235px;
+            margin: 0 auto -10px;
           }
           .footer-cta {
             align-items: center;
@@ -934,6 +966,169 @@ export const PortfolioFooter: React.FC = () => {
             display: none;
           }
         }
+
+        /* =========================================
+           DAY MODE OVERRIDES
+        ========================================= */
+        .portfolio-footer[data-theme="day"] {
+          background: linear-gradient(180deg, #F4F8FD 0%, #EAF3FD 55%, #E0EDFB 100%);
+          color: #0F172A;
+        }
+
+        .portfolio-footer[data-theme="day"]::before {
+          background:
+            radial-gradient(ellipse 32% 52% at 10% 85%, rgba(225, 29, 72, 0.08), transparent 70%),
+            radial-gradient(ellipse 32% 52% at 75% 45%, rgba(22, 163, 74, 0.09), transparent 70%),
+            radial-gradient(ellipse 25% 40% at 62% 95%, rgba(148, 163, 184, 0.16), transparent 70%);
+        }
+
+        .portfolio-footer[data-theme="day"] .footer-heading .white-line {
+          color: #0F172A;
+        }
+
+        .portfolio-footer[data-theme="day"] .footer-heading .gradient-line {
+          background: linear-gradient(90deg, #16A34A 0%, #E11D48 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+
+        .portfolio-footer[data-theme="day"] .footer-subtitle {
+          color: #475569;
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-btn {
+          background: #16A34A;
+          color: #FFFFFF;
+          box-shadow:
+            0 10px 26px -4px rgba(22, 163, 74, 0.42),
+            0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-btn:hover {
+          box-shadow:
+            0 14px 34px -4px rgba(22, 163, 74, 0.55),
+            0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-card {
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.96) 0%,
+            rgba(248, 251, 255, 0.94) 65%,
+            rgba(255, 241, 245, 0.92) 100%
+          );
+          box-shadow:
+            0 24px 55px rgba(15, 23, 42, 0.14),
+            inset 0 0 24px rgba(22, 163, 74, 0.05);
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-card:hover {
+          box-shadow:
+            0 28px 62px rgba(15, 23, 42, 0.18),
+            inset 0 0 28px rgba(22, 163, 74, 0.09);
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-card::before {
+          background: linear-gradient(
+            135deg,
+            rgba(22, 163, 74, 0.65) 0%,
+            rgba(22, 163, 74, 0.18) 25%,
+            rgba(15, 23, 42, 0.06) 52%,
+            rgba(225, 29, 72, 0.35) 78%,
+            rgba(225, 29, 72, 0.52) 100%
+          );
+        }
+
+        .portfolio-footer[data-theme="day"] .info-item {
+          color: #1E293B;
+        }
+
+        .portfolio-footer[data-theme="day"] .info-item:hover {
+          background: rgba(15, 23, 42, 0.05);
+          color: #0F172A;
+        }
+
+        .portfolio-footer[data-theme="day"] .social-btn {
+          background: rgba(15, 23, 42, 0.05);
+          border-color: rgba(15, 23, 42, 0.12);
+          color: #0F172A;
+        }
+
+        .portfolio-footer[data-theme="day"] .social-btn:hover {
+          background: rgba(22, 163, 74, 0.12);
+          border-color: rgba(22, 163, 74, 0.45);
+        }
+
+        .portfolio-footer[data-theme="day"] .dashed-trail {
+          stroke: rgba(15, 23, 42, 0.22);
+        }
+
+        .portfolio-footer[data-theme="day"] .dashed-trail.active-trail {
+          stroke: rgba(22, 163, 74, 0.9);
+          filter: drop-shadow(0 0 6px rgba(22, 163, 74, 0.55));
+        }
+
+        .portfolio-footer[data-theme="day"] .plane-svg {
+          filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.18));
+        }
+
+        .portfolio-footer[data-theme="day"] .flight-spark {
+          background: #16A34A;
+          box-shadow: 0 0 8px #16A34A;
+        }
+
+        .portfolio-footer[data-theme="day"] .mini-toast {
+          background: rgba(255, 255, 255, 0.96);
+          border-color: rgba(22, 163, 74, 0.45);
+          color: #0F172A;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-modal-backdrop {
+          background: rgba(15, 23, 42, 0.45);
+        }
+
+        .portfolio-footer[data-theme="day"] .contact-modal {
+          background: linear-gradient(145deg, #FFFFFF, #F8FBFF);
+          border-color: rgba(15, 23, 42, 0.12);
+          color: #0F172A;
+          box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-header h3 {
+          background: linear-gradient(90deg, #16A34A, #E11D48);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-close {
+          background: rgba(15, 23, 42, 0.06);
+          color: #334155;
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-close:hover {
+          background: rgba(225, 29, 72, 0.12);
+          color: #E11D48;
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-form input,
+        .portfolio-footer[data-theme="day"] .modal-form textarea {
+          border-color: rgba(15, 23, 42, 0.15);
+          background: #F8FAFC;
+          color: #0F172A;
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-form input:focus,
+        .portfolio-footer[data-theme="day"] .modal-form textarea:focus {
+          border-color: #16A34A;
+        }
+
+        .portfolio-footer[data-theme="day"] .modal-submit {
+          background: #16A34A;
+          color: #FFFFFF;
+        }
       `}</style>
 
       {/* Starry Sky Canvas */}
@@ -943,49 +1138,54 @@ export const PortfolioFooter: React.FC = () => {
       <svg className="footer-waves" viewBox="0 0 1440 385" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="wavePurpleLeft" x1="0%" y1="30%" x2="80%" y2="100%">
-            <stop offset="0%" stopColor="#6b1eff" />
-            <stop offset="55%" stopColor="#8b2aff" />
-            <stop offset="100%" stopColor="#5308d4" />
+            <stop offset="0%" stopColor={isDay ? '#DBE8F7' : '#1A1A1A'} />
+            <stop offset="55%" stopColor={isDay ? '#CFE0F5' : '#262626'} />
+            <stop offset="100%" stopColor={isDay ? '#C5D8F0' : '#0d0d0d'} />
           </linearGradient>
 
           <linearGradient id="waveOrangeLeft" x1="0%" y1="0%" x2="85%" y2="95%">
-            <stop offset="0%" stopColor="#ffaa00" />
-            <stop offset="38%" stopColor="#ff5e0a" />
-            <stop offset="78%" stopColor="#ff2b00" />
-            <stop offset="100%" stopColor="#d41414" />
+            <stop offset="0%" stopColor={isDay ? '#E11D48' : '#FF073A'} />
+            <stop offset="48%" stopColor={isDay ? '#BE123C' : '#d9042f'} />
+            <stop offset="100%" stopColor={isDay ? '#9F1239' : '#8c001c'} />
           </linearGradient>
 
           <linearGradient id="waveMintRight" x1="0%" y1="80%" x2="100%" y2="20%">
-            <stop offset="0%" stopColor="#19d49e" />
-            <stop offset="50%" stopColor="#37f5c5" />
-            <stop offset="100%" stopColor="#1598b5" />
+            <stop offset="0%" stopColor={isDay ? '#16A34A' : '#27b30e'} />
+            <stop offset="50%" stopColor={isDay ? '#22C55E' : '#39FF14'} />
+            <stop offset="100%" stopColor={isDay ? '#15803D' : '#1c8a08'} />
           </linearGradient>
 
           <linearGradient id="wavePurpleRight" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3818d9" />
-            <stop offset="55%" stopColor="#6a2bff" />
-            <stop offset="100%" stopColor="#9e3dff" />
+            <stop offset="0%" stopColor={isDay ? '#C5D8F0' : '#0d0d0d'} />
+            <stop offset="55%" stopColor={isDay ? '#D3E3F7' : '#1A1A1A'} />
+            <stop offset="100%" stopColor={isDay ? '#E0EDFA' : '#2a2a2a'} />
           </linearGradient>
 
           <filter id="waveSoftShadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="-6" stdDeviation="12" floodColor="#000000" floodOpacity="0.35" />
+            <feDropShadow
+              dx="0"
+              dy="-6"
+              stdDeviation="12"
+              floodColor={isDay ? '#0F172A' : '#000000'}
+              floodOpacity={isDay ? 0.1 : 0.35}
+            />
           </filter>
         </defs>
 
-        {/* Bottom-left deep purple base wave */}
+        {/* Bottom-left base wave */}
         <path d="M -20 330 C 100 322, 230 338, 375 390 L -20 390 Z" fill="url(#wavePurpleLeft)" />
 
-        {/* Bottom-left orange fluid wave kept strictly on the left 0–31% */}
+        {/* Bottom-left crimson fluid wave kept strictly on the left 0–31% */}
         <path
           d="M -20 185 C 105 175, 225 225, 345 318 C 385 350, 415 375, 445 390 L 350 390 C 230 342, 105 332, -20 338 Z"
           fill="url(#waveOrangeLeft)"
           filter="url(#waveSoftShadow)"
         />
 
-        {/* Bottom-right mint-cyan smooth wave */}
+        {/* Bottom-right emerald smooth wave */}
         <path d="M 740 390 C 805 345, 895 335, 995 362 C 1070 382, 1140 388, 1210 390 Z" fill="url(#waveMintRight)" />
 
-        {/* Bottom-right purple-violet sweeping wave */}
+        {/* Bottom-right sweeping wave */}
         <path
           d="M 970 390 C 1105 380, 1255 340, 1460 225 L 1460 390 Z"
           fill="url(#wavePurpleRight)"
@@ -995,14 +1195,17 @@ export const PortfolioFooter: React.FC = () => {
 
       {/* Main Content */}
       <div className="footer-inner">
+        {/* Interactive 3D Companion Bot in Reserved Left Stage */}
+        <FooterCompanionBot className="footer-bot-stage" />
+
         {/* Left Column */}
         <div className="footer-cta">
           <div className="flex flex-wrap items-center gap-3.5 mb-5">
             <span
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/22 bg-white/5 text-xl text-white shadow-[0_0_20px_rgba(74,222,128,0.12)]"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-900/12 bg-white/90 text-xl text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.08)] dark:border-white/22 dark:bg-[#1A1A1A]/75 dark:text-white dark:shadow-[0_0_20px_rgba(57,255,20,0.14)] transition-colors duration-700"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
-              <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_10px_#4ade80] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(22,163,74,0.55)] dark:bg-[#39FF14] dark:shadow-[0_0_10px_#39FF14] animate-pulse" />
               Get In Touch
             </span>
           </div>
@@ -1056,14 +1259,14 @@ export const PortfolioFooter: React.FC = () => {
                   <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
                     <defs>
                       <linearGradient id="mailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#c9f756" />
-                        <stop offset="100%" stopColor="#3ae8b0" />
+                        <stop offset="0%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
+                        <stop offset="100%" stopColor={isDay ? '#15803D' : '#27b30e'} />
                       </linearGradient>
                     </defs>
                     <rect x="2" y="4" width="20" height="16" rx="3.5" fill="url(#mailGrad)" />
                     <path
                       d="M3.5 6.5L12 13L20.5 6.5"
-                      stroke="#0c1424"
+                      stroke={isDay ? '#FFFFFF' : '#000000'}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1078,7 +1281,7 @@ export const PortfolioFooter: React.FC = () => {
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                     <path
                       d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"
-                      fill="#5ef2a8"
+                      fill={isDay ? '#16A34A' : '#39FF14'}
                     />
                   </svg>
                 </span>
@@ -1090,7 +1293,7 @@ export const PortfolioFooter: React.FC = () => {
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                     <path
                       d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
-                      fill="#5ef2a8"
+                      fill={isDay ? '#E11D48' : '#FF073A'}
                     />
                   </svg>
                 </span>
@@ -1177,21 +1380,21 @@ export const PortfolioFooter: React.FC = () => {
             <svg className="plane-svg" viewBox="0 0 120 105" fill="none">
               <defs>
                 <linearGradient id="wingTop" x1="0%" y1="30%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#fff49c" />
-                  <stop offset="55%" stopColor="#ffd55a" />
-                  <stop offset="100%" stopColor="#ffb13b" />
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="55%" stopColor={isDay ? '#bbf7d0' : '#b8ffa6'} />
+                  <stop offset="100%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
                 </linearGradient>
                 <linearGradient id="wingBottom" x1="20%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffe06b" />
-                  <stop offset="100%" stopColor="#ff9328" />
+                  <stop offset="0%" stopColor={isDay ? '#22C55E' : '#39FF14'} />
+                  <stop offset="100%" stopColor={isDay ? '#15803D' : '#1ea807'} />
                 </linearGradient>
                 <linearGradient id="wingFoldDark" x1="0%" y1="0%" x2="100%" y2="80%">
-                  <stop offset="0%" stopColor="#f57c1f" />
-                  <stop offset="100%" stopColor="#d44d0e" />
+                  <stop offset="0%" stopColor={isDay ? '#E11D48' : '#FF073A'} />
+                  <stop offset="100%" stopColor={isDay ? '#9F1239' : '#a30021'} />
                 </linearGradient>
                 <linearGradient id="wingFoldMid" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#ff9c2a" />
-                  <stop offset="100%" stopColor="#ffc94d" />
+                  <stop offset="0%" stopColor={isDay ? '#334155' : '#1A1A1A'} />
+                  <stop offset="100%" stopColor={isDay ? '#16A34A' : '#39FF14'} />
                 </linearGradient>
               </defs>
 

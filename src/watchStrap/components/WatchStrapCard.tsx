@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, MotionValue, useTransform } from 'motion/react';
+import { useSkyTheme } from '../../context/ThemeContext';
 import { Project } from '../types/project';
 
 export interface PixelStrapGeometry {
@@ -126,6 +127,7 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
   onSelect,
   onCenterHoverChange,
 }) => {
+  const { isDay } = useSkyTheme();
   const [imageError, setImageError] = useState(false);
 
   const offset = useTransform(smoothPosition, (pos) => virtualIndex - pos);
@@ -184,12 +186,12 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
   let filterStyle = 'brightness(1) saturate(1)';
   if (isActive) {
     filterStyle = isCenterHovered
-      ? 'brightness(1.06) saturate(1.05) contrast(1.02)'
+      ? 'brightness(1.04) saturate(1.04) contrast(1.02)'
       : 'brightness(1) saturate(1)';
   } else if (isOtherWhenCenterHovered) {
-    filterStyle = 'brightness(0.4) saturate(0.25)';
+    filterStyle = isDay ? 'brightness(0.82) saturate(0.55)' : 'brightness(0.4) saturate(0.25)';
   } else {
-    filterStyle = 'brightness(0.64) saturate(0.58)';
+    filterStyle = isDay ? 'brightness(0.9) saturate(0.75)' : 'brightness(0.64) saturate(0.58)';
   }
 
   const shouldStagger = entranceDelay !== null && !reducedMotion;
@@ -249,15 +251,23 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
               ? `Open case study for ${project.title}`
               : `Select project ${project.title}`
           }
-          className={`group relative block h-full w-full rounded-[14px] overflow-hidden bg-[#09090e] text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507] transition-[transform,filter,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${hoverScaleClass}`}
+          className={`group relative block h-full w-full rounded-[14px] overflow-hidden bg-white dark:bg-[#1A1A1A] text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/80 dark:focus-visible:ring-[#39FF14]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F4F8FD] dark:focus-visible:ring-offset-[#000000] transition-[transform,filter,box-shadow,border-color,background-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${hoverScaleClass}`}
           style={{
             filter: filterStyle,
-            boxShadow: isActive
-              ? '0 28px 60px -15px rgba(0, 0, 0, 0.95), 0 8px 24px -8px rgba(0, 0, 0, 0.8)'
-              : '0 14px 32px -12px rgba(0, 0, 0, 0.92)',
-            border: isActive
-              ? '1px solid rgba(255, 255, 255, 0.2)'
-              : '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: isDay
+              ? isActive
+                ? '0 26px 52px -14px rgba(15, 23, 42, 0.22), 0 8px 22px -8px rgba(15, 23, 42, 0.12)'
+                : '0 14px 30px -12px rgba(15, 23, 42, 0.16)'
+              : isActive
+                ? '0 28px 60px -15px rgba(0, 0, 0, 0.95), 0 8px 24px -8px rgba(0, 0, 0, 0.8)'
+                : '0 14px 32px -12px rgba(0, 0, 0, 0.92)',
+            border: isDay
+              ? isActive
+                ? '1px solid rgba(22, 163, 74, 0.45)'
+                : '1px solid rgba(15, 23, 42, 0.12)'
+              : isActive
+                ? '1px solid rgba(57, 255, 20, 0.35)'
+                : '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           {/* Pure Project Screenshot */}
@@ -269,11 +279,11 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
               draggable={false}
               referrerPolicy="no-referrer"
               onError={() => setImageError(true)}
-              className="h-full w-full object-cover object-top bg-[#09090e] pointer-events-none"
+              className="h-full w-full object-cover object-top bg-white dark:bg-[#1A1A1A] pointer-events-none"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-zinc-900 via-[#0e0e14] to-zinc-950 p-6">
-              <span className="font-display text-base font-semibold text-zinc-300">
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-white via-slate-50 to-slate-100 dark:from-[#1A1A1A] dark:via-[#0d0d0d] dark:to-[#000000] p-6">
+              <span className="font-display text-base font-semibold text-slate-800 dark:text-zinc-300">
                 {project.title}
               </span>
             </div>
@@ -283,16 +293,20 @@ export const WatchStrapCard: React.FC<WatchStrapCardProps> = ({
           <div
             className="pointer-events-none absolute inset-0 rounded-[14px]"
             style={{
-              boxShadow: isActive
-                ? 'inset 0 1px 0 0 rgba(255, 255, 255, 0.22), inset -2px 0 0 0 rgba(255, 255, 255, 0.12)'
-                : 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
+              boxShadow: isDay
+                ? isActive
+                  ? 'inset 0 1px 0 0 rgba(255, 255, 255, 0.8), inset -2px 0 0 0 rgba(22, 163, 74, 0.18)'
+                  : 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5)'
+                : isActive
+                  ? 'inset 0 1px 0 0 rgba(255, 255, 255, 0.22), inset -2px 0 0 0 rgba(57, 255, 20, 0.14)'
+                  : 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
             }}
             aria-hidden="true"
           />
 
-          {/* Continuous darkening veil for receding cards */}
+          {/* Continuous softening veil for receding cards */}
           <motion.div
-            className="pointer-events-none absolute inset-0 bg-[#050507]"
+            className="pointer-events-none absolute inset-0 bg-[#DDE7F4] dark:bg-[#000000] transition-colors duration-700"
             style={{ opacity: dimOpacity }}
             aria-hidden="true"
           />

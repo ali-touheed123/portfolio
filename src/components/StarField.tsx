@@ -20,10 +20,10 @@ interface Star {
 }
 
 const STAR_PALETTE = [
-  { color: '#ffffff', glow: 'rgba(255, 255, 255, 0.9)', weight: 45 },
-  { color: '#f3e8ff', glow: 'rgba(192, 132, 252, 0.85)', weight: 25 },
-  { color: '#e0f2fe', glow: 'rgba(56, 189, 248, 0.85)', weight: 20 },
-  { color: '#fef9c3', glow: 'rgba(250, 204, 21, 0.75)', weight: 10 },
+  { color: '#ffffff', glow: 'rgba(255, 255, 255, 0.9)', weight: 48 },
+  { color: '#d9ffd1', glow: 'rgba(57, 255, 20, 0.85)', weight: 24 },
+  { color: '#ffd6de', glow: 'rgba(255, 7, 58, 0.85)', weight: 16 },
+  { color: '#e4e4e7', glow: 'rgba(212, 212, 216, 0.72)', weight: 12 },
 ];
 
 function pickPaletteIdx(): number {

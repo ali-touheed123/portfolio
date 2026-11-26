@@ -98,7 +98,7 @@ function createPopupTexture(text: string, colorHex: string): THREE.CanvasTexture
   ctx.textBaseline = 'middle';
   ctx.shadowColor = colorHex;
   ctx.shadowBlur = 12;
-  ctx.fillStyle = '#e0f2fe';
+  ctx.fillStyle = '#f4f4f5';
   ctx.fillText(text, c.width / 2, c.height / 2);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -111,20 +111,20 @@ function createPaddleDualTexture(): THREE.CanvasTexture {
   c.height = 128;
   const ctx = c.getContext('2d')!;
   const grad = ctx.createLinearGradient(0, 0, 512, 0);
-  grad.addColorStop(0, '#0c354c');
-  grad.addColorStop(0.2, '#0f2744');
-  grad.addColorStop(0.5, '#0b162d');
-  grad.addColorStop(0.8, '#171a3b');
-  grad.addColorStop(1, '#261742');
+  grad.addColorStop(0, '#0f2909');
+  grad.addColorStop(0.2, '#1a1a1a');
+  grad.addColorStop(0.5, '#0a0a0a');
+  grad.addColorStop(0.8, '#1a1a1a');
+  grad.addColorStop(1, '#2b0912');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 512, 128);
 
   // Subtle brushed metal micro-rib banding for realistic inner core depth
   const vGrad = ctx.createLinearGradient(0, 0, 0, 128);
-  vGrad.addColorStop(0, 'rgba(255,255,255,0.16)');
-  vGrad.addColorStop(0.28, 'rgba(148,163,184,0.06)');
-  vGrad.addColorStop(0.55, 'rgba(2,6,23,0.34)');
-  vGrad.addColorStop(1, 'rgba(2,6,23,0.72)');
+  vGrad.addColorStop(0, 'rgba(255,255,255,0.14)');
+  vGrad.addColorStop(0.28, 'rgba(161,161,170,0.06)');
+  vGrad.addColorStop(0.55, 'rgba(0,0,0,0.4)');
+  vGrad.addColorStop(1, 'rgba(0,0,0,0.8)');
   ctx.fillStyle = vGrad;
   ctx.fillRect(0, 0, 512, 128);
 
@@ -148,15 +148,15 @@ function createPaddleTrackTexture(): THREE.CanvasTexture {
 
   ctx.beginPath();
   ctx.roundRect(padX, padY, w, h, r);
-  ctx.fillStyle = 'rgba(7, 10, 25, 0.56)';
+  ctx.fillStyle = 'rgba(10, 10, 10, 0.72)';
   ctx.fill();
   ctx.lineWidth = 2.2;
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
+  ctx.strokeStyle = 'rgba(161, 161, 170, 0.25)';
   ctx.stroke();
 
   // Left dashed arrow: < - - - - - - - - -
   const midY = c.height / 2;
-  const arrowStroke = 'rgba(148, 163, 184, 0.52)';
+  const arrowStroke = 'rgba(161, 161, 170, 0.48)';
   ctx.strokeStyle = arrowStroke;
   ctx.lineWidth = 2.5;
   ctx.setLineDash([8, 8]);
@@ -275,11 +275,11 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const ambientLight = new THREE.AmbientLight(0xcbd5e1, 0.21);
     const keyLight = new THREE.DirectionalLight(0xf8fafc, 0.62);
     keyLight.position.set(2.5, 3.8, 9.5);
-    const rimLightCyan = new THREE.DirectionalLight(0x22d3ee, 0.26);
+    const rimLightCyan = new THREE.DirectionalLight(0x39ff14, 0.24);
     rimLightCyan.position.set(-7.0, 2.0, 4.5);
-    const rimLightPurple = new THREE.DirectionalLight(0xa855f7, 0.22);
+    const rimLightPurple = new THREE.DirectionalLight(0xff073a, 0.22);
     rimLightPurple.position.set(7.0, -3.0, 4.5);
-    const orbPointLight = new THREE.PointLight(0x38bdf8, 1.0, 3.8, 2.0);
+    const orbPointLight = new THREE.PointLight(0x39ff14, 1.0, 3.8, 2.0);
     scene.add(ambientLight, keyLight, rimLightCyan, rimLightPurple, orbPointLight);
 
     // Minimal UnrealBloomPass so only intense orb/edge accents softly glow
@@ -293,8 +293,8 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
       composer.addPass(new OutputPass());
     }
 
-    const cyanGlowTex = createSoftGlowTexture('rgba(224,242,254,0.85)', 'rgba(34,211,238,0.34)');
-    const sparkTex = createSoftGlowTexture('rgba(255,255,255,0.95)', 'rgba(56,189,248,0.5)');
+    const cyanGlowTex = createSoftGlowTexture('rgba(244,244,245,0.85)', 'rgba(57,255,20,0.34)');
+    const sparkTex = createSoftGlowTexture('rgba(255,255,255,0.95)', 'rgba(57,255,20,0.5)');
 
     const bricksGroup = new THREE.Group();
     const capsulesGroup = new THREE.Group();
@@ -311,7 +311,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     // Subtle wall bounce flash strips for responsive physical feedback
     const createWallStrip = (w: number, h: number, x: number, y: number) => {
       const mat = new THREE.MeshBasicMaterial({
-        color: 0x38bdf8,
+        color: 0x39ff14,
         transparent: true,
         opacity: 0,
         blending: THREE.AdditiveBlending,
@@ -334,7 +334,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const paddleDualTex = createPaddleDualTexture();
     const paddleCoreMat = new THREE.MeshStandardMaterial({
       map: paddleDualTex,
-      emissive: new THREE.Color('#0c4a6e'),
+      emissive: new THREE.Color('#1A1A1A'),
       emissiveIntensity: 0.14,
       roughness: 0.26,
       metalness: 0.78,
@@ -349,8 +349,8 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const paddleSpineGeo = new THREE.CapsuleGeometry(0.036, BASE_PADDLE_WIDTH - 0.68, 8, 16);
     paddleSpineGeo.rotateZ(Math.PI / 2);
     const paddleSpineMat = new THREE.MeshStandardMaterial({
-      color: 0x1e3a5f,
-      emissive: 0x0ea5e9,
+      color: 0x1a1a1a,
+      emissive: 0x39ff14,
       emissiveIntensity: 0.22,
       roughness: 0.2,
       metalness: 0.85,
@@ -364,7 +364,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const paddleShellGeo = new THREE.CapsuleGeometry(0.205, BASE_PADDLE_WIDTH - 0.42, 16, 36);
     paddleShellGeo.rotateZ(Math.PI / 2);
     const paddleShellMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0f2744,
+      color: 0x1a1a1a,
       transparent: true,
       opacity: 0.36,
       roughness: 0.06,
@@ -380,7 +380,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
 
     // Brushed metallic shoulder bezels + subtle recessed neon accent seams
     const paddleBezelMat = new THREE.MeshStandardMaterial({
-      color: 0x64748b,
+      color: 0x52525b,
       roughness: 0.22,
       metalness: 0.9,
       envMapIntensity: 1.2,
@@ -394,16 +394,16 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     paddleGroup.add(paddleBezelL, paddleBezelR);
 
     const paddleRingMatL = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      emissive: 0x0ea5e9,
+      color: 0x39ff14,
+      emissive: 0x39ff14,
       emissiveIntensity: 0.55,
       roughness: 0.2,
       metalness: 0.4,
     });
     const paddleRingMatR = new THREE.MeshStandardMaterial({
-      color: 0xa78bfa,
-      emissive: 0x7c3aed,
-      emissiveIntensity: 0.45,
+      color: 0xff073a,
+      emissive: 0xff073a,
+      emissiveIntensity: 0.5,
       roughness: 0.2,
       metalness: 0.4,
     });
@@ -419,7 +419,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const paddleGlowSprite = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: cyanGlowTex,
-        color: 0x0ea5e9,
+        color: 0x39ff14,
         transparent: true,
         opacity: 0.16,
         blending: THREE.AdditiveBlending,
@@ -446,9 +446,9 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     // Interactive launch aim guide dots in READY state (extends clearly toward target bricks)
     const aimDotsGroup = new THREE.Group();
     const aimDotMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
+      color: 0x39ff14,
       transparent: true,
-      opacity: 0.62,
+      opacity: 0.68,
     });
     const aimDots: THREE.Mesh[] = [];
     for (let i = 0; i < 9; i++) {
@@ -461,8 +461,8 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     // Refined Glowing Neon Energy Orb + Sleek Tapered Ribbon Trail
     const orbGroup = new THREE.Group();
     const orbCoreMat = new THREE.MeshStandardMaterial({
-      color: 0xe0f2fe,
-      emissive: 0x38bdf8,
+      color: 0xf4f4f5,
+      emissive: 0x39ff14,
       emissiveIntensity: 1.2,
       roughness: 0.15,
     });
@@ -470,7 +470,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
     const orbHaloSprite = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: cyanGlowTex,
-        color: 0x22d3ee,
+        color: 0x39ff14,
         transparent: true,
         opacity: 0.58,
         blending: THREE.AdditiveBlending,
@@ -703,7 +703,7 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
         onCapsuleCaught: (cap, isDocker) => {
           const def = SKILL_REGISTRY[cap.skillId];
           arcadeSfx.playCapsuleCatch(isDocker);
-          spawnSparks(cap.x, PADDLE_Y + 0.22, isDocker ? '#38bdf8' : def.accentHex, isDocker ? 16 : 9);
+          spawnSparks(cap.x, PADDLE_Y + 0.22, isDocker ? '#39FF14' : def.accentHex, isDocker ? 16 : 9);
           const vis = capsuleVisuals.get(cap.uid);
           if (vis) {
             capsulesGroup.remove(vis);
@@ -720,11 +720,11 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
         },
         onPaddleBounce: (x, y, dockerActive) => {
           arcadeSfx.playPaddleHit(dockerActive);
-          spawnSparks(x, y, dockerActive ? '#38bdf8' : '#22d3ee', dockerActive ? 10 : 6);
+          spawnSparks(x, y, dockerActive ? '#39FF14' : '#FF073A', dockerActive ? 10 : 6);
         },
         onWallBounce: (x, y) => {
           arcadeSfx.playWallHit();
-          spawnSparks(x, y, '#67e8f9', 4);
+          spawnSparks(x, y, '#39FF14', 4);
           if (x < -ARENA_HALF_W + 0.35) wallLeft.flash = 0.65;
           else if (x > ARENA_HALF_W - 0.35) wallRight.flash = 0.65;
           if (y > ARENA_HALF_H - 0.35) wallTop.flash = 0.65;
@@ -870,11 +870,11 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
         trailCorePositions[vIdx + 4] = pt.y - py * halfCore;
         trailCorePositions[vIdx + 5] = 0.095;
 
-        // Smooth cyan-to-violet outer beam gradient
+        // Smooth Neon Lime to Neon Red outer beam gradient
         const fade = Math.pow(1 - frac, 1.35);
-        const r = THREE.MathUtils.lerp(0.26, 0.62, frac) * fade;
-        const g = THREE.MathUtils.lerp(0.86, 0.34, frac) * fade;
-        const b = THREE.MathUtils.lerp(0.98, 0.94, frac) * fade;
+        const r = THREE.MathUtils.lerp(0.22, 1.0, frac) * fade;
+        const g = THREE.MathUtils.lerp(1.0, 0.03, frac) * fade;
+        const b = THREE.MathUtils.lerp(0.08, 0.23, frac) * fade;
         trailColors[vIdx] = r;
         trailColors[vIdx + 1] = g;
         trailColors[vIdx + 2] = b;
@@ -882,11 +882,11 @@ export function ThreeArenaCanvas({ engineRef, onHudSync }: ThreeArenaCanvasProps
         trailColors[vIdx + 4] = g;
         trailColors[vIdx + 5] = b;
 
-        // Crisp ice-white-cyan inner beam filament
+        // Crisp white-lime inner beam filament
         const coreFade = Math.pow(1 - frac, 1.05);
-        const cr = THREE.MathUtils.lerp(0.85, 0.3, frac) * coreFade;
-        const cg = THREE.MathUtils.lerp(0.98, 0.78, frac) * coreFade;
-        const cb = 1.0 * coreFade;
+        const cr = THREE.MathUtils.lerp(0.9, 0.22, frac) * coreFade;
+        const cg = THREE.MathUtils.lerp(1.0, 1.0, frac) * coreFade;
+        const cb = THREE.MathUtils.lerp(0.84, 0.08, frac) * coreFade;
         trailCoreColors[vIdx] = cr;
         trailCoreColors[vIdx + 1] = cg;
         trailCoreColors[vIdx + 2] = cb;

@@ -1,53 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArcadeLedgeMorph } from './components/ArcadeLedgeMorph';
 import { ArenaViewportFrame } from './components/ArenaViewportFrame';
 import { BackgroundDecor } from './components/BackgroundDecor';
-import { LeftStatsPanel } from './components/LeftStatsPanel';
-import { StackerArenaFrame } from './components/StackerArenaFrame';
-import { StackerLeftPanel } from './components/StackerLeftPanel';
 import { SkillBreakerEngine } from './game/physicsEngine';
 import { arcadeSfx } from './game/soundEffects';
 import type { HudSnapshot } from './game/types';
-import type { StackerArenaController } from './gameStacker/StackerArenaCanvas';
-import type {
-  StackerHudSnapshot,
-  StackerInteractionMode,
-  StackerSessionSnapshot,
-} from './gameStacker/types';
-
-type ActiveGameId = 'breaker' | 'stacker';
-
-const INITIAL_STACKER_HUD: StackerHudSnapshot = {
-  gameState: 'STABLE',
-  towerHeight: 3,
-  maxTowerHeight: 3,
-  stability: 98,
-  stabilityLabel: 'STABLE',
-  skillsInPlay: 3,
-  totalTargetSkills: 20,
-  score: 0,
-  selectedUid: null,
-  selectedSkillId: 'express',
-  detectedCombos: [],
-  nextDropSkillId: 'react',
-  interactionMode: 'drag',
-  muted: false,
-  collapseNotice: null,
-};
 
 export default function App() {
-  const [activeGame, setActiveGame] = useState<ActiveGameId>('breaker');
-
-  // Game 01: Brick Breaker & Catcher persistent engine ref
+  const mainRef = useRef<HTMLElement>(null);
+  const revealContainerRef = useRef<HTMLDivElement>(null);
+  const arcadeFrameRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<SkillBreakerEngine | null>(null);
   if (!engineRef.current) {
     engineRef.current = new SkillBreakerEngine();
   }
   const [hud, setHud] = useState<HudSnapshot>(() => engineRef.current!.getHudSnapshot());
-
-  // Game 02: 3D Skill Jenga & Stacker controller & session persistence ref
-  const stackerCtrlRef = useRef<StackerArenaController | null>(null);
-  const stackerSessionRef = useRef<StackerSessionSnapshot | null>(null);
-  const [stackerHud, setStackerHud] = useState<StackerHudSnapshot>(INITIAL_STACKER_HUD);
 
   const syncHud = useCallback(() => {
     const eng = engineRef.current;
@@ -86,7 +53,6 @@ export default function App() {
       engineRef.current.muted = muted;
       syncHud();
     }
-    setStackerHud((prev) => ({ ...prev, muted }));
   }, [syncHud]);
 
   const handleSelectWave = useCallback(
@@ -99,63 +65,22 @@ export default function App() {
     [syncHud]
   );
 
-  // Seamless game switching preserving both games cleanly
-  const handleSwitchToStacker = useCallback(() => {
-    const eng = engineRef.current;
-    if (eng && eng.mode === 'PLAYING') {
-      eng.togglePause();
-      syncHud();
-    }
-    setStackerHud((prev) => ({ ...prev, muted: eng?.muted ?? prev.muted }));
-    setActiveGame('stacker');
-  }, [syncHud]);
-
-  const handleSwitchToBreaker = useCallback(() => {
-    setActiveGame('breaker');
-    syncHud();
-  }, [syncHud]);
-
-  // Game 02 callbacks
-  const handleDropCapsule = useCallback(() => {
-    stackerCtrlRef.current?.dropCapsule();
-  }, []);
-
-  const handleResetStack = useCallback(() => {
-    stackerCtrlRef.current?.resetStack();
-  }, []);
-
-  const handleClearStackerSelection = useCallback(() => {
-    stackerCtrlRef.current?.clearSelection();
-  }, []);
-
-  const handleSetStackerMode = useCallback((mode: StackerInteractionMode) => {
-    stackerCtrlRef.current?.setInteractionMode(mode);
-  }, []);
-
-  // Keyboard routing isolated strictly to the currently active game
   useEffect(() => {
     const keysHeld = new Set<string>();
     let rafKey = 0;
 
     const stepKeys = () => {
-      if (activeGame === 'breaker') {
-        const eng = engineRef.current;
-        if (eng) {
-          const left = keysHeld.has('ArrowLeft') || keysHeld.has('KeyA');
-          const right = keysHeld.has('ArrowRight') || keysHeld.has('KeyD');
-          if (eng.mode === 'READY') {
-            if (left) eng.adjustAimBy(-0.032);
-            if (right) eng.adjustAimBy(0.032);
-          } else if (eng.mode === 'PLAYING') {
-            if (left) eng.movePaddleBy(-0.16);
-            if (right) eng.movePaddleBy(0.16);
-          }
+      const eng = engineRef.current;
+      if (eng) {
+        const left = keysHeld.has('ArrowLeft') || keysHeld.has('KeyA');
+        const right = keysHeld.has('ArrowRight') || keysHeld.has('KeyD');
+        if (eng.mode === 'READY') {
+          if (left) eng.adjustAimBy(-0.032);
+          if (right) eng.adjustAimBy(0.032);
+        } else if (eng.mode === 'PLAYING') {
+          if (left) eng.movePaddleBy(-0.16);
+          if (right) eng.movePaddleBy(0.16);
         }
-      } else if (stackerHud.interactionMode === 'rotate') {
-        const rotLeft = keysHeld.has('KeyQ');
-        const rotRight = keysHeld.has('KeyE');
-        if (rotLeft) stackerCtrlRef.current?.rotateSelectedBy(0, 0, 0.055);
-        if (rotRight) stackerCtrlRef.current?.rotateSelectedBy(0, 0, -0.055);
       }
 
       if (keysHeld.size > 0) {
@@ -166,38 +91,35 @@ export default function App() {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (activeGame === 'breaker') {
-        if (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'KeyA' || e.code === 'KeyD') {
-          keysHeld.add(e.code);
-          if (!rafKey) rafKey = requestAnimationFrame(stepKeys);
-        } else if (e.code === 'Space') {
-          e.preventDefault();
-          const eng = engineRef.current;
-          if (!eng) return;
-          if (eng.mode === 'PLAYING' || eng.mode === 'PAUSED') {
-            handleTogglePause();
-          } else {
-            handleLaunchOrb();
-          }
-        } else if (e.code === 'KeyP') {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'KeyA' || e.code === 'KeyD') {
+        keysHeld.add(e.code);
+        if (!rafKey) rafKey = requestAnimationFrame(stepKeys);
+      } else if (e.code === 'Space') {
+        const stackEl = document.getElementById('stack');
+        if (!stackEl) return;
+        const rect = stackEl.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3;
+        if (!inView) return;
+        e.preventDefault();
+        const eng = engineRef.current;
+        if (!eng) return;
+        if (eng.mode === 'PLAYING' || eng.mode === 'PAUSED') {
           handleTogglePause();
-        } else if (e.code === 'KeyR') {
-          handleResetArcade();
-        } else if (e.code === 'KeyM') {
-          handleToggleMute();
+        } else {
+          handleLaunchOrb();
         }
-      } else {
-        if ((e.code === 'KeyQ' || e.code === 'KeyE') && stackerHud.interactionMode === 'rotate') {
-          keysHeld.add(e.code);
-          if (!rafKey) rafKey = requestAnimationFrame(stepKeys);
-        } else if (e.code === 'Space') {
-          e.preventDefault();
-          handleDropCapsule();
-        } else if (e.code === 'KeyR') {
-          handleResetStack();
-        } else if (e.code === 'KeyM') {
-          handleToggleMute();
-        }
+      } else if (e.code === 'KeyP') {
+        handleTogglePause();
+      } else if (e.code === 'KeyR') {
+        handleResetArcade();
+      } else if (e.code === 'KeyM') {
+        handleToggleMute();
       }
     };
 
@@ -212,61 +134,72 @@ export default function App() {
       window.removeEventListener('keyup', onKeyUp);
       if (rafKey) cancelAnimationFrame(rafKey);
     };
-  }, [
-    activeGame,
-    stackerHud.interactionMode,
-    handleDropCapsule,
-    handleLaunchOrb,
-    handleResetArcade,
-    handleResetStack,
-    handleToggleMute,
-    handleTogglePause,
-  ]);
+  }, [handleLaunchOrb, handleResetArcade, handleToggleMute, handleTogglePause]);
 
   return (
-    <main className="arcade-grid-bg relative min-h-screen w-full overflow-x-hidden px-4 py-4 sm:px-6 lg:h-screen lg:overflow-hidden lg:px-10 lg:py-6">
+    <main
+      ref={mainRef}
+      className="relative w-full overflow-hidden bg-transparent -mt-14 sm:-mt-16 lg:-mt-24 pt-24 pb-10 sm:px-6 sm:pt-28 lg:px-10 lg:pt-36 lg:pb-14 px-4"
+    >
+      {/* Feathered Grid & Ambient Neon Glows (fades seamlessly from transparent at top & bottom) */}
+      <div
+        aria-hidden="true"
+        className="arcade-grid-bg pointer-events-none absolute inset-0 z-0 mask-[linear-gradient(to_bottom,transparent_0%,black_14%,black_88%,transparent_100%)]"
+      />
       <BackgroundDecor />
+      <ArcadeLedgeMorph
+        sectionRef={mainRef}
+        revealContainerRef={revealContainerRef}
+        anchorRef={arcadeFrameRef}
+      />
 
-      <div className="relative z-10 mx-auto grid h-full max-w-[1440px] grid-cols-1 items-stretch gap-6 lg:grid-cols-[34%_1fr] lg:gap-8">
-        {activeGame === 'breaker' ? (
-          <>
-            <LeftStatsPanel
-              hud={hud}
-              onLaunchOrb={handleLaunchOrb}
-              onResetArcade={handleResetArcade}
-              onPlayNextGame={handleSwitchToStacker}
-            />
+      <div
+        ref={revealContainerRef}
+        className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-6 will-change-[opacity,transform]"
+      >
+        {/* Section Header */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:pr-[260px] md:pr-[295px] lg:pr-[340px]">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-900/12 bg-white/90 text-xl text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.08)] dark:border-white/22 dark:bg-[#1A1A1A]/75 dark:text-white dark:shadow-[0_0_20px_rgba(57,255,20,0.14)] transition-colors duration-700"
+                style={{ fontFamily: "'Caveat', cursive" }}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(22,163,74,0.5)] dark:bg-[#39FF14] dark:shadow-[0_0_10px_#39FF14] animate-pulse" />
+                My Skills
+              </span>
+              <span className="font-mono text-xs tracking-[0.14em] uppercase text-rose-600 dark:text-[#FF073A] transition-colors duration-700">
+                03. Interactive Skills Arcade
+              </span>
+            </div>
 
-            <ArenaViewportFrame
-              engineRef={engineRef}
-              hud={hud}
-              onHudSync={syncHud}
-              onLaunchOrb={handleLaunchOrb}
-              onTogglePause={handleTogglePause}
-              onToggleMute={handleToggleMute}
-              onSelectWave={handleSelectWave}
-            />
-          </>
-        ) : (
-          <>
-            <StackerLeftPanel
-              hud={stackerHud}
-              onClearSelection={handleClearStackerSelection}
-              onPreviousGame={handleSwitchToBreaker}
-            />
+            <div>
+              <h2 className="font-display-sans text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl xl:text-[42px] xl:leading-[1.06] transition-colors duration-700">
+                Skills I Have Developed{' '}
+                <span className="font-script-neon neon-script-heading font-normal">
+                  in Recent Years
+                </span>
+              </h2>
+            </div>
+          </div>
+        </div>
 
-            <StackerArenaFrame
-              controllerRef={stackerCtrlRef}
-              sessionRef={stackerSessionRef}
-              hud={stackerHud}
-              onHudUpdate={setStackerHud}
-              onDropCapsule={handleDropCapsule}
-              onResetStack={handleResetStack}
-              onSetInteractionMode={handleSetStackerMode}
-              onToggleMute={handleToggleMute}
-            />
-          </>
-        )}
+        {/* Full-Width 3D Skill Breaker & Catcher Game with Perched Character Morph */}
+        <div
+          ref={arcadeFrameRef}
+          className="relative mt-20 sm:mt-4 lg:mt-0 h-[520px] sm:h-[580px] lg:h-[640px] w-full"
+        >
+          <ArenaViewportFrame
+            engineRef={engineRef}
+            hud={hud}
+            onHudSync={syncHud}
+            onLaunchOrb={handleLaunchOrb}
+            onResetArcade={handleResetArcade}
+            onTogglePause={handleTogglePause}
+            onToggleMute={handleToggleMute}
+            onSelectWave={handleSelectWave}
+          />
+        </div>
       </div>
     </main>
   );

@@ -209,7 +209,7 @@ export const WatchStrapShowcase: React.FC<WatchStrapShowcaseProps> = ({
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[74%] w-[68%] rounded-full opacity-45 blur-3xl"
         style={{
           background:
-            'radial-gradient(ellipse at center, rgba(88, 28, 135, 0.24) 0%, rgba(10, 10, 14, 0) 70%)',
+            'radial-gradient(ellipse at center, rgba(57, 255, 20, 0.16) 0%, rgba(0, 0, 0, 0) 70%)',
         }}
         aria-hidden="true"
       />

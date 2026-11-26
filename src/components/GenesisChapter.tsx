@@ -84,7 +84,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-start">
           {/* Sticky Editorial Lead (RisenSocial pin cadence) */}
           <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
-            <div className="text-xs font-mono uppercase tracking-[0.2em] text-violet-700 dark:text-purple-400">
+            <div className="text-xs font-mono uppercase tracking-[0.2em] text-[#16a34a] dark:text-[#39FF14]">
               {GENESIS_STORY.kicker} · {PERSONAL_INFO.location}
             </div>
 
@@ -104,7 +104,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
               <button
                 type="button"
                 onClick={onJumpToStudio}
-                className="inline-flex items-center gap-2 text-sm font-medium text-violet-700 dark:text-purple-300 hover:gap-3 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#16a34a] dark:text-[#39FF14] hover:gap-3 transition-all cursor-pointer"
               >
                 <span>Inspect Interactive 3D Lab</span>
                 <ArrowRight className="w-4 h-4" />
@@ -114,7 +114,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
 
           {/* Right: Interactive Scrubber Timeline + Eased Metrics */}
           <div className="lg:col-span-7 space-y-8">
-            <div className="rounded-3xl border border-slate-900/10 dark:border-white/10 bg-white/75 dark:bg-[#0D1322]/75 backdrop-blur-xl p-6 sm:p-8 shadow-sm">
+            <div className="rounded-3xl border border-slate-900/10 dark:border-white/10 bg-white/75 dark:bg-[#1A1A1A]/85 backdrop-blur-xl p-6 sm:p-8 shadow-sm">
               {/* Chapter Tabs */}
               <div className="grid grid-cols-3 gap-2 pb-6 border-b border-slate-900/10 dark:border-white/10">
                 {CHAPTERS.map((chap, idx) => {
@@ -126,7 +126,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
                       onClick={() => setActiveChapter(idx)}
                       className={`text-left p-3 rounded-2xl transition-all cursor-pointer border ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-md'
+                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-[#39FF14] dark:text-black dark:border-[#39FF14] shadow-md'
                           : 'bg-transparent border-transparent hover:bg-slate-900/4 dark:hover:bg-white/4 text-slate-600 dark:text-slate-400'
                       }`}
                     >
@@ -149,7 +149,7 @@ export const GenesisChapter: React.FC<{ onJumpToStudio: () => void }> = ({ onJum
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
                   <span>{CHAPTERS[activeChapter].place}</span>
-                  <span className="text-violet-700 dark:text-purple-400 font-semibold">
+                  <span className="text-[#16a34a] dark:text-[#39FF14] font-semibold">
                     {CHAPTERS[activeChapter].highlight}
                   </span>
                 </div>

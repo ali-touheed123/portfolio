@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Realistic Interactive 3D Cute Robot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 35%, #ffffff 0%, #e7f3f7 55%, #cce2ec 100%);
+      overflow: hidden;
+      height: 100vh;
+      user-select: none;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    #canvas-container.hovering-robo { cursor: pointer; }
+    #canvas-container:active { cursor: grabbing; }
+
+    .status-pill {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #214e5c;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(10px);
+      padding: 8px 16px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(15, 50, 70, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .status-pill.angry {
+      background: rgba(255, 232, 232, 0.92);
+      color: #b52424;
+      border-color: rgba(255, 130, 130, 0.6);
+    }
+    .status-pill.happy {
+      background: rgba(226, 252, 255, 0.92);
+      color: #0b6d7c;
+      border-color: rgba(80, 225, 240, 0.6);
+    }
+
+    .ui-panel {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(14px);
+      padding: 10px 14px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(15, 50, 70, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      z-index: 10;
+    }
+    button {
+      border: none;
+      background: #eef6f9;
+      color: #164454;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    button:hover {
+      background: #38c6d8;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    button.active {
+      background: #1a9fb3;
+      color: #ffffff;
+    }
+    button.angry-btn.active, button.angry-btn:hover {
+      background: #e84848;
+      color: #ffffff;
+    }
+    button.export-btn {
+      background: #0f2d38;
+      color: #6ef3ff;
+    }
+    button.export-btn:hover {
+      background: #174657;
+      color: #ffffff;
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="status-pill" id="status-pill">Hover to cheer me up • Touch me and I get grumpy!</div>
+  <div id="canvas-container"></div>
+
+  <div class="ui-panel">
+    <button class="expr-btn active" data-expr="happy">Happy</button>
+    <button class="expr-btn" data-expr="wink">Wink</button>
+    <button class="expr-btn" data-expr="curious">Curious</button>
+    <button class="expr-btn" data-expr="love">Love</button>
+    <button class="expr-btn angry-btn" data-expr="angry">Angry</button>
+    <button id="wave-btn">Wave</button>
+    <button class="export-btn" id="export-btn">Export .GLB</button>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+    // --- Scene, Camera, Renderer ---
+    const container = document.getElementById('canvas-container');
+    const statusPill = document.getElementById('status-pill');
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(37, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0.25, 0.78, 6.1);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.06;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Studio environment reflections
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.82;
+
+    // --- Lighting ---
+    const keyLight = new THREE.DirectionalLight(0xfffaf5, 1.55);
+    keyLight.position.set(3.5, 5.5, 4.8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.radius = 6;
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0x88f4ff, 1.15);
+    rimLight.position.set(-4.2, 2.5, -3.5);
+    scene.add(rimLight);
+
+    const bounceLight = new THREE.HemisphereLight(0xf8fcff, 0x9fc4cf, 0.65);
+    scene.add(bounceLight);
+
+    // Soft floating ground shadow
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 256;
+    shadowCanvas.height = 256;
+    const sCtx = shadowCanvas.getContext('2d');
+    const sGrad = sCtx.createRadialGradient(128, 128, 8, 128, 128, 120);
+    sGrad.addColorStop(0, 'rgba(18, 55, 70, 0.24)');
+    sGrad.addColorStop(0.55, 'rgba(18, 55, 70, 0.08)');
+    sGrad.addColorStop(1, 'rgba(18, 55, 70, 0)');
+    sCtx.fillStyle = sGrad;
+    sCtx.fillRect(0, 0, 256, 256);
+
+    const shadowPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.3, 3.3),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shadowCanvas), transparent: true, depthWrite: false })
+    );
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = -1.62;
+    scene.add(shadowPlane);
+
+    // --- Controls ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 0.25, 0);
+    controls.minDistance = 3.2;
+    controls.maxDistance = 10;
+    controls.maxPolarAngle = Math.PI * 0.78;
+
+    // --- Materials ---
+    const whiteMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf5f9fb,
+      roughness: 0.20,
+      metalness: 0.03,
+      clearcoat: 0.9,
+      clearcoatRoughness: 0.12
+    });
+
+    const tealMat = new THREE.MeshPhysicalMaterial({
+      color: 0x3ec8d8,
+      roughness: 0.22,
+      metalness: 0.05,
+      clearcoat: 0.9,
+      clearcoatRoughness: 0.12
+    });
+
+    const darkJointMat = new THREE.MeshStandardMaterial({
+      color: 0x1b3038,
+      roughness: 0.38,
+      metalness: 0.35
+    });
+
+    const visorFrameMat = new THREE.MeshPhysicalMaterial({
+      color: 0x070d12,
+      roughness: 0.10,
+      metalness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05
+    });
+
+    const visorGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.11,
+      roughness: 0.04,
+      metalness: 0.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.03,
+      reflectivity: 1.0,
+      depthWrite: false
+    });
+
+    const glowMat = new THREE.MeshStandardMaterial({
+      color: 0xa4faff,
+      emissive: 0x42ebff,
+      emissiveIntensity: 1.8,
+      roughness: 0.15
+    });
+
+    // --- Geometry Helpers ---
+    function createRoundedRectPlane(width, height, radius) {
+      const shape = new THREE.Shape();
+      const x = -width / 2;
+      const y = -height / 2;
+      shape.moveTo(x + radius, y);
+      shape.lineTo(x + width - radius, y);
+      shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+      shape.lineTo(x + width, y + height - radius);
+      shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      shape.lineTo(x + radius, y + height);
+      shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+      shape.lineTo(x, y + radius);
+      shape.quadraticCurveTo(x, y, x + radius, y);
+
+      const geo = new THREE.ShapeGeometry(shape, 28);
+      const pos = geo.attributes.position;
+      const uv = geo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) {
+        uv.setXY(i, (pos.getX(i) + width / 2) / width, (pos.getY(i) + height / 2) / height);
+      }
+      return geo;
+    }
+
+    // Ensures texture V coordinate maps linearly by actual Y height (prevents stretching on rounded caps)
+    function normalizeLatheV(geo, yMin, yMax) {
+      const pos = geo.attributes.position;
+      const uv = geo.attributes.uv;
+      const span = yMax - yMin;
+      for (let i = 0; i < pos.count; i++) {
+        const v = THREE.MathUtils.clamp((pos.getY(i) - yMin) / span, 0, 1);
+        uv.setY(i, v);
+      }
+      uv.needsUpdate = true;
+    }
+
+    // --- Dynamic OLED Face Texture ---
+    const faceCanvas = document.createElement('canvas');
+    faceCanvas.width = 512;
+    faceCanvas.height = 384;
+    const fCtx = faceCanvas.getContext('2d');
+    const faceTex = new THREE.CanvasTexture(faceCanvas);
+    faceTex.colorSpace = THREE.SRGBColorSpace;
+
+    let baseExpression = 'happy';
+    let lastDrawnKey = '';
+
+    function drawFace(expr, isBlinking = false, isHoverCheek = false) {
+      const drawKey = `${expr}_${isBlinking}_${isHoverCheek}`;
+      if (drawKey === lastDrawnKey) return;
+      lastDrawnKey = drawKey;
+
+      const w = faceCanvas.width;
+      const h = faceCanvas.height;
+
+      const isAngry = expr === 'angry';
+      const primaryColor = isAngry ? '#ff574d' : '#5cf2ff';
+      const glowColor = isAngry ? '#ff2a1f' : '#27dfff';
+
+      // Dark OLED screen background
+      const bgGrad = fCtx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, w * 0.65);
+      bgGrad.addColorStop(0, isAngry ? '#1f080a' : '#091821');
+      bgGrad.addColorStop(1, isAngry ? '#0b0304' : '#03080c');
+      fCtx.fillStyle = bgGrad;
+      fCtx.fillRect(0, 0, w, h);
+
+      fCtx.save();
+      fCtx.strokeStyle = primaryColor;
+      fCtx.fillStyle = primaryColor;
+      fCtx.lineCap = 'round';
+      fCtx.lineJoin = 'round';
+      fCtx.shadowColor = glowColor;
+      fCtx.shadowBlur = 24;
+
+      const drawHappyEye = (cx, cy, scale = 1.0) => {
+        fCtx.beginPath();
+        fCtx.arc(cx, cy + 16, 46 * scale, Math.PI * 1.08, Math.PI * 1.92, false);
+        fCtx.arc(cx, cy + 28, 22 * scale, Math.PI * 1.85, Math.PI * 1.15, true);
+        fCtx.closePath();
+        fCtx.fill();
+      };
+
+      const drawBlinkEye = (cx, cy) => {
+        fCtx.lineWidth = 10;
+        fCtx.beginPath();
+        fCtx.moveTo(cx - 40, cy + 8);
+        fCtx.quadraticCurveTo(cx, cy + 16, cx + 40, cy + 8);
+        fCtx.stroke();
+      };
+
+      if (isBlinking && !isAngry) {
+        drawBlinkEye(155, 165);
+        drawBlinkEye(357, 165);
+      } else if (expr === 'angry') {
+        // Slanted angry glowing eyes
+        const drawAngryEye = (cx, cy, dir) => {
+          fCtx.save();
+          fCtx.translate(cx, cy);
+          fCtx.rotate(dir * 0.28);
+          fCtx.beginPath();
+          fCtx.moveTo(-44, -8);
+          fCtx.quadraticCurveTo(0, -14, 44, -8);
+          fCtx.lineTo(38, 20);
+          fCtx.quadraticCurveTo(0, 34, -38, 20);
+          fCtx.closePath();
+          fCtx.fill();
+          fCtx.restore();
+
+          // Sharp angry eyebrow slash above
+          fCtx.lineWidth = 12;
+          fCtx.beginPath();
+          fCtx.moveTo(cx - 46, cy - (dir > 0 ? 34 : 14));
+          fCtx.lineTo(cx + 46, cy - (dir > 0 ? 14 : 34));
+          fCtx.stroke();
+        };
+        drawAngryEye(155, 168, 1);
+        drawAngryEye(357, 168, -1);
+      } else if (expr === 'happy') {
+        const s = isHoverCheek ? 1.07 : 1.0;
+        drawHappyEye(155, 165, s);
+        drawHappyEye(357, 165, s);
+      } else if (expr === 'wink') {
+        drawHappyEye(155, 165);
+        fCtx.lineWidth = 12;
+        fCtx.beginPath();
+        fCtx.moveTo(318, 154);
+        fCtx.lineTo(355, 174);
+        fCtx.lineTo(318, 194);
+        fCtx.stroke();
+      } else if (expr === 'curious') {
+        fCtx.beginPath();
+        fCtx.ellipse(155, 165, 34, 42, 0, 0, Math.PI * 2);
+        fCtx.fill();
+        fCtx.beginPath();
+        fCtx.ellipse(357, 165, 28, 34, 0, 0, Math.PI * 2);
+        fCtx.fill();
+        fCtx.fillStyle = '#061017';
+        fCtx.shadowBlur = 0;
+        fCtx.beginPath(); fCtx.arc(166, 152, 10, 0, Math.PI * 2); fCtx.fill();
+        fCtx.beginPath(); fCtx.arc(365, 154, 8, 0, Math.PI * 2); fCtx.fill();
+        fCtx.fillStyle = primaryColor;
+        fCtx.shadowBlur = 24;
+      } else if (expr === 'love') {
+        const drawHeart = (cx, cy, size) => {
+          fCtx.beginPath();
+          fCtx.moveTo(cx, cy + size * 0.7);
+          fCtx.bezierCurveTo(cx - size * 1.4, cy - size * 0.2, cx - size * 0.7, cy - size * 1.2, cx, cy - size * 0.35);
+          fCtx.bezierCurveTo(cx + size * 0.7, cy - size * 1.2, cx + size * 1.4, cy - size * 0.2, cx, cy + size * 0.7);
+          fCtx.fill();
+        };
+        drawHeart(155, 172, 42);
+        drawHeart(357, 172, 42);
+      }
+
+      // Cute glowing blush when hovered & happy
+      if (isHoverCheek && !isAngry) {
+        fCtx.save();
+        fCtx.fillStyle = 'rgba(255, 120, 175, 0.55)';
+        fCtx.shadowColor = '#ff66a8';
+        fCtx.shadowBlur = 18;
+        fCtx.beginPath(); fCtx.ellipse(104, 218, 22, 11, 0, 0, Math.PI * 2); fCtx.fill();
+        fCtx.beginPath(); fCtx.ellipse(408, 218, 22, 11, 0, 0, Math.PI * 2); fCtx.fill();
+        fCtx.restore();
+      }
+
+      // Mouth
+      fCtx.lineWidth = 14;
+      if (isAngry) {
+        // Grumpy zigzag / frown mouth
+        fCtx.beginPath();
+        fCtx.moveTo(212, 260);
+        fCtx.lineTo(234, 244);
+        fCtx.lineTo(256, 260);
+        fCtx.lineTo(278, 244);
+        fCtx.lineTo(300, 260);
+        fCtx.stroke();
+      } else if (expr === 'curious') {
+        fCtx.beginPath();
+        fCtx.arc(256, 248, 14, 0, Math.PI * 2);
+        fCtx.stroke();
+      } else if (isHoverCheek) {
+        // Big cheerful open/wide smile on hover
+        fCtx.beginPath();
+        fCtx.arc(256, 218, 42, Math.PI * 0.16, Math.PI * 0.84);
+        fCtx.stroke();
+      } else {
+        fCtx.beginPath();
+        fCtx.arc(256, 224, 34, Math.PI * 0.22, Math.PI * 0.78);
+        fCtx.stroke();
+      }
+      fCtx.restore();
+
+      // Subtle LED scanlines
+      fCtx.fillStyle = 'rgba(3, 10, 15, 0.40)';
+      for (let y = 0; y < h; y += 6) {
+        fCtx.fillRect(0, y, w, 2.4);
+      }
+
+      faceTex.needsUpdate = true;
+    }
+    drawFace('happy', false, false);
+
+    // --- Torso Texture ---
+    const torsoCanvas = document.createElement('canvas');
+    torsoCanvas.width = 1024;
+    torsoCanvas.height = 512;
+    const tCtx = torsoCanvas.getContext('2d');
+    tCtx.fillStyle = '#f5f9fb';
+    tCtx.fillRect(0, 0, 1024, 512);
+
+    // Teal upper chest dipping down in a smooth U-curve at front center (x = 512)
+    tCtx.fillStyle = '#3ec8d8';
+    tCtx.beginPath();
+    tCtx.moveTo(0, 0);
+    tCtx.lineTo(1024, 0);
+    tCtx.lineTo(1024, 200);
+    tCtx.bezierCurveTo(790, 200, 735, 325, 512, 325);
+    tCtx.bezierCurveTo(289, 325, 234, 200, 0, 200);
+    tCtx.closePath();
+    tCtx.fill();
+
+    tCtx.strokeStyle = 'rgba(20, 60, 75, 0.20)';
+    tCtx.lineWidth = 4;
+    tCtx.stroke();
+
+    // Soft rounded bottom accent seam
+    tCtx.fillStyle = '#d3e4eb';
+    tCtx.fillRect(0, 456, 1024, 56);
+    tCtx.strokeStyle = 'rgba(20, 60, 75, 0.16)';
+    tCtx.lineWidth = 3;
+    tCtx.beginPath();
+    tCtx.moveTo(0, 456);
+    tCtx.lineTo(1024, 456);
+    tCtx.stroke();
+
+    const torsoTex = new THREE.CanvasTexture(torsoCanvas);
+    torsoTex.colorSpace = THREE.SRGBColorSpace;
+
+    // --- Arm Texture ---
+    const armCanvas = document.createElement('canvas');
+    armCanvas.width = 256;
+    armCanvas.height = 256;
+    const aCtx = armCanvas.getContext('2d');
+    aCtx.fillStyle = '#f5f9fb';
+    aCtx.fillRect(0, 0, 256, 256);
+    aCtx.fillStyle = '#3ec8d8';
+    aCtx.fillRect(0, 0, 256, 98);
+    aCtx.fillStyle = 'rgba(20, 60, 75, 0.18)';
+    aCtx.fillRect(0, 96, 256, 4);
+    const armTex = new THREE.CanvasTexture(armCanvas);
+    armTex.colorSpace = THREE.SRGBColorSpace;
+
+    // --- Robot Assembly ---
+    const robotGroup = new THREE.Group();
+    scene.add(robotGroup);
+
+    // 1. Torso (with smooth, fully rounded bottom dome)
+    const torsoGroup = new THREE.Group();
+    robotGroup.add(torsoGroup);
+
+    const torsoPoints = [];
+    const torsoSegs = 40;
+    const yBottom = -0.78;
+    const yTop = 0.56;
+    for (let i = 0; i <= torsoSegs; i++) {
+      const t = i / torsoSegs; // 0 (bottom) -> 1 (top)
+      const angle = -Math.PI / 2 + t * Math.PI; // -PI/2 -> +PI/2
+      const y = THREE.MathUtils.lerp(yBottom, yTop, (Math.sin(angle) + 1) / 2);
+      // Smooth plump egg profile: wider upper chest, smoothly rounded bowl bottom
+      const baseR = Math.cos(angle);
+      const bulge = 0.44 + 0.21 * Math.pow(t, 0.75);
+      const r = Math.max(0, baseR * bulge);
+      torsoPoints.push(new THREE.Vector2(r, y));
+    }
+    const torsoGeo = new THREE.LatheGeometry(torsoPoints, 72, Math.PI, Math.PI * 2);
+    normalizeLatheV(torsoGeo, yBottom, yTop);
+
+    const torsoMat = new THREE.MeshPhysicalMaterial({
+      map: torsoTex,
+      roughness: 0.22,
+      metalness: 0.03,
+      clearcoat: 0.88,
+      clearcoatRoughness: 0.12
+    });
+    const torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
+    torsoMesh.castShadow = true;
+    torsoMesh.receiveShadow = true;
+    torsoGroup.add(torsoMesh);
+
+    // Chest Core
+    const chestRing = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.024, 18, 48), tealMat);
+    chestRing.position.set(0, 0.13, 0.595);
+    chestRing.rotation.x = -0.08;
+    torsoGroup.add(chestRing);
+
+    const chestCore = new THREE.Mesh(new THREE.SphereGeometry(0.145, 32, 24), glowMat);
+    chestCore.scale.set(1, 1, 0.35);
+    chestCore.position.set(0, 0.13, 0.59);
+    torsoGroup.add(chestCore);
+
+    // Neck
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.21, 0.24, 36), darkJointMat);
+    neck.position.set(0, 0.60, 0);
+    torsoGroup.add(neck);
+
+    // 2. Head Group
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 1.32, 0);
+    robotGroup.add(headGroup);
+
+    const headMesh = new THREE.Mesh(new RoundedBoxGeometry(2.05, 1.50, 1.32, 10, 0.46), whiteMat);
+    headMesh.castShadow = true;
+    headMesh.receiveShadow = true;
+    headGroup.add(headMesh);
+
+    // Recessed Dark Bezel
+    const visorBezel = new THREE.Mesh(
+      new RoundedBoxGeometry(1.62, 1.12, 0.14, 8, 0.26),
+      visorFrameMat
+    );
+    visorBezel.position.set(0, 0, 0.59);
+    headGroup.add(visorBezel);
+
+    // Glowing OLED Screen
+    const screenMesh = new THREE.Mesh(
+      createRoundedRectPlane(1.48, 0.98, 0.20),
+      new THREE.MeshBasicMaterial({ map: faceTex })
+    );
+    screenMesh.position.set(0, 0, 0.665);
+    headGroup.add(screenMesh);
+
+    // Glossy Curved Visor Glass Overlay (gives realistic corner specular shine)
+    const visorGlass = new THREE.Mesh(
+      new RoundedBoxGeometry(1.56, 1.06, 0.04, 8, 0.24),
+      visorGlassMat
+    );
+    visorGlass.position.set(0, 0, 0.675);
+    headGroup.add(visorGlass);
+
+    // Rounded Ear Cups + Antennae
+    function createEar(side) {
+      const earGroup = new THREE.Group();
+      earGroup.position.set(side * 1.03, -0.02, 0);
+
+      // Smooth rounded puck profile via LatheGeometry
+      const cupPoints = [];
+      const cupSegs = 20;
+      const cupR = 0.31;
+      const cupHalfH = 0.095;
+      for (let i = 0; i <= cupSegs; i++) {
+        const a = -Math.PI / 2 + (i / cupSegs) * Math.PI;
+        const y = Math.sin(a) * cupHalfH;
+        const r = Math.max(0, (cupR - 0.065) + Math.cos(a) * 0.065);
+        cupPoints.push(new THREE.Vector2(r, y));
+      }
+      // Close center top & bottom cleanly
+      cupPoints.unshift(new THREE.Vector2(0, -cupHalfH));
+      cupPoints.push(new THREE.Vector2(0, cupHalfH));
+
+      const cup = new THREE.Mesh(new THREE.LatheGeometry(cupPoints, 40), tealMat);
+      cup.rotation.z = Math.PI / 2;
+      cup.castShadow = true;
+      earGroup.add(cup);
+
+      const earGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.185, 28, 20),
+        glowMat
+      );
+      earGlow.scale.set(0.18, 1, 1);
+      earGlow.position.x = side * 0.088;
+      earGroup.add(earGlow);
+
+      // Antenna Pivot (for subtle secondary wiggle!)
+      const antGroup = new THREE.Group();
+      antGroup.position.set(side * 0.03, 0.22, 0);
+      antGroup.rotation.z = side * -0.32;
+
+      const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.076, 0.64, 24), tealMat);
+      stalk.position.y = 0.30;
+      stalk.castShadow = true;
+      antGroup.add(stalk);
+
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.034, 18, 18), tealMat);
+      tip.position.y = 0.62;
+      antGroup.add(tip);
+
+      earGroup.add(antGroup);
+      return { earGroup, antGroup };
+    }
+
+    const leftEarObj = createEar(-1);
+    const rightEarObj = createEar(1);
+    headGroup.add(leftEarObj.earGroup);
+    headGroup.add(rightEarObj.earGroup);
+
+    // 3. Arms with Plump, Rounded Capsule-Mitten Edges
+    function createArm(side) {
+      const shoulderPivot = new THREE.Group();
+      shoulderPivot.position.set(side * 0.63, 0.33, 0.02);
+
+      const joint = new THREE.Mesh(new THREE.SphereGeometry(0.105, 22, 22), darkJointMat);
+      shoulderPivot.add(joint);
+
+      // Smooth rounded capsule-teardrop profile (zero sharp points at top or bottom!)
+      const armPoints = [];
+      const armSegs = 36;
+      const armMinY = -0.72;
+      const armMaxY = 0.0;
+      for (let i = 0; i <= armSegs; i++) {
+        const t = i / armSegs; // 0 (bottom hand tip) -> 1 (top shoulder)
+        const angle = -Math.PI / 2 + t * Math.PI;
+        const y = THREE.MathUtils.lerp(armMinY, armMaxY, (Math.sin(angle) + 1) / 2);
+        // Plump mitten contour: rounded 0.16 tip curving smoothly up to 0.185 forearm and 0.155 shoulder
+        const widthProfile = 0.155 + 0.032 * Math.sin(t * Math.PI);
+        const r = Math.max(0, Math.cos(angle) * widthProfile);
+        armPoints.push(new THREE.Vector2(r, y));
+      }
+
+      const armGeo = new THREE.LatheGeometry(armPoints, 44);
+      normalizeLatheV(armGeo, armMinY, armMaxY);
+
+      const armMat = new THREE.MeshPhysicalMaterial({
+        map: armTex,
+        roughness: 0.21,
+        metalness: 0.03,
+        clearcoat: 0.88,
+        clearcoatRoughness: 0.12
+      });
+
+      const armMesh = new THREE.Mesh(armGeo, armMat);
+      armMesh.position.y = -0.04;
+      armMesh.castShadow = true;
+      armMesh.receiveShadow = true;
+      shoulderPivot.add(armMesh);
+
+      return shoulderPivot;
+    }
+
+    const rightArm = createArm(-1); // Viewer's left (greeting arm)
+    const leftArm = createArm(1);   // Viewer's right
+    torsoGroup.add(rightArm);
+    torsoGroup.add(leftArm);
+
+    // --- Interactivity State (Hover = Happy, Touch = Angry) ---
+    const pointer = new THREE.Vector2(0, 0);
+    const raycaster = new THREE.Raycaster();
+    let isHovering = false;
+    let angryTimer = 0;
+    let waveTimer = 1.4;
+    let joltImpulse = 0;
+
+    function updateStatusUI(state) {
+      statusPill.classList.remove('angry', 'happy');
+      if (state === 'angry') {
+        statusPill.textContent = "Hey! Don't poke me! 😠";
+        statusPill.classList.add('angry');
+      } else if (state === 'hover') {
+        statusPill.textContent = "Hehe, that's nice! 😊";
+        statusPill.classList.add('happy');
+      } else {
+        statusPill.textContent = "Hover to cheer me up • Touch me and I get grumpy!";
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObject(robotGroup, true);
+      const nowHovering = hits.length > 0;
+
+      if (nowHovering !== isHovering) {
+        isHovering = nowHovering;
+        container.classList.toggle('hovering-robo', isHovering);
+        if (angryTimer <= 0) {
+          updateStatusUI(isHovering ? 'hover' : 'idle');
+        }
+      }
+    });
+
+    // Touch / Click detection (ignores OrbitControls drag)
+    let downPos = { x: 0, y: 0 };
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      downPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+      if (dist > 7) return; // Was dragging camera
+
+      const tapPos = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1
+      );
+      raycaster.setFromCamera(tapPos, camera);
+      if (raycaster.intersectObject(robotGroup, true).length > 0) {
+        // Touched! Robot gets grumpy/angry
+        angryTimer = 2.8;
+        joltImpulse = 1.0;
+        updateStatusUI('angry');
+      }
+    });
+
+    // UI Buttons
+    document.querySelectorAll('.expr-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.expr-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        baseExpression = btn.dataset.expr;
+        if (baseExpression === 'angry') {
+          angryTimer = 2.8;
+          joltImpulse = 0.8;
+          updateStatusUI('angry');
+        } else {
+          angryTimer = 0;
+          updateStatusUI(isHovering ? 'hover' : 'idle');
+        }
+      });
+    });
+
+    document.getElementById('wave-btn').addEventListener('click', () => {
+      angryTimer = 0;
+      waveTimer = 2.4;
+      updateStatusUI(isHovering ? 'hover' : 'idle');
+    });
+
+    // Export .GLB
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const exporter = new GLTFExporter();
+      exporter.parse(
+        robotGroup,
+        (result) => {
+          const blob = new Blob([result], { type: 'model/gltf-binary' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'cute-robot.glb';
+          link.click();
+          URL.revokeObjectURL(link.href);
+        },
+        (err) => console.error('Export error:', err),
+        { binary: true }
+      );
+    });
+
+    // Blink scheduler
+    let nextBlink = 2.5;
+    let blinkDuration = 0;
+    const cyanColor = new THREE.Color(0x42ebff);
+    const angryColor = new THREE.Color(0xff3b2f);
+    const cyanRim = new THREE.Color(0x88f4ff);
+    const angryRim = new THREE.Color(0xff7766);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Animation Loop ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.getElapsedTime();
+
+      // Angry timer countdown
+      if (angryTimer > 0) {
+        angryTimer -= dt;
+        if (angryTimer <= 0) {
+          angryTimer = 0;
+          if (baseExpression === 'angry') baseExpression = 'happy';
+          updateStatusUI(isHovering ? 'hover' : 'idle');
+        }
+      }
+
+      const isAngryNow = angryTimer > 0 || baseExpression === 'angry';
+      const isHoverHappy = isHovering && !isAngryNow;
+
+      // Decay poke recoil impulse
+      joltImpulse *= Math.pow(0.03, dt);
+
+      // Smoothly transition core/ear glow & rim light colors
+      const targetEmissive = isAngryNow ? angryColor : cyanColor;
+      glowMat.emissive.lerp(targetEmissive, 0.12);
+      glowMat.emissiveIntensity = isAngryNow
+        ? 2.1 + Math.sin(t * 16) * 0.5
+        : isHoverHappy
+          ? 2.1 + Math.sin(t * 6) * 0.25
+          : 1.7 + Math.sin(t * 2.5) * 0.15;
+      rimLight.color.lerp(isAngryNow ? angryRim : cyanRim, 0.1);
+
+      // Natural blinking
+      nextBlink -= dt;
+      if (nextBlink <= 0) {
+        blinkDuration = 0.13;
+        nextBlink = 2.4 + Math.random() * 3.2;
+      } else if (blinkDuration > 0) {
+        blinkDuration -= dt;
+      }
+      const blinkingNow = blinkDuration > 0 && !isAngryNow;
+
+      // Update active expression
+      const activeExpr = isAngryNow ? 'angry' : isHoverHappy ? 'happy' : baseExpression;
+      drawFace(activeExpr, blinkingNow, isHoverHappy);
+
+      // Organic floating, squash/stretch, & jolt recoil
+      const floatSpeed = isHoverHappy ? 3.2 : 2.0;
+      const floatAmp = isHoverHappy ? 0.13 : 0.095;
+      const floatY = Math.sin(t * floatSpeed) * floatAmp + joltImpulse * 0.12;
+      robotGroup.position.y = floatY;
+      robotGroup.position.z = -joltImpulse * 0.18;
+
+      const squash = 1 + joltImpulse * 0.08 * Math.sin(t * 25);
+      robotGroup.scale.set(squash, 2 - squash, squash);
+      shadowPlane.scale.setScalar(1 - floatY * 0.35);
+
+      // Torso breathing & sway
+      torsoGroup.rotation.z = isAngryNow
+        ? Math.sin(t * 24) * 0.06
+        : Math.sin(t * 1.4) * (isHoverHappy ? 0.06 : 0.035);
+      torsoGroup.rotation.x = Math.cos(t * 1.2) * 0.025 + joltImpulse * -0.18;
+
+      // Head tracking + annoyed shake
+      const targetHeadY = pointer.x * 0.30 + (isAngryNow ? Math.sin(t * 28) * 0.14 : 0);
+      const targetHeadX = -pointer.y * 0.18 + (isAngryNow ? 0.12 : isHoverHappy ? -0.06 : 0);
+      headGroup.rotation.y += (targetHeadY - headGroup.rotation.y) * 0.10;
+      headGroup.rotation.x += (targetHeadX - headGroup.rotation.x) * 0.10;
+      headGroup.rotation.z = isHoverHappy
+        ? Math.sin(t * 4.2) * 0.08
+        : Math.sin(t * 1.5) * 0.04;
+
+      // Secondary antenna wiggle
+      const antWiggle = isAngryNow
+        ? Math.sin(t * 30) * 0.12
+        : isHoverHappy
+          ? Math.sin(t * 8) * 0.08
+          : Math.sin(t * 2.5) * 0.025;
+      leftEarObj.antGroup.rotation.z = 0.32 + antWiggle;
+      rightEarObj.antGroup.rotation.z = -0.32 - antWiggle;
+
+      // Natural Arm Animations
+      if (isAngryNow) {
+        // Crossed/tensed grumpy arm posture shaking slightly
+        const shake = Math.sin(t * 26) * 0.06;
+        rightArm.rotation.z += (-0.32 + shake - rightArm.rotation.z) * 0.22;
+        rightArm.rotation.x += (-0.55 - rightArm.rotation.x) * 0.22;
+        leftArm.rotation.z += (0.32 - shake - leftArm.rotation.z) * 0.22;
+        leftArm.rotation.x += (-0.55 - leftArm.rotation.x) * 0.22;
+      } else if (isHoverHappy || waveTimer > 0) {
+        if (waveTimer > 0) waveTimer -= dt;
+        const wave = Math.sin(t * 10.5) * 0.28;
+        rightArm.rotation.z += (-1.92 + wave - rightArm.rotation.z) * 0.16;
+        rightArm.rotation.x += (-0.18 - rightArm.rotation.x) * 0.14;
+        leftArm.rotation.z += (0.28 + Math.sin(t * 4) * 0.06 - leftArm.rotation.z) * 0.12;
+        leftArm.rotation.x += (0.04 - leftArm.rotation.x) * 0.12;
+      } else {
+        // Natural relaxed idle pose matching your image
+        const idleRaise = -1.72 + Math.sin(t * 2.1) * 0.06;
+        rightArm.rotation.z += (idleRaise - rightArm.rotation.z) * 0.06;
+        rightArm.rotation.x += (-0.14 - rightArm.rotation.x) * 0.06;
+        leftArm.rotation.z += (0.24 + Math.sin(t * 2.0 + 1) * 0.04 - leftArm.rotation.z) * 0.08;
+        leftArm.rotation.x += (Math.cos(t * 1.4) * 0.04 - leftArm.rotation.x) * 0.08;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

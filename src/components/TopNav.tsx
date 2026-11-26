@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { Moon, Sun } from 'lucide-react';
 import { useSkyTheme } from '../context/ThemeContext';
 
 interface TopNavProps {
@@ -16,12 +17,12 @@ const NAV_LINKS = [
 ];
 
 /**
- * Hand-sketched purple oval loop + corner burst sparks + slanted underline
- * matching the natural ink highlight style from the user's reference.
+ * Hand-sketched oval loop + corner burst sparks + slanted underline
+ * matching the natural ink highlight style.
  */
 const HandDrawnHighlight: React.FC<{ isDay: boolean }> = ({ isDay }) => {
-  const stroke = isDay ? '#7c3aed' : '#c026d3';
-  const sparkStroke = isDay ? '#8b5cf6' : '#d946ef';
+  const stroke = isDay ? '#16a34a' : '#39FF14';
+  const sparkStroke = isDay ? '#e11d48' : '#FF073A';
 
   return (
     <motion.svg
@@ -65,7 +66,7 @@ const HandDrawnHighlight: React.FC<{ isDay: boolean }> = ({ isDay }) => {
         animate={{ pathLength: 1 }}
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          filter: isDay ? 'none' : 'drop-shadow(0 0 8px rgba(192, 38, 211, 0.75))',
+          filter: isDay ? 'none' : 'drop-shadow(0 0 8px rgba(57, 255, 20, 0.72))',
         }}
       />
       {/* Crisp brush underline accent below oval */}
@@ -83,7 +84,7 @@ const HandDrawnHighlight: React.FC<{ isDay: boolean }> = ({ isDay }) => {
 };
 
 export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top' }) => {
-  const { isDay } = useSkyTheme();
+  const { isDay, toggleTheme } = useSkyTheme();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [clickedId, setClickedId] = useState<string>(activeSection);
 
@@ -95,12 +96,12 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-transparent border-b border-transparent pointer-events-none">
-      <div className="max-w-7xl mx-auto h-16 px-4 sm:px-8 flex items-center justify-center">
+      <div className="max-w-7xl mx-auto h-16 px-3 sm:px-8 flex items-center justify-center gap-2 sm:gap-4">
         {/* Centered Handwritten Nav Links with | Dividers & Natural Hand-Drawn Loop Highlight */}
         <nav
           aria-label="Primary Navigation"
           onMouseLeave={() => setHoveredId(null)}
-          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-2 sm:px-3"
+          className="pointer-events-auto flex items-center justify-center gap-0.5 xs:gap-1.5 sm:gap-3 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden py-1.5 sm:py-2 px-1.5 sm:px-3"
         >
           {NAV_LINKS.map((item, idx) => {
             const isHighlighted = highlightedId === item.id;
@@ -138,6 +139,26 @@ export const TopNav: React.FC<TopNavProps> = ({ onNavigate, activeSection = 'top
             );
           })}
         </nav>
+
+        {/* Subtle Mid-Page Theme Toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isDay ? 'Switch to Night mode' : 'Switch to Day mode'}
+          aria-pressed={isDay}
+          title={isDay ? 'Switch to Night mode' : 'Switch to Day mode'}
+          className={`pointer-events-auto inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 ${
+            isDay
+              ? 'bg-white/90 border-slate-900/12 text-slate-800 shadow-[0_6px_16px_rgba(15,23,42,0.08)] hover:border-emerald-600/50 hover:text-emerald-700 focus-visible:ring-emerald-600'
+              : 'bg-[#1A1A1A]/90 border-white/15 text-slate-200 shadow-[0_6px_18px_rgba(0,0,0,0.45)] hover:border-[#39FF14]/60 hover:text-[#39FF14] focus-visible:ring-[#39FF14]'
+          }`}
+        >
+          {isDay ? (
+            <Moon className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Sun className="h-4 w-4 text-[#39FF14]" aria-hidden="true" />
+          )}
+        </button>
       </div>
     </header>
   );

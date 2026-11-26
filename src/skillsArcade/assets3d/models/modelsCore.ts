@@ -108,14 +108,14 @@ export function buildNextjsBadge(overrideRimHex?: string): BuiltSkillBadge {
   const W = 2.68;
   const H = 1.05;
   const R = 0.35;
-  const isCyanVariant = Boolean(overrideRimHex);
+  const hasOverride = Boolean(overrideRimHex);
   const baseTex = createSmokyFaceTexture(
     W,
     H,
-    isCyanVariant ? '#083a4d' : '#18242c',
-    isCyanVariant ? '#051524' : '#0e1318',
-    isCyanVariant ? 'rgba(34, 211, 238, 0.34)' : 'rgba(148, 163, 184, 0.22)',
-    isCyanVariant ? 0.32 : 0.5
+    hasOverride ? '#0f2e09' : '#18242c',
+    hasOverride ? '#081405' : '#0e1318',
+    hasOverride ? 'rgba(57, 255, 20, 0.34)' : 'rgba(148, 163, 184, 0.22)',
+    hasOverride ? 0.32 : 0.5
   );
   const baseMat = new THREE.MeshStandardMaterial({
     map: baseTex,
@@ -535,13 +535,13 @@ export function buildPythonBadge(overrideRimHex?: string): BuiltSkillBadge {
   const H = 1.0;
   const R = 0.42;
 
-  const isPurpleVariant = Boolean(overrideRimHex);
+  const isOverrideVariant = Boolean(overrideRimHex);
   const baseTex = createSmokyFaceTexture(
     W,
     H,
-    isPurpleVariant ? '#2c144a' : '#0a1f3a',
-    isPurpleVariant ? '#1b0b33' : '#58400c',
-    isPurpleVariant ? 'rgba(168, 85, 247, 0.36)' : 'rgba(255, 202, 58, 0.3)',
+    isOverrideVariant ? '#380612' : '#0a1f3a',
+    isOverrideVariant ? '#1d0309' : '#58400c',
+    isOverrideVariant ? 'rgba(255, 7, 58, 0.36)' : 'rgba(255, 202, 58, 0.3)',
     0.26
   );
   const baseMat = new THREE.MeshStandardMaterial({
@@ -551,7 +551,7 @@ export function buildPythonBadge(overrideRimHex?: string): BuiltSkillBadge {
     envMapIntensity: 0.9,
   });
   const rimColor = overrideRimHex ? new THREE.Color(overrideRimHex) : new THREE.Color(0xffca3a);
-  const rimEmissive = overrideRimHex ? new THREE.Color('#9333ea') : new THREE.Color(0xc97b00);
+  const rimEmissive = overrideRimHex ? new THREE.Color(overrideRimHex) : new THREE.Color(0xc97b00);
   const rimMat = new THREE.MeshStandardMaterial({
     color: rimColor,
     emissive: rimEmissive,
@@ -569,7 +569,7 @@ export function buildPythonBadge(overrideRimHex?: string): BuiltSkillBadge {
     fontSizeRatio: 0.47,
     fontWeight: 600,
     fillStyle: '#f8fafc',
-    glowColor: isPurpleVariant ? 'rgba(168, 85, 247, 0.45)' : 'rgba(250, 204, 21, 0.35)',
+    glowColor: isOverrideVariant ? 'rgba(255, 7, 58, 0.45)' : 'rgba(250, 204, 21, 0.35)',
   });
 
   const { root, frontMount, backMount } = createBasePillAssembly(
