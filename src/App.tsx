@@ -18,8 +18,10 @@ import { AboutOriginSection } from './components/AboutOriginSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { PortfolioFooter } from './components/PortfolioFooter';
 import { AllProjectsPage } from './pages/AllProjectsPage';
-import { HeroCelestialOrbRobo } from './components/HeroCelestialOrbRobo';
 
+const HeroCelestialOrbRobo = lazy(() =>
+  import('./components/HeroCelestialOrbRobo').then((m) => ({ default: m.HeroCelestialOrbRobo }))
+);
 const SkillsSectionApp = lazy(() => import('./skillsArcade/App'));
 
 interface PortfolioShellProps {
@@ -222,7 +224,11 @@ function PortfolioShell({ onOpenAllProjects, isVisible, restoreScrollY }: Portfo
             revealActive={heroRevealed}
             onConnectClick={() => handleNavigate('contact')}
           />
-          <HeroCelestialOrbRobo className="absolute top-14 right-2 sm:top-2.5 sm:right-5 lg:top-3 lg:right-8 z-30" />
+          {curtainDone && (
+            <Suspense fallback={null}>
+              <HeroCelestialOrbRobo className="absolute top-14 right-2 sm:top-2.5 sm:right-5 lg:top-3 lg:right-8 z-30" />
+            </Suspense>
+          )}
         </div>
       </section>
 

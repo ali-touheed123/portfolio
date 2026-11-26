@@ -38,36 +38,49 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
       return;
     }
 
-    // ── STEP 1: After snappy hold, directly animate panels via DOM refs ──
-    const holdTimer = window.setTimeout(() => {
-      panelRefs.current.forEach((el, i) => {
-        if (!el) return;
-        el.style.transition = `transform ${DUR}s ${EASING} ${DELAYS[i]}s`;
-        el.style.transform = 'translateY(-110%)';
+    let holdTimer = 0;
+    let revealTimer = 0;
+    let unmountTimer = 0;
+    let raf1 = 0;
+    let raf2 = 0;
+
+    // Wait for first paint before starting curtain timers so bounce never skips frames
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        // ── STEP 1: After snappy hold, directly animate panels via DOM refs ──
+        holdTimer = window.setTimeout(() => {
+          panelRefs.current.forEach((el, i) => {
+            if (!el) return;
+            el.style.transition = `transform ${DUR}s ${EASING} ${DELAYS[i]}s`;
+            el.style.transform = 'translateY(-110%)';
+          });
+
+          // Brand lockup rides up with the shutters
+          if (lockupRef.current) {
+            lockupRef.current.style.transition = `transform ${DUR}s ${EASING} 0.15s`;
+            lockupRef.current.style.transform = 'translateY(-110vh)';
+          }
+        }, HOLD_MS);
+
+        // ── STEP 2: Fire hero reveal right as shutters start lifting ──
+        revealTimer = window.setTimeout(() => {
+          onCurtainOpenStart?.();
+        }, HOLD_MS + 60);
+
+        // ── STEP 3: Unmount curtain cleanly when last panel finishes ──
+        unmountTimer = window.setTimeout(() => {
+          if (!completedRef.current) {
+            completedRef.current = true;
+            setUnmounted(true);
+            onCurtainComplete?.();
+          }
+        }, HOLD_MS + TOTAL_LIFT_MS + 60);
       });
-
-      // Brand lockup rides up with the shutters
-      if (lockupRef.current) {
-        lockupRef.current.style.transition = `transform ${DUR}s ${EASING} 0.15s`;
-        lockupRef.current.style.transform = 'translateY(-110vh)';
-      }
-    }, HOLD_MS);
-
-    // ── STEP 2: Fire hero reveal right as shutters start lifting ──
-    const revealTimer = window.setTimeout(() => {
-      onCurtainOpenStart?.();
-    }, HOLD_MS + 60);
-
-    // ── STEP 3: Unmount curtain cleanly when last panel finishes ──
-    const unmountTimer = window.setTimeout(() => {
-      if (!completedRef.current) {
-        completedRef.current = true;
-        setUnmounted(true);
-        onCurtainComplete?.();
-      }
-    }, HOLD_MS + TOTAL_LIFT_MS + 60);
+    });
 
     return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
       window.clearTimeout(holdTimer);
       window.clearTimeout(revealTimer);
       window.clearTimeout(unmountTimer);
@@ -119,7 +132,7 @@ export const EntryCurtain: React.FC<EntryCurtainProps> = memo(({
             style={{
               height: '100%',
               backgroundColor: '#000000',
-              borderRight: i < 3 ? '1px solid #1A1A1A' : 'none',
+              borderRight: i < 3 ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
               transform: 'translateY(0%)',   // explicit start — browser paints this first
               willChange: 'transform',
               position: 'relative',
